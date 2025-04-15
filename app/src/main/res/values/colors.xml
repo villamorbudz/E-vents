@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary-->
+    <color name="colorPrimary">#BD0027</color>          <!-- Deep Red -->
+    <color name="colorPrimaryVariant">#8A001C</color>  <!-- Darker shade for StatusBar -->
+    <color name="colorOnPrimary">#FFFFFFFF</color>     <!-- White text/icons on red -->
+
+    <!-- Secondary-->
+    <color name="colorSecondary">#FFC107</color>       <!-- Amber (warm contrast) -->
+    <color name="colorSecondaryVariant">#FF9800</color> <!-- Deeper orange contrast -->
+    <color name="colorOnSecondary">#FF000000</color>   <!-- Black text/icons on light accent -->
+
+    <!-- Neutrals-->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="gray_light">#FFEEEEEE</color>
+    <color name="gray_dark">#FF121212</color>
+</resources>
