@@ -21,33 +21,50 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())  // Disable CSRF for now to allow API access
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/signup", "/login", "/api/users/register", "/api/users/login", "/events/**", "/home").permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers("/", "/login", "/signup", "/change-password", "/api/users/**", "/css/**", "/js/**", "/events/**", "/api/events/**").permitAll()
+                .anyRequest().permitAll()
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .successHandler((request, response, authentication) -> {
-                    String targetUrl = (String) request.getSession().getAttribute("redirect-url");
-                    if (targetUrl != null) {
-                        request.getSession().removeAttribute("redirect-url");
-                        response.sendRedirect(targetUrl);
-                    } else {
-                        response.sendRedirect("/home");
-                    }
-                })
-                .failureUrl("/login?error=true")
+                .successHandler(customAuthenticationSuccessHandler())
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("/index.html")
+                .logoutSuccessUrl("/login")
                 .permitAll()
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)  // Ensure sessions are always created
+                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
             );
 
         return http.build();
+    }
+
+    @Bean
+    public org.springframework.security.web.authentication.AuthenticationSuccessHandler customAuthenticationSuccessHandler() {
+        return (request, response, authentication) -> {
+            org.springframework.security.core.userdetails.User userDetails =
+                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+            String email = userDetails.getUsername();
+            it342.g4.e_vents.model.User user = ((it342.g4.e_vents.repository.UserRepository)
+                org.springframework.web.context.support.WebApplicationContextUtils
+                    .getRequiredWebApplicationContext(request.getServletContext())
+                    .getBean(it342.g4.e_vents.repository.UserRepository.class))
+                .findByEmail(email).orElse(null);
+            if (user != null && user.getRole() != null) {
+                Long role = user.getRole().getRoleId();
+                if (role == 1L) {
+                    response.sendRedirect("/home");
+                } else if (role == 2L) {
+                    response.sendRedirect("/events/dashboard");
+                } else {
+                    response.sendRedirect("/events/dashboard");
+                }
+            } else {
+                response.sendRedirect("/login");
+            }
+        };
     }
 }

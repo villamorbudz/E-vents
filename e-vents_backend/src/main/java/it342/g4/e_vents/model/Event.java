@@ -1,32 +1,47 @@
 package it342.g4.e_vents.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import java.sql.Time;
+import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "events")
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "event_id")
+    private Long eventId;
 
     @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)
-    private String date;
+    private Date date;
 
     @Column(nullable = false)
-    private String location;
+    private Time time;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "venue_id", nullable = false)
+    @JsonManagedReference
+    private Venue venue;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JsonManagedReference
+    private List<Act> lineup;
 
     @Column(nullable = false)
-    private String description;
+    private String status;
 
-    public Long getId() {
-        return id;
+    // Getters and Setters
+    public Long getEventId() {
+        return eventId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 
     public String getName() {
@@ -37,27 +52,43 @@ public class Event {
         this.name = name;
     }
 
-    public String getDate() {
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
-    public String getLocation() {
-        return location;
+    public Time getTime() {
+        return time;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
+    public void setTime(Time time) {
+        this.time = time;
     }
 
-    public String getDescription() {
-        return description;
+    public Venue getVenue() {
+        return venue;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setVenue(Venue venue) {
+        this.venue = venue;
+    }
+
+    public List<Act> getLineup() {
+        return lineup;
+    }
+
+    public void setLineup(List<Act> lineup) {
+        this.lineup = lineup;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
