@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Event</title>
+    <link rel="stylesheet" href="/path/to/your/styles.css"> <!-- Add your stylesheet path here -->
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Event</h1>
+    <form action="/api/events/create" method="POST">
+        <div class="form-group">
+            <label for="name">Event Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        <div class="form-group">
+            <label for="time">Time:</label>
+            <input type="time" id="time" name="time" required>
+        </div>
+        <div class="form-group">
+            <label for="venue">Venue:</label>
+            <select id="venue" name="venue" required>
+    <option value="" disabled selected>Select a venue</option>
+    <!-- Options will be populated dynamically -->
+</select>
+        </div>
+        <div class="form-group">
+            <label for="lineup">Lineup:</label>
+            <select id="lineup" name="lineup" multiple required>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" name="status" disabled>
+                <option value="scheduled" selected>Scheduled</option>
+            </select>
+        </div>
+        <input type="hidden" name="status" value="scheduled">
+        <button type="submit">Create Event</button>
+    </form>
+    <script>
+        // Fetch venues and populate the select box
+        fetch('/api/venues')
+            .then(response => response.json())
+            .then(data => {
+                const venueSelect = document.getElementById('venue');
+                data.forEach(venue => {
+    const option = document.createElement('option');
+    option.value = venue.venueId;
+    option.textContent = venue.name;
+    venueSelect.appendChild(option);
+});
+            })
+            .catch(error => console.error('Error fetching venues:', error));
+
+        // Fetch acts and populate the multi-select box
+        fetch('/api/acts')
+            .then(response => response.json())
+            .then(data => {
+                const lineupSelect = document.getElementById('lineup');
+                data.forEach(act => {
+    const option = document.createElement('option');
+    option.value = act.actId;
+    option.textContent = act.name;
+    lineupSelect.appendChild(option);
+});
+            })
+            .catch(error => console.error('Error fetching acts:', error));
+    </script>
+    <script src="/path/to/your/scripts.js"></script> <!-- Add your script path here -->
+</body>
+</html>

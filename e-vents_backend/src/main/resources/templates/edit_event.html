@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Event</title>
+    <link rel="stylesheet" href="/path/to/your/styles.css">
+</head>
+<body>
+    <h1>Edit Event</h1>
+    <form id="editEventForm">
+        <input type="hidden" id="eventId" name="eventId">
+        <div class="form-group">
+            <label for="name">Event Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        <div class="form-group">
+            <label for="time">Time:</label>
+            <input type="time" id="time" name="time" required>
+        </div>
+        <div class="form-group">
+            <label for="venue">Venue:</label>
+            <select id="venue" name="venue" required>
+                <option value="" disabled selected>Select a venue</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="lineup">Lineup:</label>
+            <select id="lineup" name="lineup" multiple required></select>
+        </div>
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" name="status">
+                <option value="scheduled">Scheduled</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <button type="submit">Save Changes</button>
+    </form>
+    <script>
+        // Get event ID from URL
+        const eventId = window.location.pathname.split('/').pop();
+        document.getElementById('eventId').value = eventId;
+
+        // Fetch event details
+        fetch(`/api/events/${eventId}`)
+            .then(response => response.json())
+            .then(event => {
+                document.getElementById('name').value = event.name;
+                document.getElementById('date').value = event.date.substring(0, 10);
+                document.getElementById('time').value = event.time.substring(0, 5);
+                document.getElementById('status').value = event.status;
+                // Fetch venues and acts after event is loaded
+                fetch('/api/venues')
+                    .then(response => response.json())
+                    .then(venues => {
+                        const venueSelect = document.getElementById('venue');
+                        venues.forEach(venue => {
+                            const option = document.createElement('option');
+                            option.value = venue.venueId;
+                            option.textContent = venue.name;
+                            if (venue.venueId === event.venue.venueId) option.selected = true;
+                            venueSelect.appendChild(option);
+                        });
+                    });
+                fetch('/api/acts')
+                    .then(response => response.json())
+                    .then(acts => {
+                        const lineupSelect = document.getElementById('lineup');
+                        acts.forEach(act => {
+                            const option = document.createElement('option');
+                            option.value = act.actId;
+                            option.textContent = act.name;
+                            if (event.lineup.some(ea => ea.actId === act.actId)) option.selected = true;
+                            lineupSelect.appendChild(option);
+                        });
+                    });
+            });
+
+        document.getElementById('editEventForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const lineup = Array.from(document.getElementById('lineup').selectedOptions).map(opt => opt.value);
+            fetch(`/api/events/edit/${eventId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.get('name'),
+                    date: formData.get('date'),
+                    time: formData.get('time'),
+                    venue: formData.get('venue'),
+                    lineup: lineup,
+                    status: formData.get('status')
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/events/dashboard';
+                } else {
+                    alert('Failed to update event');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -27,6 +27,7 @@
         <div class="signup-container">
             <h2 class="text-center mb-4">Sign Up for E-vents</h2>
             <form id="signupForm">
+                <h3>Personal Information</h3>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -43,18 +44,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" class="form-control" id="email" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" class="form-control" id="password" required>
-                </div>
-
-                <div class="form-group">
                     <label for="birthdate">Birthdate</label>
                     <input type="date" class="form-control" id="birthdate" required>
+                </div>
+
+                <h3>Contact Information </h3>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" class="form-control" id="email" required>
                 </div>
 
                 <div class="form-group">
@@ -62,26 +59,40 @@
                     <input type="tel" class="form-control" id="contactNumber" required>
                 </div>
 
+                <h3>Authentication</h3>
                 <div class="form-group">
-                    <label for="country">Country</label>
-                    <select class="form-control" id="country" required>
-                        <option value="">Select Country</option>
-                    </select>
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" required>
                 </div>
 
+                <h3>Address</h3>
                 <div class="form-group">
-                    <label for="region">Region</label>
-                    <select class="form-control" id="region" required disabled>
-                        <option value="">Select Region</option>
-                    </select>
+                    <label for="addressCountry">Country</label>
+                    <select id="addressCountry" class="form-control" required>
+    <option value="">Select Country</option>
+</select>
+                </div>
+                <div class="form-group">
+                    <label for="addressState">State</label>
+                    <select id="addressState" class="form-control" required disabled>
+    <option value="">Select State</option>
+</select>
+                </div>
+                <div class="form-group">
+                    <label for="addressCity">City</label>
+                    <select id="addressCity" class="form-control" required disabled>
+    <option value="">Select City</option>
+</select>
+                </div>
+                <div class="form-group">
+                    <label for="street">Street</label>
+                    <input type="text" class="form-control" id="street" required>
+                </div>
+                <div class="form-group">
+                    <label for="zip">Zip/Postal Code</label>
+                    <input type="text" class="form-control" id="zip" required>
                 </div>
 
-                <div class="form-group">
-                    <label for="city">City</label>
-                    <select class="form-control" id="city" required disabled>
-                        <option value="">Select City</option>
-                    </select>
-                </div>
 
                 <button type="submit" class="btn btn-primary w-100">Sign Up</button>
                 <p class="text-center mt-3">
@@ -92,100 +103,212 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load countries when page loads
-            fetch('/api/users/countries')
-                .then(response => response.json())
-                .then(countries => {
-                    const countrySelect = document.getElementById('country');
-                    countries.forEach(country => {
-                        const option = new Option(country, country);
-                        countrySelect.add(option);
-                    });
+document.addEventListener('DOMContentLoaded', function () {
+    const countrySelect = document.getElementById('addressCountry');
+    const stateSelect = document.getElementById('addressState');
+    const citySelect = document.getElementById('addressCity');
+
+    // Always reset selects on load
+    countrySelect.disabled = false;
+    stateSelect.disabled = true;
+    citySelect.disabled = true;
+
+    // Fetch and populate countries on page load
+    fetch('https://countriesnow.space/api/v0.1/countries/positions')
+        .then(res => res.json())
+        .then(data => {
+            if (data.data && data.data.length > 0) {
+                data.data.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.name;
+                    option.textContent = country.name;
+                    countrySelect.appendChild(option);
                 });
-
-            // Handle country change
-            document.getElementById('country').addEventListener('change', function() {
-                const country = this.value;
-                const regionSelect = document.getElementById('region');
-                const citySelect = document.getElementById('city');
-
-                regionSelect.disabled = !country;
-                citySelect.disabled = true;
-                citySelect.innerHTML = '<option value="">Select City</option>';
-
-                if (country) {
-                    fetch(`/api/users/regions/${country}`)
-                        .then(response => response.json())
-                        .then(regions => {
-                            regionSelect.innerHTML = '<option value="">Select Region</option>';
-                            regions.forEach(region => {
-                                const option = new Option(region, region);
-                                regionSelect.add(option);
-                            });
-                        });
-                }
-            });
-
-            // Handle region change
-            document.getElementById('region').addEventListener('change', function() {
-                const country = document.getElementById('country').value;
-                const region = this.value;
-                const citySelect = document.getElementById('city');
-
-                citySelect.disabled = !region;
-
-                if (region) {
-                    fetch(`/api/users/cities/${country}/${region}`)
-                        .then(response => response.json())
-                        .then(cities => {
-                            citySelect.innerHTML = '<option value="">Select City</option>';
-                            cities.forEach(city => {
-                                const option = new Option(city, city);
-                                citySelect.add(option);
-                            });
-                        });
-                }
-            });
-
-            // Handle form submission
-            document.getElementById('signupForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                const userData = {
-                    firstName: document.getElementById('firstName').value,
-                    lastName: document.getElementById('lastName').value,
-                    email: document.getElementById('email').value,
-                    password: document.getElementById('password').value,
-                    birthdate: document.getElementById('birthdate').value,
-                    contactNumber: document.getElementById('contactNumber').value,
-                    country: document.getElementById('country').value,
-                    region: document.getElementById('region').value,
-                    city: document.getElementById('city').value
-                };
-
-                fetch('/api/users/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.text().then(text => { throw new Error(text) });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    alert('Registration successful! Please login.');
-                    window.location.href = '/login';
-                })
-                .catch(error => {
-                    alert('Registration failed: ' + error.message);
-                });
-            });
+                countrySelect.disabled = false;
+            } else {
+                alert('Failed to load countries.');
+            }
+        })
+        .catch(err => {
+            alert('Could not fetch countries. Check your internet connection.');
+            console.error(err);
         });
+
+    // Fetch and populate states when a country is selected
+    countrySelect.addEventListener('change', function () {
+        const country = countrySelect.value;
+        stateSelect.innerHTML = '<option value="">Select State</option>';
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        stateSelect.disabled = true;
+        citySelect.disabled = true;
+
+        if (!country) return;
+
+        fetch('https://countriesnow.space/api/v0.1/countries/states', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ country })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.data && data.data.states && data.data.states.length > 0) {
+                data.data.states.forEach(state => {
+                    const option = document.createElement('option');
+                    option.value = state.name;
+                    option.textContent = state.name;
+                    stateSelect.appendChild(option);
+                });
+                stateSelect.disabled = false;
+            } else {
+                alert('No states found for this country.');
+            }
+        })
+        .catch(err => {
+            alert('Could not fetch states.');
+            console.error(err);
+        });
+    });
+
+    // Fetch and populate cities when a state is selected
+    stateSelect.addEventListener('change', function () {
+        const country = countrySelect.value;
+        const state = stateSelect.value;
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        citySelect.disabled = true;
+
+        if (!state) return;
+
+        fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ country, state })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.data && data.data.length > 0) {
+                data.data.forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+                    citySelect.appendChild(option);
+                });
+                citySelect.disabled = false;
+            } else {
+                alert('No cities found for this state.');
+            }
+        })
+        .catch(err => {
+            alert('Could not fetch cities.');
+            console.error(err);
+        });
+    });
+});
+// Handle country change
+document.getElementById('addressCountry').addEventListener('change', function() {
+    const country = this.value;
+    const regionSelect = document.getElementById('addressState');
+    const citySelect = document.getElementById('addressCity');
+
+    regionSelect.disabled = !country;
+    citySelect.disabled = true;
+    citySelect.innerHTML = '<option value="">Select City</option>';
+
+    if (country) {
+        fetch(`/api/users/regions/${country}`)
+            .then(response => response.json())
+            .then(regions => {
+                regionSelect.innerHTML = '<option value="">Select Region</option>';
+                regions.forEach(region => {
+                    const option = new Option(region, region);
+                    regionSelect.add(option);
+                });
+            });
+    }
+});
+
+// Handle region change
+document.getElementById('addressState').addEventListener('change', function() {
+    const country = document.getElementById('addressCountry').value;
+    const region = this.value;
+    const citySelect = document.getElementById('addressCity');
+
+    citySelect.disabled = !region;
+
+    if (region) {
+        fetch(`/api/users/cities/${country}/${region}`)
+            .then(response => response.json())
+            .then(cities => {
+                citySelect.innerHTML = '<option value="">Select City</option>';
+                cities.forEach(city => {
+                    const option = new Option(city, city);
+                    citySelect.add(option);
+                });
+            });
+    }
+});
+
+// Validate birthdate
+const birthdateInput = document.getElementById('birthdate');
+if (birthdateInput) {
+    birthdateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const today = new Date();
+        if (selectedDate > today) {
+            alert('Birthdate cannot be in the future.');
+            this.value = '';
+        }
+    });
+}
+
+// Handle form submission
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const password = document.getElementById('password').value;
+
+    // Ensure placeholders are not submitted as actual values
+    let addressCountry = document.getElementById('addressCountry').value;
+    let addressState = document.getElementById('addressState').value;
+    let addressCity = document.getElementById('addressCity').value;
+
+    if (addressCountry === '' || addressCountry === 'Select Country') addressCountry = '';
+    if (addressState === '' || addressState === 'Select State' || addressState === 'Select Region' || addressState === 'Select Province') addressState = '';
+    if (addressCity === '' || addressCity === 'Select City') addressCity = '';
+
+    const userData = {
+        firstName: document.getElementById('firstName').value,
+        lastName: document.getElementById('lastName').value,
+        email: document.getElementById('email').value,
+        password: password,
+        birthdate: document.getElementById('birthdate').value,
+        contactNumber: document.getElementById('contactNumber').value,
+        country: addressCountry,
+        state: addressState,
+        city: addressCity,
+        street: document.getElementById('street').value,
+        zipCode: document.getElementById('zip').value
+    };
+
+    fetch('/api/users/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text) });
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('Registration successful! Please login.');
+        window.location.href = '/login';
+    })
+    .catch(error => {
+        alert('Registration failed: ' + error.message);
+    });
+});
     </script>
 </body>
 </html>

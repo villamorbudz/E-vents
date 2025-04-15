@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Events Dashboard</h1>
+        <a href="/events/create" class="btn btn-success mb-3">Create Event</a>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Act</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Venue</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="eventsTableBody">
+                <!-- Events will be populated here -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        // Fetch events and populate the table
+        fetch('/api/events')
+            .then(response => response.json())
+            .then(data => {
+                const eventsTableBody = document.getElementById('eventsTableBody');
+                data.forEach(event => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${event.name}</td>
+                        <td>${event.lineup.map(act => act.name).join(', ')}</td>
+                        <td>${event.date.substring(0, 10)}</td>
+                        <td>${event.time}</td>
+                        <td>${event.venue.name}</td>
+                        <td>${event.status}</td>
+                        <td>
+                            <a href="/events/edit/${event.eventId}" class="btn btn-warning btn-sm">Edit</a>
+                            <button class="btn btn-danger btn-sm" onclick="deleteEvent(${event.eventId})">Delete</button>
+                        </td>
+                    `;
+                    eventsTableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching events:', error));
+
+        function deleteEvent(eventId) {
+            fetch(`/api/events/${eventId}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Event cancelled successfully');
+                    location.reload();
+                })
+                .catch(error => console.error('Error cancelling event:', error));
+        }
+    </script>
+</body>
+</html>
