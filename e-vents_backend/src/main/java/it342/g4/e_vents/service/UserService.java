@@ -1,12 +1,13 @@
 package it342.g4.e_vents.service;
 
-import it342.g4.e_vents.model.User;
-import it342.g4.e_vents.model.Role;
-import it342.g4.e_vents.repository.UserRepository;
-import it342.g4.e_vents.repository.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import it342.g4.e_vents.model.Role;
+import it342.g4.e_vents.model.User;
+import it342.g4.e_vents.repository.RoleRepository;
+import it342.g4.e_vents.repository.UserRepository;
 
 @Service
 public class UserService {
@@ -47,18 +48,67 @@ public class UserService {
     }
 
     // Method to get list of countries (placeholder until API integration)
+    //public String[] getCountries() {
+        //return new String[]{"---"};
+    //}
+
     public String[] getCountries() {
-        return new String[]{"---"};
+        return new String[]{
+            "United States", "Canada", "United Kingdom", "Australia", 
+            "Germany", "France", "Japan", "Brazil", "India", "China"
+        };
     }
 
-    // Method to get regions for a country (placeholder until API integration)
+    /*  Method to get regions for a country (placeholder until API integration)
     public String[] getRegions(String country) {
         return new String[]{"---"};
+    }*/
+
+    public String[] getRegions(String country) {
+        switch (country) {
+            case "United States":
+                return new String[]{
+                    "Alabama", "Alaska", "Arizona", "Arkansas", "California", 
+                    "Colorado", "Connecticut", "Delaware", "Florida", "Georgia"
+                };
+            case "Canada":
+                return new String[]{
+                    "Alberta", "British Columbia", "Manitoba", "New Brunswick", 
+                    "Newfoundland and Labrador", "Nova Scotia", "Ontario", "Quebec"
+                };
+            case "United Kingdom":
+                return new String[]{
+                    "England", "Scotland", "Wales", "Northern Ireland"
+                };
+            default:
+                return new String[]{"Other"};
+        }
     }
 
-    // Method to get cities for a region (placeholder until API integration)
+    /*  Method to get cities for a region (placeholder until API integration)
     public String[] getCities(String country, String region) {
         return new String[]{"---"};
+    }*/
+
+    public String[] getCities(String country, String region) {
+        if (country.equals("United States")) {
+            if (region.equals("California")) {
+                return new String[]{
+                    "Los Angeles", "San Francisco", "San Diego", "Sacramento", "San Jose"
+                };
+            } else if (region.equals("New York")) {
+                return new String[]{
+                    "New York City", "Buffalo", "Rochester", "Albany", "Syracuse"
+                };
+            }
+        } else if (country.equals("Canada")) {
+            if (region.equals("Ontario")) {
+                return new String[]{
+                    "Toronto", "Ottawa", "Hamilton", "London", "Windsor"
+                };
+            }
+        }
+        return new String[]{"City 1", "City 2", "City 3"};
     }
 
     public boolean userExists(String email) {

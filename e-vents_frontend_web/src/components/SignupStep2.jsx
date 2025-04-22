@@ -1,23 +1,27 @@
-// SignupStep2.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import backgroundImage from '../assets/images/loginBG.png';
+import { userService } from '../services/apiService';
 
 export default function SignupStep2() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    mobile: "",
+    contactNumber: "", // changed from mobile to match backend
     birthdate: "",
     country: "",
     state: "",
     city: "",
-    postalCode: ""
+    street: "",
+    zipCode: ""
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [regions, setRegions] = useState([]);
+  const [cities, setCities] = useState([]);
 
   // Check for existing signup data in localStorage
   useEffect(() => {
@@ -37,7 +41,61 @@ export default function SignupStep2() {
         ...parsedData.personalInfo
       }));
     }
+    
+    // Load countries
+    loadCountries();
   }, [navigate]);
+
+  // Load countries from API
+  const loadCountries = async () => {
+    try {
+      const countriesData = await userService.getCountries();
+      console.log("Countries data:", countriesData);
+      setCountries(countriesData);
+    } catch (error) {
+      console.error("Error loading countries:", error);
+    }
+  };
+
+  // Load regions when country changes
+  useEffect(() => {
+    const loadRegions = async () => {
+      if (formData.country) {
+        try {
+          const regionsData = await userService.getRegions(formData.country);
+          console.log("Regions data:", regionsData);
+          setRegions(regionsData);
+        } catch (error) {
+          console.error("Error loading regions:", error);
+        }
+      } else {
+        setRegions([]);
+        setFormData(prev => ({ ...prev, state: "", city: "" }));
+      }
+    };
+    
+    loadRegions();
+  }, [formData.country]);
+
+  // Load cities when region changes
+  useEffect(() => {
+    const loadCities = async () => {
+      if (formData.country && formData.state) {
+        try {
+          const citiesData = await userService.getCities(formData.country, formData.state);
+          console.log("Cities data:", citiesData);
+          setCities(citiesData);
+        } catch (error) {
+          console.error("Error loading cities:", error);
+        }
+      } else {
+        setCities([]);
+        setFormData(prev => ({ ...prev, city: "" }));
+      }
+    };
+    
+    loadCities();
+  }, [formData.country, formData.state]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,10 +119,10 @@ export default function SignupStep2() {
     }
     
     // Mobile validation
-    if (!formData.mobile) {
-      newErrors.mobile = "Mobile number is required";
-    } else if (!/^\d{10,15}$/.test(formData.mobile.replace(/[^0-9]/g, ''))) {
-      newErrors.mobile = "Enter a valid mobile number";
+    if (!formData.contactNumber) {
+      newErrors.contactNumber = "Contact number is required";
+    } else if (!/^\d{10,15}$/.test(formData.contactNumber.replace(/[^0-9]/g, ''))) {
+      newErrors.contactNumber = "Enter a valid contact number";
     }
     
     // Birthdate validation
@@ -87,16 +145,31 @@ export default function SignupStep2() {
       newErrors.country = "Country is required";
     }
     
+    // State validation
+    if (regions.length > 0 && !formData.state.trim()) {
+      newErrors.state = "State/Province is required";
+    }
+    
+    // City validation
+    if (cities.length > 0 && !formData.city.trim()) {
+      newErrors.city = "City is required";
+    }
+    
+    // Street validation
+    if (!formData.street.trim()) {
+      newErrors.street = "Street address is required";
+    }
+    
     // Postal code validation
-    if (!formData.postalCode.trim()) {
-      newErrors.postalCode = "Postal code is required";
+    if (!formData.zipCode.trim()) {
+      newErrors.zipCode = "Postal code is required";
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -105,15 +178,33 @@ export default function SignupStep2() {
     
     setIsLoading(true);
     
-    // In a real app, you would send this data to your backend
-    setTimeout(() => {
+    try {
       // Get existing signup data
       const existingData = JSON.parse(localStorage.getItem("signupData")) || {};
+      
+      // Prepare user data for registration
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: existingData.email,
+        password: existingData.password,
+        contactNumber: formData.contactNumber,
+        birthdate: new Date(formData.birthdate),
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
+        street: formData.street,
+        zipCode: formData.zipCode
+      };
+      
+      // Register user
+      const registeredUser = await userService.register(userData);
       
       // Update with personal info
       const updatedData = {
         ...existingData,
         personalInfo: formData,
+        userId: registeredUser.userId,
         step: 2,
         completed: true,
         timestamp: new Date().toISOString()
@@ -121,13 +212,31 @@ export default function SignupStep2() {
       
       // Save updated data
       localStorage.setItem("signupData", JSON.stringify(updatedData));
-      localStorage.setItem("userLoggedIn", "true");
-      
-      setIsLoading(false);
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userData", JSON.stringify(registeredUser));
+      localStorage.setItem("userEmail", registeredUser.email);
       
       // Redirect to home page or dashboard
       navigate("/homeseller");
-    }, 1000);
+    } catch (error) {
+      setErrors(prev => ({ 
+        ...prev, 
+        form: typeof error === 'string' ? error : "Failed to register account. Please try again."
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    // Save current form data before navigating back
+    const existingData = JSON.parse(localStorage.getItem("signupData")) || {};
+    localStorage.setItem("signupData", JSON.stringify({
+      ...existingData,
+      personalInfo: formData
+    }));
+    
+    navigate("/signup");
   };
 
   return (
@@ -143,7 +252,6 @@ export default function SignupStep2() {
       {/* Left side just shows background */}
       <motion.div
         initial={{ x: 0 }}
-        //exit={{ x: "-100%" }}
         transition={{ duration: 0.5, ease: "easeInOut" }}
         className="w-1/2 flex flex-col justify-center items-center bg-transparent text-center px-8"
       >
@@ -162,12 +270,18 @@ export default function SignupStep2() {
         exit={{ x: "200%" }}
         animate={{ x: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-1/2 bg-[#BD0027]/80 rounded-l-[80px] flex flex-col justify-center items-center text-white p-10"
+        className="w-1/2 bg-[#BD0027]/80 rounded-l-[80px] flex flex-col justify-center items-center text-white p-10 overflow-y-auto max-h-screen"
       >
         <h2 className="text-2xl font-bold mb-4">Complete Your Profile</h2>
         <p className="text-sm mb-6 text-center w-3/4">Please provide your personal information to complete your account setup</p>
         
         <form onSubmit={handleSubmit} className="w-full flex flex-col items-center">
+          {errors.form && (
+            <div className="w-3/4 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-center">
+              {errors.form}
+            </div>
+          )}
+          
           <div className="w-3/4 grid grid-cols-2 gap-3 mb-4">
             <div>
               <input 
@@ -194,13 +308,13 @@ export default function SignupStep2() {
           
           <div className="w-3/4 mb-4">
             <input 
-              name="mobile"
-              placeholder="Mobile Number" 
-              className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.mobile ? 'border-red-500' : 'border-black'}`}
-              value={formData.mobile}
+              name="contactNumber"
+              placeholder="Contact Number" 
+              className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.contactNumber ? 'border-red-500' : 'border-black'}`}
+              value={formData.contactNumber}
               onChange={handleChange}
             />
-            {errors.mobile && <p className="text-sm text-red-200 mt-1">{errors.mobile}</p>}
+            {errors.contactNumber && <p className="text-sm text-red-200 mt-1">{errors.contactNumber}</p>}
           </div>
           
           <div className="w-3/4 mb-4">
@@ -218,55 +332,82 @@ export default function SignupStep2() {
           
           <div className="w-3/4 grid grid-cols-2 gap-3 mb-4">
             <div>
-              <input 
+              <select 
                 name="country"
-                placeholder="Country" 
                 className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.country ? 'border-red-500' : 'border-black'}`}
                 value={formData.country}
                 onChange={handleChange}
-              />
+              >
+                <option value="">Select Country</option>
+                {countries.map((country, index) => (
+                  <option key={index} value={country}>{country}</option>
+                ))}
+              </select>
               {errors.country && <p className="text-sm text-red-200 mt-1">{errors.country}</p>}
             </div>
             
             <div>
-              <input 
+              <select 
                 name="state"
-                placeholder="State/Province" 
-                className="w-full p-3 rounded-md bg-white text-black border-2 border-black"
+                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.state ? 'border-red-500' : 'border-black'}`}
                 value={formData.state}
                 onChange={handleChange}
-              />
+                disabled={!formData.country}
+              >
+                <option value="">Select State/Province</option>
+                {regions.map((region, index) => (
+                  <option key={index} value={region}>{region}</option>
+                ))}
+              </select>
+              {errors.state && <p className="text-sm text-red-200 mt-1">{errors.state}</p>}
             </div>
           </div>
           
-          <div className="w-3/4 grid grid-cols-2 gap-3 mb-6">
+          <div className="w-3/4 grid grid-cols-2 gap-3 mb-4">
             <div>
-              <input 
+              <select 
                 name="city"
-                placeholder="City" 
-                className="w-full p-3 rounded-md bg-white text-black border-2 border-black"
+                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.city ? 'border-red-500' : 'border-black'}`}
                 value={formData.city}
                 onChange={handleChange}
-              />
+                disabled={!formData.state}
+              >
+                <option value="">Select City</option>
+                {cities.map((city, index) => (
+                  <option key={index} value={city}>{city}</option>
+                ))}
+              </select>
+              {errors.city && <p className="text-sm text-red-200 mt-1">{errors.city}</p>}
             </div>
             
             <div>
               <input 
-                name="postalCode"
-                placeholder="Postal Code" 
-                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.postalCode ? 'border-red-500' : 'border-black'}`}
-                value={formData.postalCode}
+                name="zipCode"
+                placeholder="Postal/Zip Code" 
+                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.zipCode ? 'border-red-500' : 'border-black'}`}
+                value={formData.zipCode}
                 onChange={handleChange}
               />
-              {errors.postalCode && <p className="text-sm text-red-200 mt-1">{errors.postalCode}</p>}
+              {errors.zipCode && <p className="text-sm text-red-200 mt-1">{errors.zipCode}</p>}
             </div>
           </div>
           
-          <div className="flex w-3/4 justify-between mb-6">
+          <div className="w-3/4 mb-6">
+            <input 
+              name="street"
+              placeholder="Street Address" 
+              className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.street ? 'border-red-500' : 'border-black'}`}
+              value={formData.street}
+              onChange={handleChange}
+            />
+            {errors.street && <p className="text-sm text-red-200 mt-1">{errors.street}</p>}
+          </div>
+          
+          <div className="w-3/4 flex justify-between mb-4">
             <button 
               type="button" 
-              className="bg-white/20 text-white px-8 py-2 rounded-md font-semibold hover:bg-white/30 transition-colors"
-              onClick={() => navigate("/signup")}
+              onClick={handleBack}
+              className="bg-transparent border-2 border-white text-white px-8 py-2 rounded-md font-semibold hover:bg-white/10 transition-colors"
             >
               Back
             </button>
@@ -282,16 +423,16 @@ export default function SignupStep2() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Creating Account...
+                  Processing...
                 </>
               ) : (
-                <>SIGN UP</>
+                <>Complete Signup</>
               )}
             </button>
           </div>
         </form>
         
-        <p className="text-sm">
+        <p className="text-sm mt-4">
           Already have an account?{" "}
           <Link to="/" className="underline hover:text-gray-200 transition-colors">SIGN IN</Link>
         </p>

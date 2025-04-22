@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import backgroundImage from '../assets/images/loginBG.png';
+import { userService } from '../services/apiService';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,12 +12,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // Mock user data
-  const validUsers = [
-    { email: 'user@example.com', password: 'password123' },
-    { email: 'john@example.com', password: 'john123' }
-  ];
 
   const handleNavigateSignup = () => {
     navigate("/signup");
@@ -33,15 +28,6 @@ export default function Login() {
       return false;
     }
 
-    const foundUser = validUsers.find(
-      user => (user.email === email.trim() && user.password === password)
-    );
-
-    if (!foundUser) {
-      setError('Invalid email or password');
-      return false;
-    }
-
     return true;
   };
 
@@ -54,16 +40,24 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const userData = await userService.login(email, password);
+      
+      // Store user data in localStorage
       localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userData', JSON.stringify(userData));
       localStorage.setItem('userEmail', email);
+      
       navigate("/homeseller");
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(typeof err === 'string' ? err : 'Invalid email or password');
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    navigate("/forgot-password");
   };
 
   const handleSocialLogin = (provider) => {
@@ -111,7 +105,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <p className="text-sm underline mb-6 cursor-pointer">Forgot Password?</p>
+          <p className="text-sm underline mb-6 cursor-pointer" onClick={handleForgotPassword}>Forgot Password?</p>
 
           <p className="mb-3">or login using</p>
           <div className="flex gap-4 mb-6">

@@ -1,10 +1,20 @@
 package it342.g4.e_vents.controller;
 
-import it342.g4.e_vents.model.User;
-import it342.g4.e_vents.service.UserService;
+import java.util.Collections;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import it342.g4.e_vents.model.User;
+import it342.g4.e_vents.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
@@ -53,10 +63,15 @@ public class UserController {
     }
 
     @GetMapping("/exists")
-    public ResponseEntity<?> userExists(@RequestParam String email) {
-        boolean exists = userService.userExists(email);
-        return ResponseEntity.ok(java.util.Collections.singletonMap("exists", exists));
+public ResponseEntity<?> userExists(@RequestParam(required = false) String email) {
+    System.out.println("Incoming email: " + email);
+    if (email == null || email.trim().isEmpty()) {
+        return ResponseEntity.badRequest().body("Email parameter is required");
     }
+
+    boolean exists = userService.userExists(email);
+    return ResponseEntity.ok(Collections.singletonMap("exists", exists));
+}
 
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest req) {

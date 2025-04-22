@@ -1,10 +1,10 @@
-// SignupStep1.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import backgroundImage from '../assets/images/loginBG.png';
+import { userService } from '../services/apiService';
 
 export default function SignupStep1() {
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ export default function SignupStep1() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = (e) => {
+  const handleNext = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -61,8 +61,16 @@ export default function SignupStep1() {
     
     setIsLoading(true);
     
-    // Check if email already exists
-    setTimeout(() => {
+    try {
+      // Check if email already exists
+      const emailExists = await userService.checkEmailExists(email);
+      
+      if (emailExists) {
+        setErrors(prev => ({ ...prev, email: "Email is already registered" }));
+        setIsLoading(false);
+        return;
+      }
+      
       // Save data to localStorage
       const signupData = {
         email,
@@ -72,9 +80,12 @@ export default function SignupStep1() {
       };
       
       localStorage.setItem("signupData", JSON.stringify(signupData));
-      setIsLoading(false);
       navigate("/signup/personal-info");
-    }, 800);
+    } catch (error) {
+      setErrors(prev => ({ ...prev, form: typeof error === 'string' ? error : "An error occurred" }));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSocialSignup = (provider) => {
@@ -94,7 +105,6 @@ export default function SignupStep1() {
       {/* Left side just shows background */}
       <motion.div
         initial={{ x: 0 }}
-        //exit={{ x: "-100%" }}
         transition={{ duration: 0.5, ease: "easeInOut" }}
         className="w-1/2 flex flex-col justify-center items-center bg-transparent text-center px-8"
       >
@@ -119,6 +129,12 @@ export default function SignupStep1() {
         <p className="text-sm mb-4 text-center w-1/2">Please enter your email and create a password to get started</p>
         
         <form onSubmit={handleNext} className="w-full flex flex-col items-center">
+          {errors.form && (
+            <div className="w-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-center">
+              {errors.form}
+            </div>
+          )}
+          
           <div className="w-1/2 mb-4">
             <input 
               type="email" 
