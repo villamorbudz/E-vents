@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' - E-vents'">Act Form - E-vents</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .nav { display: flex; list-style: none; padding: 0; margin-bottom: 20px; border-bottom: 1px solid #ddd; }
+        .nav li { margin-right: 15px; padding: 10px; }
+        .nav a { text-decoration: none; color: #333; }
+        .nav a.active { font-weight: bold; color: #0066cc; }
+        .form-container { max-width: 800px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        textarea { min-height: 100px; }
+        .btn-container { margin-top: 20px; display: flex; justify-content: space-between; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
+        .btn-primary { background-color: #0066cc; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .tag-input { display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; min-height: 38px; }
+        .tag { background-color: #e9ecef; padding: 2px 8px; border-radius: 3px; display: flex; align-items: center; }
+        .tag-close { margin-left: 5px; cursor: pointer; }
+        .tag-input input { flex: 1; min-width: 100px; border: none; padding: 5px; }
+        .tag-input input:focus { outline: none; }
+    </style>
+</head>
+<body>
+    <h1 th:text="${pageTitle}">Act Form</h1>
+    
+    <!-- Navigation -->
+    <ul class="nav">
+        <li><a th:href="@{/admin}">Dashboard</a></li>
+        <li><a th:href="@{/admin(entityType='users')}">Users</a></li>
+        <li><a th:href="@{/admin(entityType='events')}">Events</a></li>
+        <li><a th:href="@{/admin(entityType='venues')}">Venues</a></li>
+        <li><a th:href="@{/admin(entityType='acts')}" class="active">Acts</a></li>
+    </ul>
+    
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">Success message</div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error message</div>
+    
+    <!-- Act Form -->
+    <div class="form-container">
+        <form th:action="${act.actId != null} ? @{/admin/acts/{id}/edit(id=${act.actId})} : @{/admin/acts/new}" 
+              th:object="${act}" method="post">
+            
+            <!-- Act ID (hidden for edit mode) -->
+            <input type="hidden" th:if="${act.actId != null}" th:field="*{actId}" />
+            
+            <!-- Act Name -->
+            <div class="form-group">
+                <label for="name">Act Name</label>
+                <input type="text" id="name" th:field="*{name}" required />
+            </div>
+            
+            <!-- Category -->
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" th:field="*{category}" required>
+                    <option value="">-- Select Category --</option>
+                    <option value="Music">Music</option>
+                    <option value="Comedy">Comedy</option>
+                    <option value="Theatre">Theatre</option>
+                    <option value="Dance">Dance</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" th:field="*{description}"></textarea>
+            </div>
+            
+            <!-- Tags -->
+            <div class="form-group">
+                <label for="tags">Tags (comma separated)</label>
+                <input type="text" id="tagsInput" placeholder="Enter tags and press Enter" />
+                <div id="tagsContainer" class="tag-input" style="margin-top: 5px;"></div>
+                <div id="tagsHiddenInputs"></div>
+            </div>
+            
+            <!-- Form Buttons -->
+            <div class="btn-container">
+                <a th:href="@{/admin(entityType='acts')}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Tags JavaScript -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const tagsInput = document.getElementById('tagsInput');
+            const tagsContainer = document.getElementById('tagsContainer');
+            const tagsHiddenInputs = document.getElementById('tagsHiddenInputs');
+            const existingTags = /*[[${act.tags}]]*/ [];
+            
+            // Initialize with existing tags
+            if (existingTags) {
+                existingTags.forEach(tag => addTag(tag));
+            }
+            
+            // Add tag when Enter is pressed
+            tagsInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const tag = this.value.trim();
+                    if (tag) {
+                        addTag(tag);
+                        this.value = '';
+                    }
+                }
+            });
+            
+            // Add tag to UI and create hidden input
+            function addTag(tag) {
+                // Create tag element
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tag';
+                tagElement.innerHTML = `
+                    <span>${tag}</span>
+                    <span class="tag-close">&times;</span>
+                `;
+                
+                // Add remove event
+                tagElement.querySelector('.tag-close').addEventListener('click', function() {
+                    tagElement.remove();
+                    updateHiddenInputs();
+                });
+                
+                // Add to container
+                tagsContainer.appendChild(tagElement);
+                
+                // Update hidden inputs
+                updateHiddenInputs();
+            }
+            
+            // Update hidden inputs for form submission
+            function updateHiddenInputs() {
+                // Clear existing hidden inputs
+                tagsHiddenInputs.innerHTML = '';
+                
+                // Get all tags
+                const tags = Array.from(tagsContainer.querySelectorAll('.tag span:first-child'))
+                    .map(span => span.textContent);
+                
+                // Create hidden inputs
+                tags.forEach((tag, index) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = `tags[${index}]`;
+                    input.value = tag;
+                    tagsHiddenInputs.appendChild(input);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

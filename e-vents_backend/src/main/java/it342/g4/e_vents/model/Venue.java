@@ -1,4 +1,4 @@
-package it342.g4.e_vents.model;
+    package it342.g4.e_vents.model;
 
 import jakarta.persistence.*;
 import java.util.List;
@@ -35,9 +35,6 @@ public class Venue {
 
     @Column(nullable = false)
     private double longitude;
-
-    @Column
-    private String placeId;
 
     @OneToMany(mappedBy = "venue")
     @JsonBackReference
@@ -115,14 +112,6 @@ public class Venue {
         this.longitude = longitude;
     }
 
-    public String getPlaceId() {
-        return placeId;
-    }
-
-    public void setPlaceId(String placeId) {
-        this.placeId = placeId;
-    }
-
     public List<Event> getEvents() {
         return events;
     }
@@ -130,5 +119,4 @@ public class Venue {
     public void setEvents(List<Event> events) {
         this.events = events;
     }
-// Getters and setters
 }

@@ -23,7 +23,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/signup", "/change-password", "/api/users/**", "/css/**", "/js/**", "/events/**", "/api/events/**").permitAll()
+                // Allow all requests without role restrictions
                 .anyRequest().permitAll()
             )
             .formLogin(form -> form
@@ -45,26 +45,8 @@ public class SecurityConfig {
     @Bean
     public org.springframework.security.web.authentication.AuthenticationSuccessHandler customAuthenticationSuccessHandler() {
         return (request, response, authentication) -> {
-            org.springframework.security.core.userdetails.User userDetails =
-                (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
-            String email = userDetails.getUsername();
-            it342.g4.e_vents.model.User user = ((it342.g4.e_vents.repository.UserRepository)
-                org.springframework.web.context.support.WebApplicationContextUtils
-                    .getRequiredWebApplicationContext(request.getServletContext())
-                    .getBean(it342.g4.e_vents.repository.UserRepository.class))
-                .findByEmail(email).orElse(null);
-            if (user != null && user.getRole() != null) {
-                Long role = user.getRole().getRoleId();
-                if (role == 1L) {
-                    response.sendRedirect("/home");
-                } else if (role == 2L) {
-                    response.sendRedirect("/events/dashboard");
-                } else {
-                    response.sendRedirect("/events/dashboard");
-                }
-            } else {
-                response.sendRedirect("/login");
-            }
+            // Redirect all users to the same page regardless of role
+            response.sendRedirect("/events/dashboard");
         };
     }
 }

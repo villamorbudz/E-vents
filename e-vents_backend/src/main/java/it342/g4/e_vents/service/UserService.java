@@ -1,25 +1,54 @@
 package it342.g4.e_vents.service;
 
-import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.model.Role;
-import it342.g4.e_vents.repository.UserRepository;
+import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.repository.RoleRepository;
+import it342.g4.e_vents.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 public class UserService {
     
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
     
     @Autowired
-    private RoleRepository roleRepository;
-    
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
+    /**
+     * Retrieves all users from the database
+     * @return List of all users
+     */
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
+     * Retrieves a user by their ID
+     * @param id The user ID to look up
+     * @return Optional containing the user if found
+     */
+    public Optional<User> getUser(Long id) {
+        return userRepository.findById(id);
+    }
+
+    /**
+     * Registers a new user with encrypted password and default role
+     * @param user The user to register
+     * @return The registered user with ID
+     * @throws RuntimeException if user already exists or default role not found
+     */
     public User registerUser(User user) {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("Error: User already exists");
@@ -29,12 +58,20 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         
         // Set default role to 'attendee' with roleId 1
-        Role defaultRole = roleRepository.findById(1L).orElseThrow(() -> new RuntimeException("Default role not found"));
+        Role defaultRole = roleRepository.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Default role not found"));
         user.setRole(defaultRole);
 
         return userRepository.save(user);
     }
 
+    /**
+     * Authenticates a user by email and password
+     * @param email The user's email
+     * @param password The user's password (plain text)
+     * @return The authenticated user
+     * @throws RuntimeException if user not found or password invalid
+     */
     public User login(String email, String password) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Error: User not found"));
@@ -46,38 +83,120 @@ public class UserService {
         return user;
     }
 
-    // Method to get list of countries (placeholder until API integration)
+    /**
+     * Gets list of countries (placeholder until API integration)
+     * @return Array of country names
+     */
     public String[] getCountries() {
         return new String[]{"---"};
     }
 
-    // Method to get regions for a country (placeholder until API integration)
+    /**
+     * Gets regions for a country (placeholder until API integration)
+     * @param country The country to get regions for
+     * @return Array of region names
+     */
     public String[] getRegions(String country) {
         return new String[]{"---"};
     }
 
-    // Method to get cities for a region (placeholder until API integration)
+    /**
+     * Gets cities for a region (placeholder until API integration)
+     * @param country The country containing the region
+     * @param region The region to get cities for
+     * @return Array of city names
+     */
     public String[] getCities(String country, String region) {
         return new String[]{"---"};
     }
 
+    /**
+     * Checks if a user with the given email exists
+     * @param email The email to check
+     * @return true if user exists, false otherwise
+     */
     public boolean userExists(String email) {
         return userRepository.existsByEmail(email);
     }
 
+    /**
+     * Changes a user's password by email
+     * @param email The email of the user
+     * @param newPassword The new password (plain text)
+     * @return true if password changed successfully, false if user not found
+     */
     public boolean changePasswordByEmail(String email, String newPassword) {
-        java.util.Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            user.setPassword(passwordEncoder.encode(newPassword));
-            editUser(user);
-            return true;
-        }
-        return false;
+        return userRepository.findByEmail(email)
+                .map(user -> {
+                    user.setPassword(passwordEncoder.encode(newPassword));
+                    userRepository.save(user);
+                    return true;
+                })
+                .orElse(false);
     }
 
+    /**
+     * Updates an existing user
+     * @param user The user with updated fields
+     * @return The updated user
+     */
     public User editUser(User user) {
-        // Assumes user.id is set and valid
         return userRepository.save(user);
+    }
+    
+    /**
+     * Soft deletes a user by setting their is_active attribute to false
+     * @param userId The ID of the user to soft delete
+     * @return The updated User object
+     * @throws EntityNotFoundException if the user is not found
+     */
+    public User softDeleteUser(Long userId) {
+        return updateUserActiveStatus(userId, false);
+    }
+    
+    /**
+     * Restores a previously soft-deleted user by setting their is_active attribute back to true
+     * @param userId The ID of the user to restore
+     * @return The updated User object
+     * @throws EntityNotFoundException if the user is not found
+     */
+    public User restoreUser(Long userId) {
+        return updateUserActiveStatus(userId, true);
+    }
+    
+    /**
+     * Helper method to update a user's active status
+     * @param userId The ID of the user to update
+     * @param activeStatus The new active status
+     * @return The updated User object
+     * @throws EntityNotFoundException if the user is not found
+     */
+    private User updateUserActiveStatus(Long userId, boolean activeStatus) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
+        
+        user.setActive(activeStatus);
+        return userRepository.save(user);
+    }
+    
+    /**
+     * Counts all users in the system
+     * @return The total number of users
+     */
+    public long countAllUsers() {
+        return userRepository.count();
+    }
+    
+    /**
+     * Gets the most recently registered users
+     * @param limit The maximum number of users to return
+     * @return List of recent users
+     */
+    public List<User> getRecentUsers(int limit) {
+        // This is a simple implementation that returns the first N users
+        // In a real application, you would order by registration date
+        return userRepository.findAll().stream()
+                .limit(limit)
+                .toList();
     }
 }

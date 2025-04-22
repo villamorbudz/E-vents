@@ -12,6 +12,27 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 @Entity
 @Table(name = "acts")
 public class Act {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "act_id")
+    private Long actId;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String category;
+
+    @Lob
+    private String description;
+
+    @ElementCollection
+    private List<String> tags;
+
+    @ManyToMany(mappedBy = "lineup")
+    @JsonBackReference
+    private List<Event> events;
+
     public Long getActId() {
         return actId;
     }
@@ -26,14 +47,6 @@ public class Act {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public byte[] getImage() {
-        return image;
-    }
-
-    public void setImage(byte[] image) {
-        this.image = image;
     }
 
     public String getCategory() {
@@ -60,58 +73,11 @@ public class Act {
         this.tags = tags;
     }
 
-    @ManyToMany(mappedBy = "lineup")
-    @JsonBackReference
-    private List<Event> events;
-
     public List<Event> getEvents() {
         return events;
     }
 
     public void setEvents(List<Event> events) {
         this.events = events;
-    }
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "act_id")
-    private Long actId;
-
-    @Column(nullable = false)
-    private String name;
-
-    @Lob
-    private byte[] image;
-
-    @Column(nullable = false)
-    private String category;
-
-    @Lob
-    private String description;
-
-    @ElementCollection
-    private List<String> tags;
-
-
-    public BufferedImage getImageAsBufferedImage() {
-        if (image != null) {
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(image)) {
-                return ImageIO.read(bais);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    public void setImageFromBufferedImage(BufferedImage bufferedImage) {
-        if (bufferedImage != null) {
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                ImageIO.write(bufferedImage, "png", baos);
-                this.image = baos.toByteArray();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
