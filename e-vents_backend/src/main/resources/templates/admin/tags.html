@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tags Management - E-vents</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .nav { display: flex; list-style: none; padding: 0; margin-bottom: 20px; border-bottom: 1px solid #ddd; }
+        .nav li { margin-right: 15px; padding: 10px; }
+        .nav a { text-decoration: none; color: #333; }
+        .nav a.active { font-weight: bold; color: #0066cc; }
+        .stats { display: flex; flex-wrap: wrap; margin-bottom: 20px; }
+        .stat-card { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-right: 15px; margin-bottom: 15px; width: 200px; }
+        .entity-table { width: 100%; border-collapse: collapse; }
+        .entity-table th, .entity-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .entity-table th { background-color: #f2f2f2; }
+        .form-container { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { padding: 8px 15px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background-color: #0052a3; }
+        .alert { padding: 10px; margin-bottom: 15px; border-radius: 4px; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    </style>
+</head>
+<body>
+    <h1>E-vents Admin Dashboard</h1>
+    <!-- Navigation Tabs -->
+    <ul class="nav">
+        <li>
+            <a th:href="@{/admin}" th:class="${activeTab == 'dashboard' ? 'active' : ''}">Dashboard</a>
+        </li>
+        <li>
+            <a th:href="@{/admin(entityType='users')}" th:class="${activeTab == 'users' ? 'active' : ''}">Users</a>
+        </li>
+        <li>
+            <a th:href="@{/admin(entityType='events')}" th:class="${activeTab == 'events' ? 'active' : ''}">Events</a>
+        </li>
+        <li>
+            <a th:href="@{/admin(entityType='venues')}" th:class="${activeTab == 'venues' ? 'active' : ''}">Venues</a>
+        </li>
+        <li>
+            <a th:href="@{/admin(entityType='acts')}" th:class="${activeTab == 'acts' ? 'active' : ''}">Acts</a>
+        </li>
+        <li>
+            <a th:href="@{/admin/tags}" class="active">Tags</a>
+        </li>
+    </ul>
+
+    <!-- Success Message -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">
+        Tag saved successfully!
+    </div>
+
+    <!-- Add/Edit Tag Form -->
+    <div class="form-container">
+        <h2 th:text="${tag.tagId != null ? 'Edit Tag' : 'Add New Tag'}">Add New Tag</h2>
+        <form th:action="@{/admin/tags/save}" method="post" th:object="${tag}">
+            <input type="hidden" th:field="*{tagId}" />
+            
+            <div class="form-group">
+                <label for="name">Tag Name</label>
+                <input type="text" id="name" th:field="*{name}" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" th:field="*{category}" required>
+                    <option value="">-- Select Category --</option>
+                    <option th:each="cat : ${categories}" 
+                            th:value="${cat.categoryId}" 
+                            th:text="${cat.name}">Category Name</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn">Save Tag</button>
+        </form>
+    </div>
+
+    <!-- Tags Table -->
+    <div style="margin-top: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #0066cc; padding-bottom: 10px;">
+            <h2>Tags Management</h2>
+        </div>
+        
+        <table class="entity-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${tags == null || tags.empty}">
+                    <td colspan="4" style="text-align: center; padding: 20px;">
+                        No tags found
+                    </td>
+                </tr>
+                <tr th:each="tagItem : ${tags}">
+                    <td th:text="${tagItem.tagId}">1</td>
+                    <td th:text="${tagItem.name}">Tag Name</td>
+                    <td th:text="${tagItem.category != null ? tagItem.category.name : 'N/A'}">Category Name</td>
+                    <td style="white-space: nowrap;">
+                        <a th:href="@{/admin/tags/edit/__${tagItem.tagId}__}" style="margin-right: 10px;">Edit</a>
+                        <a href="javascript:void(0)" th:onclick="'deleteTag(' + ${tagItem.tagId} + ')'" style="cursor: pointer;">Delete</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        function deleteTag(tagId) {
+            if (confirm('Are you sure you want to delete this tag?')) {
+                // Try the RESTful DELETE endpoint first
+                fetch('/admin/tags/' + tagId, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Success - reload the page to show updated list
+                        window.location.reload();
+                    } else {
+                        // If the DELETE request fails, fall back to the legacy endpoint
+                        window.location.href = '/admin/tags/delete/' + tagId;
+                    }
+                })
+                .catch(error => {
+                    // If there's an error, fall back to the legacy endpoint
+                    console.error('Error:', error);
+                    window.location.href = '/admin/tags/delete/' + tagId;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

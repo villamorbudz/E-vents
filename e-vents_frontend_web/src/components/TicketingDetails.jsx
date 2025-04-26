@@ -61,16 +61,13 @@ export default function TicketingDetails() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
-      {/* Navigation bar */}
-      <div className="bg-[#BD0027] flex justify-between items-center px-10 py-4">
-        <div className="text-2xl font-bold flex-1">
-          E-Vents
-        </div>
-        <div className="flex space-x-8">
-          <Link to="/homeseller" className="text-white hover:underline">Home</Link>
-          <Link to="/events" className="text-white hover:underline">Events</Link>
-          <Link to="/create" className="text-white hover:underline">Create Events</Link>
-          <Link to="/profile" className="text-white hover:underline">Profile</Link>
+      {/* Navbar */}
+      <div className="bg-[#5798FF] flex justify-between items-center px-10 py-4">
+        <h1 className="text-2xl font-bold">E-Vents</h1>
+        <div className="flex gap-10 text-lg">
+          <Link to="/homeseller" className="hover:underline">My Events</Link>
+          <Link to="/create" className="hover:underline text-black">Create Events</Link>
+          <Link to="/profile" className="hover:underline">Profile</Link>
         </div>
       </div>
       
@@ -78,9 +75,9 @@ export default function TicketingDetails() {
       <div className="flex-1 p-8 bg-gray-900">
         <h1 className="text-2xl mb-8 text-gray-300">Ticket Details</h1>
         
-        <div className="flex flex-col md:flex-row gap-16">
+        <div className="flex justify-center">
           {/* Left column */}
-          <div className="flex-1">
+          <div className="w-full md:w-1/2 space-y-6">
             <div className="mb-6">
               <h2 className="mb-2">Ticket Categories:</h2>
               <div className="flex items-center mb-4">
@@ -167,34 +164,9 @@ export default function TicketingDetails() {
               </div>
             )}
           </div>
-          
-          {/* Right column */}
-          <div className="flex-1">
-            <h2 className="mb-4">Additional Photos:</h2>
-            <div className="flex gap-4">
-              <div 
-                className="w-40 h-32 bg-gray-200 flex items-center justify-center cursor-pointer rounded"
-                onClick={handlePhotoUpload}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </div>
-              
-              <div className="w-40 h-32 bg-gray-200 flex items-center justify-center cursor-pointer rounded">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="16" />
-                  <line x1="8" y1="12" x2="16" y2="12" />
-                </svg>
-              </div>
-            </div>
-          </div>
         </div>
         
-        {/* Payment button */}
+        {/* This should be Save button instead of Payment button */}
         <div className="flex justify-center mt-16">
           <Link to="/create/details/payment">
             <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full">

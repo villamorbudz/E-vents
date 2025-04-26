@@ -5,13 +5,42 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "acts")
 public class Act {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "act_id")
+    private Long actId;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String category;
+
+    @Lob
+    private String description;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "act_tags",
+        joinColumns = @JoinColumn(name = "act_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    @JsonManagedReference
+    private List<Tags> tags = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "lineup")
+    @JsonBackReference
+    private List<Event> events;
+
     public Long getActId() {
         return actId;
     }
@@ -26,14 +55,6 @@ public class Act {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public byte[] getImage() {
-        return image;
-    }
-
-    public void setImage(byte[] image) {
-        this.image = image;
     }
 
     public String getCategory() {
@@ -52,17 +73,13 @@ public class Act {
         this.description = description;
     }
 
-    public List<String> getTags() {
+    public List<Tags> getTags() {
         return tags;
     }
 
-    public void setTags(List<String> tags) {
+    public void setTags(List<Tags> tags) {
         this.tags = tags;
     }
-
-    @ManyToMany(mappedBy = "lineup")
-    @JsonBackReference
-    private List<Event> events;
 
     public List<Event> getEvents() {
         return events;
@@ -70,48 +87,5 @@ public class Act {
 
     public void setEvents(List<Event> events) {
         this.events = events;
-    }
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "act_id")
-    private Long actId;
-
-    @Column(nullable = false)
-    private String name;
-
-    @Lob
-    private byte[] image;
-
-    @Column(nullable = false)
-    private String category;
-
-    @Lob
-    private String description;
-
-    @ElementCollection
-    private List<String> tags;
-
-
-    public BufferedImage getImageAsBufferedImage() {
-        if (image != null) {
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(image)) {
-                return ImageIO.read(bais);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    public void setImageFromBufferedImage(BufferedImage bufferedImage) {
-        if (bufferedImage != null) {
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                ImageIO.write(bufferedImage, "png", baos);
-                this.image = baos.toByteArray();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }

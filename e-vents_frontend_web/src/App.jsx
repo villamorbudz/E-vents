@@ -6,8 +6,8 @@ import SignupStep1 from './components/SignupStep1'
 import SignupStep2 from './components/SignupStep2'
 import HomeSeller from './components/HomeSeller'
 import EventCreation from './components/EventCreation'
-import EventDetailsPage from './components/EventDetailsPage'
 import TicketingDetails from './components/TicketingDetails';
+import Profile from './components/Profile';
 import { AnimatePresence } from "framer-motion";
 import './App.css'
 
@@ -22,8 +22,8 @@ function App() {
         <Route path="/signup/personal-info" element={<SignupStep2 />} />
         <Route path="/homeseller" element={<HomeSeller />} />
         <Route path="/create" element={<EventCreation />} />
-        <Route path="/create/details" element={<EventDetailsPage />} />
-        <Route path="/create/details/ticketing" element={<TicketingDetails />} />
+        <Route path="/create/ticketing" element={<TicketingDetails />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </AnimatePresence>
   );
