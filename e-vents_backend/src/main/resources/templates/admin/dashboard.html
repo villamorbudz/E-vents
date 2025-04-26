@@ -15,6 +15,7 @@
         .entity-table { width: 100%; border-collapse: collapse; }
         .entity-table th, .entity-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .entity-table th { background-color: #f2f2f2; }
+        .inactive-row { background-color: #f8f9fa; color: #6c757d; }
     </style>
 </head>
 <body>
@@ -103,7 +104,7 @@
                         No users found
                     </td>
                 </tr>
-                <tr th:if="${activeTab == 'users'}" th:each="user : ${users}">
+                <tr th:if="${activeTab == 'users'}" th:each="user : ${users}" th:class="${!user.active ? 'inactive-row' : ''}">
                     <td th:each="column : ${columns}">
                         <!-- Name column -->
                         <th:block th:if="${column.key == 'firstName,lastName'}">
@@ -131,7 +132,19 @@
                     </td>
                     <td style="white-space: nowrap;">
                         <a th:href="@{/admin/users/__${user.userId}__/edit}" style="margin-right: 10px;">Edit</a>
-                        <a th:href="@{/admin/users/__${user.userId}__/delete}" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                        <!-- Toggle between Delete and Restore based on active status -->
+                        <a th:if="${user.active}" 
+                           th:href="@{/admin/users/__${user.userId}__/delete}" 
+                           onclick="return confirm('Are you sure you want to deactivate this user?');" 
+                           style="margin-right: 10px; color: #dc3545;">
+                            Deactivate
+                        </a>
+                        <a th:if="${!user.active}" 
+                           th:href="@{/admin/users/__${user.userId}__/restore}" 
+                           onclick="return confirm('Are you sure you want to reactivate this user?');" 
+                           style="margin-right: 10px; color: #28a745;">
+                            Reactivate
+                        </a>
                     </td>
                 </tr>
                                         

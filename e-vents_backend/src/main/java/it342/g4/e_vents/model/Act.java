@@ -5,9 +5,11 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "acts")
@@ -26,8 +28,14 @@ public class Act {
     @Lob
     private String description;
 
-    @ElementCollection
-    private List<String> tags;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "act_tags",
+        joinColumns = @JoinColumn(name = "act_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    @JsonManagedReference
+    private List<Tags> tags = new ArrayList<>();
 
     @ManyToMany(mappedBy = "lineup")
     @JsonBackReference
@@ -65,11 +73,11 @@ public class Act {
         this.description = description;
     }
 
-    public List<String> getTags() {
+    public List<Tags> getTags() {
         return tags;
     }
 
-    public void setTags(List<String> tags) {
+    public void setTags(List<Tags> tags) {
         this.tags = tags;
     }
 

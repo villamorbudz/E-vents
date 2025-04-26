@@ -1,6 +1,9 @@
 package it342.g4.e_vents.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tags")
@@ -39,5 +42,17 @@ public class Tags {
 
     public void setCategory(Category category) {
         this.category = category;
+    }
+    
+    @ManyToMany(mappedBy = "tags")
+    @JsonBackReference
+    private List<Act> acts = new ArrayList<>();
+    
+    public List<Act> getActs() {
+        return acts;
+    }
+    
+    public void setActs(List<Act> acts) {
+        this.acts = acts;
     }
 }

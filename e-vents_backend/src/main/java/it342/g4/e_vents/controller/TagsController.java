@@ -5,11 +5,14 @@ import it342.g4.e_vents.model.Tags;
 import it342.g4.e_vents.service.CategoryService;
 import it342.g4.e_vents.service.TagsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -57,11 +60,31 @@ public class TagsController {
         return "admin/tag-form";
     }
 
+    /**
+     * @deprecated Use DELETE /admin/tags/{id} instead. This endpoint is maintained for backward compatibility.
+     */
     @GetMapping("/delete/{id}")
-    public String deleteTag(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteTagLegacy(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         tagsService.deleteTag(id);
         redirectAttributes.addFlashAttribute("successMessage", "Tag deleted successfully");
         return "redirect:/admin/tags";
+    }
+    
+    /**
+     * RESTful endpoint to delete a tag
+     * @param id The tag ID to delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public ResponseEntity<?> deleteTag(@PathVariable Long id) {
+        try {
+            tagsService.deleteTag(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Tag deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/by-category/{categoryId}")

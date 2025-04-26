@@ -58,6 +58,29 @@ public class VenueService {
     public Venue createVenue(Venue venue) {
         return venueRepository.save(venue);
     }
+
+    /**
+     * Finds a venue by normalized name and address, or creates a new one if not found.
+     * @param name Venue name
+     * @param address Venue address
+     * @param city Venue city (optional for further normalization)
+     * @param country Venue country (optional for further normalization)
+     * @return Existing or newly created Venue
+     */
+    public Venue findOrCreateVenue(String name, String address, String city, String country) {
+        String normalizedName = name.trim();
+        String normalizedAddress = address.trim();
+        Optional<Venue> existing = venueRepository.findByNameIgnoreCaseAndAddressIgnoreCase(normalizedName, normalizedAddress);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        Venue newVenue = new Venue();
+        newVenue.setName(normalizedName);
+        newVenue.setAddress(normalizedAddress);
+        if (city != null) newVenue.setCity(city.trim());
+        if (country != null) newVenue.setCountry(country.trim());
+        return venueRepository.save(newVenue);
+    }
     
     /**
      * Updates an existing venue

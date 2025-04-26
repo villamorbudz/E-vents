@@ -3,11 +3,14 @@ package it342.g4.e_vents.controller;
 import it342.g4.e_vents.model.Act;
 import it342.g4.e_vents.model.Event;
 import it342.g4.e_vents.model.Role;
+import it342.g4.e_vents.model.Tags;
 import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.model.Venue;
 import it342.g4.e_vents.service.ActService;
+import it342.g4.e_vents.service.CategoryService;
 import it342.g4.e_vents.service.EventService;
 import it342.g4.e_vents.service.RoleService;
+import it342.g4.e_vents.service.TagsService;
 import it342.g4.e_vents.service.UserService;
 import it342.g4.e_vents.service.VenueService;
 import jakarta.persistence.EntityNotFoundException;
@@ -50,16 +53,21 @@ public class AdminController {
     private final VenueService venueService;
     private final ActService actService;
     private final RoleService roleService;
+    private final TagsService tagsService;
+    private final CategoryService categoryService;
     
     @Autowired
     public AdminController(UserService userService, EventService eventService, 
                           VenueService venueService, ActService actService,
-                          RoleService roleService) {
+                          RoleService roleService, TagsService tagsService,
+                          CategoryService categoryService) {
         this.userService = userService;
         this.eventService = eventService;
         this.venueService = venueService;
         this.actService = actService;
         this.roleService = roleService;
+        this.tagsService = tagsService;
+        this.categoryService = categoryService;
     }
     
     /**
@@ -146,6 +154,19 @@ public class AdminController {
             columns.put("name", "Name");
             columns.put("description", "Description");
             columns.put("category", "Genre");
+            model.addAttribute("columns", columns);
+        } else if ("tags".equals(entityType)) {
+            List<Tags> tags = tagsService.getAllTags();
+            model.addAttribute("tags", tags);
+            model.addAttribute("entityName", "Tags");
+            model.addAttribute("entityIcon", "bi-tags");
+            model.addAttribute("entityColor", "info");
+            
+            // Define table columns for tags
+            Map<String, String> columns = new HashMap<>();
+            columns.put("tagId", "ID");
+            columns.put("name", "Name");
+            columns.put("category.name", "Category");
             model.addAttribute("columns", columns);
             
         } else {
@@ -239,6 +260,20 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("successMessage", "User deleted successfully");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error deleting user: " + e.getMessage());
+        }
+        return "redirect:/admin?entityType=users";
+    }
+    
+    /**
+     * Restore a previously deleted user
+     */
+    @GetMapping("/users/{id}/restore")
+    public String restoreUser(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.restoreUser(id);
+            redirectAttributes.addFlashAttribute("successMessage", "User restored successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error restoring user: " + e.getMessage());
         }
         return "redirect:/admin?entityType=users";
     }
@@ -418,6 +453,7 @@ public class AdminController {
     public String newActForm(Model model) {
         model.addAttribute("act", new Act());
         model.addAttribute("pageTitle", "Create New Act");
+        model.addAttribute("allTags", tagsService.getAllTags());
         return "admin/act-form";
     }
     
@@ -445,6 +481,7 @@ public class AdminController {
             Act act = actService.getActById(id);
             model.addAttribute("act", act);
             model.addAttribute("pageTitle", "Edit Act");
+            model.addAttribute("allTags", tagsService.getAllTags());
             return "admin/act-form";
         } catch (EntityNotFoundException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -482,5 +519,83 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage", "Error deleting act: " + e.getMessage());
         }
         return "redirect:/admin?entityType=acts";
+    }
+    
+    // ==================== TAG MANAGEMENT ====================
+    
+    /**
+     * Display form to create a new tag
+     */
+    @GetMapping("/tags/new")
+    public String newTagForm(Model model) {
+        model.addAttribute("tag", new Tags());
+        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("pageTitle", "Create New Tag");
+        return "admin/tag-form";
+    }
+    
+    /**
+     * Process new tag form submission
+     */
+    @PostMapping("/tags/new")
+    public String createTag(@ModelAttribute Tags tag, RedirectAttributes redirectAttributes) {
+        try {
+            tagsService.saveTag(tag);
+            redirectAttributes.addFlashAttribute("successMessage", "Tag created successfully");
+            return "redirect:/admin?entityType=tags";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error creating tag: " + e.getMessage());
+            return "redirect:/admin/tags/new";
+        }
+    }
+    
+    /**
+     * Display form to edit an existing tag
+     */
+    @GetMapping("/tags/{id}/edit")
+    public String editTagForm(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            Tags tag = tagsService.getTagById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Tag not found with ID: " + id));
+            model.addAttribute("tag", tag);
+            model.addAttribute("categories", categoryService.getAllCategories());
+            model.addAttribute("pageTitle", "Edit Tag");
+            return "admin/tag-form";
+        } catch (EntityNotFoundException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin?entityType=tags";
+        }
+    }
+    
+    /**
+     * Process edit tag form submission
+     */
+    @PostMapping("/tags/{id}/edit")
+    public String updateTag(@PathVariable("id") Long id, @ModelAttribute Tags tag, 
+                          RedirectAttributes redirectAttributes) {
+        try {
+            // Ensure the ID is set correctly
+            tag.setTagId(id);
+            tagsService.saveTag(tag);
+            redirectAttributes.addFlashAttribute("successMessage", "Tag updated successfully");
+            return "redirect:/admin?entityType=tags";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating tag: " + e.getMessage());
+            return "redirect:/admin/tags/" + id + "/edit";
+        }
+    }
+    
+    /**
+     * Delete a tag
+     */
+    @GetMapping("/tags/{id}/delete")
+    public String deleteTag(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        try {
+            tagsService.deleteTag(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Tag deleted successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error deleting tag: " + e.getMessage());
+        }
+        return "redirect:/admin?entityType=tags";
     }
 }

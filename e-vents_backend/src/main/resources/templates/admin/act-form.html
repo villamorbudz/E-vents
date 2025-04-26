@@ -22,11 +22,10 @@
         .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; }
         .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .alert-danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .tag-input { display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; min-height: 38px; }
-        .tag { background-color: #e9ecef; padding: 2px 8px; border-radius: 3px; display: flex; align-items: center; }
-        .tag-close { margin-left: 5px; cursor: pointer; }
-        .tag-input input { flex: 1; min-width: 100px; border: none; padding: 5px; }
-        .tag-input input:focus { outline: none; }
+        .multiselect-container { width: 100%; }
+        .multiselect-container select { width: 100%; min-height: 120px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .multiselect-container select option { padding: 5px; }
+        .multiselect-container select option:checked { background-color: #0066cc; color: white; }
     </style>
 </head>
 <body>
@@ -81,10 +80,16 @@
             
             <!-- Tags -->
             <div class="form-group">
-                <label for="tags">Tags (comma separated)</label>
-                <input type="text" id="tagsInput" placeholder="Enter tags and press Enter" />
-                <div id="tagsContainer" class="tag-input" style="margin-top: 5px;"></div>
-                <div id="tagsHiddenInputs"></div>
+                <label for="tags">Tags</label>
+                <div class="multiselect-container">
+                    <select id="tags" name="tags" multiple="multiple" size="5">
+                        <option th:each="tag : ${allTags}" 
+                                th:value="${tag.tagId}" 
+                                th:text="${tag.name + ' (' + tag.category.name + ')'}" 
+                                th:selected="${act.tags != null && act.tags.contains(tag.name)}">Tag Name</option>
+                    </select>
+                    <div class="form-text" style="margin-top: 5px; font-size: 0.875em; color: #6c757d;">Hold Ctrl (or Cmd on Mac) to select multiple tags</div>
+                </div>
             </div>
             
             <!-- Form Buttons -->
@@ -95,73 +100,6 @@
         </form>
     </div>
     
-    <!-- Tags JavaScript -->
-    <script th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function() {
-            const tagsInput = document.getElementById('tagsInput');
-            const tagsContainer = document.getElementById('tagsContainer');
-            const tagsHiddenInputs = document.getElementById('tagsHiddenInputs');
-            const existingTags = /*[[${act.tags}]]*/ [];
-            
-            // Initialize with existing tags
-            if (existingTags) {
-                existingTags.forEach(tag => addTag(tag));
-            }
-            
-            // Add tag when Enter is pressed
-            tagsInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    const tag = this.value.trim();
-                    if (tag) {
-                        addTag(tag);
-                        this.value = '';
-                    }
-                }
-            });
-            
-            // Add tag to UI and create hidden input
-            function addTag(tag) {
-                // Create tag element
-                const tagElement = document.createElement('div');
-                tagElement.className = 'tag';
-                tagElement.innerHTML = `
-                    <span>${tag}</span>
-                    <span class="tag-close">&times;</span>
-                `;
-                
-                // Add remove event
-                tagElement.querySelector('.tag-close').addEventListener('click', function() {
-                    tagElement.remove();
-                    updateHiddenInputs();
-                });
-                
-                // Add to container
-                tagsContainer.appendChild(tagElement);
-                
-                // Update hidden inputs
-                updateHiddenInputs();
-            }
-            
-            // Update hidden inputs for form submission
-            function updateHiddenInputs() {
-                // Clear existing hidden inputs
-                tagsHiddenInputs.innerHTML = '';
-                
-                // Get all tags
-                const tags = Array.from(tagsContainer.querySelectorAll('.tag span:first-child'))
-                    .map(span => span.textContent);
-                
-                // Create hidden inputs
-                tags.forEach((tag, index) => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = `tags[${index}]`;
-                    input.value = tag;
-                    tagsHiddenInputs.appendChild(input);
-                });
-            }
-        });
-    </script>
+
 </body>
 </html>

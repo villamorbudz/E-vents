@@ -1,11 +1,14 @@
 package it342.g4.e_vents.service;
 
 import it342.g4.e_vents.model.Act;
+import it342.g4.e_vents.model.Tags;
 import it342.g4.e_vents.repository.ActRepository;
+import it342.g4.e_vents.repository.TagsRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,10 +19,12 @@ import java.util.Optional;
 public class ActService {
 
     private final ActRepository actRepository;
+    private final TagsRepository tagsRepository;
     
     @Autowired
-    public ActService(ActRepository actRepository) {
+    public ActService(ActRepository actRepository, TagsRepository tagsRepository) {
         this.actRepository = actRepository;
+        this.tagsRepository = tagsRepository;
     }
 
     /**
@@ -56,7 +61,29 @@ public class ActService {
      * @return The created act with ID
      */
     public Act createAct(Act act) {
+        // Process tags if they exist
+        processTags(act);
         return actRepository.save(act);
+    }
+    
+    /**
+     * Process tags for an act - resolves tag IDs to actual Tag entities
+     * @param act The act with tags to process
+     */
+    private void processTags(Act act) {
+        if (act.getTags() != null && !act.getTags().isEmpty()) {
+            List<Tags> resolvedTags = new ArrayList<>();
+            
+            // Get tag IDs and fetch actual tag entities
+            for (Tags tag : act.getTags()) {
+                if (tag.getTagId() != null) {
+                    tagsRepository.findById(tag.getTagId())
+                        .ifPresent(resolvedTags::add);
+                }
+            }
+            
+            act.setTags(resolvedTags);
+        }
     }
     
     /**
@@ -69,6 +96,10 @@ public class ActService {
         if (!actRepository.existsById(act.getActId())) {
             throw new EntityNotFoundException("Act not found with ID: " + act.getActId());
         }
+        
+        // Process tags if they exist
+        processTags(act);
+        
         return actRepository.save(act);
     }
     

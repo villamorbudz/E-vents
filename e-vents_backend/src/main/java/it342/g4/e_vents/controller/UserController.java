@@ -170,6 +170,42 @@ public class UserController {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
+    
+    /**
+     * Updates an existing user
+     * @param id The user ID to update
+     * @param userDetails Updated user data
+     * @return The updated user or error
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+        try {
+            // Verify user exists
+            User existingUser = userService.getUser(id)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + id));
+            
+            // Update fields (preserve password and role)
+            String currentPassword = existingUser.getPassword();
+            Role currentRole = existingUser.getRole();
+            
+            // Set ID from path
+            userDetails.setUserId(id);
+            
+            // Preserve sensitive fields
+            userDetails.setPassword(currentPassword);
+            userDetails.setRole(currentRole);
+            
+            // Update and return
+            User updatedUser = userService.editUser(userDetails);
+            return ResponseEntity.ok(updatedUser);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
 
     /**
      * DTO for password change requests

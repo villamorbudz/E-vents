@@ -55,8 +55,19 @@ public class VenueController {
     @PostMapping
     public ResponseEntity<Venue> createVenue(@RequestBody Venue venue) {
         try {
-            Venue createdVenue = venueService.createVenue(venue);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdVenue);
+            Venue result = venueService.findOrCreateVenue(
+                venue.getName(),
+                venue.getAddress(),
+                venue.getCity(),
+                venue.getCountry()
+            );
+            // If the venue already existed, return 200 OK, else 201 Created
+            boolean isNew = result.getVenueId().equals(venue.getVenueId()) == false;
+            if (isNew) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(result);
+            } else {
+                return ResponseEntity.ok(result);
+            }
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
