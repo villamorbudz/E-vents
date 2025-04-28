@@ -9,6 +9,7 @@
   <li><b>PUT /{id}/edit</b> – Updates an existing act.</li>
   <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) an act.</li>
   <li><b>POST /restore/{id}</b> – Restores a previously deactivated act.</li>
+  <li><b>DELETE /{id}/delete</b> – Permanently deletes an act.</li>
 </ul>
 
 <h2>CategoryController (<code>/api/categories</code>)</h2>
@@ -20,6 +21,7 @@
   <li><b>PUT /{id}/edit</b> – Updates an existing category.</li>
   <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a category.</li>
   <li><b>POST /restore/{id}</b> – Restores a previously deactivated category.</li>
+  <li><b>DELETE /{id}/delete</b> – Permanently deletes a category.</li>
 </ul>
 
 <h2>EventController (<code>/api/events</code>)</h2>
@@ -28,10 +30,16 @@
   <li><b>GET /{id}</b> – Retrieves an event by ID.</li>
   <li><b>GET /venues</b> – Retrieves all venues.</li>
   <li><b>GET /acts</b> – Retrieves all acts.</li>
-  <li><b>POST /</b> – Creates a new event.</li>
+  <li><b>POST /create</b> – Creates a new event.</li>
   <li><b>PUT /{id}</b> – Updates an event.</li>
   <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) an event.</li>
-  <li><b>POST /restore/{id}</b> – Restores a previously deactivated event.</li>
+  <li><b>POST /{id}/restore</b> – Restores a previously deactivated event.</li>
+  <li><b>DELETE /{id}/cancel</b> – Cancels an event (sets status to 'cancelled').</li>
+  <li><b>PUT /{id}/postpone</b> – Postpones an event (sets status to 'postponed').</li>
+  <!-- Image APIs -->
+  <li><b>POST /{id}/banner</b> – Uploads a banner image for an event.</li>
+  <li><b>DELETE /{id}/banner</b> – Deletes the banner image for an event.</li>
+  <li><b>GET /images/{filename}</b> – Serves image files from the file system.</li>
 </ul>
 
 <h2>NotificationController (<code>/api/notifications</code>)</h2>
@@ -45,6 +53,7 @@
   <li><b>PUT /{id}</b> – Updates a notification.</li>
   <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a notification.</li>
   <li><b>POST /restore/{id}</b> – Restores a previously deactivated notification.</li>
+  <li><b>PUT /{id}/read</b> – Marks a notification as read.</li>
 </ul>
 
 <h2>TagController (<code>/api/tags</code>)</h2>
@@ -97,6 +106,7 @@
   <li><b>PUT /{id}</b> – Updates a user’s information.</li>
   <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a user.</li>
   <li><b>POST /restore/{id}</b> – Restores a previously deactivated user.</li>
+  <li><b>DELETE /{id}/deactivate</b> – Soft deletes a user (sets isActive to false).</li>
 </ul>
 
 <h2>VenueController (<code>/api/venues</code>)</h2>
@@ -108,4 +118,6 @@
   <li><b>PUT /{id}</b> – Updates a venue.</li>
   <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a venue.</li>
   <li><b>POST /restore/{id}</b> – Restores a previously deactivated venue.</li>
+  <li><b>DELETE /{id}/deactivate</b> – Soft deletes a venue (marks as inactive).</li>
+  <li><b>DELETE /{id}/delete</b> – Permanently deletes a venue.</li>
 </ul>
