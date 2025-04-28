@@ -1,6 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { userService } from "../services/apiService";
+
 
 export default function HomePage() {
+  const navigate = useNavigate(); // for programmatic navigation
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Navbar */}

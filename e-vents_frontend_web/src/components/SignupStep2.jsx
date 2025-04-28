@@ -12,10 +12,9 @@ export default function SignupStep2() {
     contactNumber: "", // changed from mobile to match backend
     birthdate: "",
     country: "",
-    state: "",
+    region: "",
     city: "",
-    street: "",
-    zipCode: ""
+    postalCode: ""
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +69,7 @@ export default function SignupStep2() {
         }
       } else {
         setRegions([]);
-        setFormData(prev => ({ ...prev, state: "", city: "" }));
+        setFormData(prev => ({ ...prev, region: "", city: "" }));
       }
     };
     
@@ -80,9 +79,9 @@ export default function SignupStep2() {
   // Load cities when region changes
   useEffect(() => {
     const loadCities = async () => {
-      if (formData.country && formData.state) {
+      if (formData.country && formData.region) {
         try {
-          const citiesData = await userService.getCities(formData.country, formData.state);
+          const citiesData = await userService.getCities(formData.country, formData.region);
           console.log("Cities data:", citiesData);
           setCities(citiesData);
         } catch (error) {
@@ -95,7 +94,7 @@ export default function SignupStep2() {
     };
     
     loadCities();
-  }, [formData.country, formData.state]);
+  }, [formData.country, formData.region]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -146,8 +145,8 @@ export default function SignupStep2() {
     }
     
     // State validation
-    if (regions.length > 0 && !formData.state.trim()) {
-      newErrors.state = "State/Province is required";
+    if (regions.length > 0 && !formData.region.trim()) {
+      newErrors.region = "State/Province is required";
     }
     
     // City validation
@@ -155,14 +154,10 @@ export default function SignupStep2() {
       newErrors.city = "City is required";
     }
     
-    // Street validation
-    if (!formData.street.trim()) {
-      newErrors.street = "Street address is required";
-    }
     
     // Postal code validation
-    if (!formData.zipCode.trim()) {
-      newErrors.zipCode = "Postal code is required";
+    if (!formData.postalCode.trim()) {
+      newErrors.postalCode = "Postal code is required";
     }
     
     setErrors(newErrors);
@@ -191,10 +186,9 @@ export default function SignupStep2() {
         contactNumber: formData.contactNumber,
         birthdate: new Date(formData.birthdate),
         country: formData.country,
-        state: formData.state,
+        region: formData.region,
         city: formData.city,
-        street: formData.street,
-        zipCode: formData.zipCode
+        postalCode: formData.postalCode
       };
       
       // Register user
@@ -217,7 +211,7 @@ export default function SignupStep2() {
       localStorage.setItem("userEmail", registeredUser.email);
       
       // Redirect to home page or dashboard
-      navigate("/homeseller");
+      navigate("/");
     } catch (error) {
       setErrors(prev => ({ 
         ...prev, 
@@ -348,9 +342,9 @@ export default function SignupStep2() {
             
             <div>
               <select 
-                name="state"
-                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.state ? 'border-red-500' : 'border-black'}`}
-                value={formData.state}
+                name="region"
+                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.region ? 'border-red-500' : 'border-black'}`}
+                value={formData.region}
                 onChange={handleChange}
                 disabled={!formData.country}
               >
@@ -359,7 +353,7 @@ export default function SignupStep2() {
                   <option key={index} value={region}>{region}</option>
                 ))}
               </select>
-              {errors.state && <p className="text-sm text-red-200 mt-1">{errors.state}</p>}
+              {errors.region && <p className="text-sm text-red-200 mt-1">{errors.region}</p>}
             </div>
           </div>
           
@@ -370,7 +364,7 @@ export default function SignupStep2() {
                 className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.city ? 'border-red-500' : 'border-black'}`}
                 value={formData.city}
                 onChange={handleChange}
-                disabled={!formData.state}
+                disabled={!formData.region}
               >
                 <option value="">Select City</option>
                 {cities.map((city, index) => (
@@ -382,25 +376,14 @@ export default function SignupStep2() {
             
             <div>
               <input 
-                name="zipCode"
+                name="postalCode"
                 placeholder="Postal/Zip Code" 
-                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.zipCode ? 'border-red-500' : 'border-black'}`}
-                value={formData.zipCode}
+                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.postalCode ? 'border-red-500' : 'border-black'}`}
+                value={formData.postalCode}
                 onChange={handleChange}
               />
-              {errors.zipCode && <p className="text-sm text-red-200 mt-1">{errors.zipCode}</p>}
+              {errors.postalCode && <p className="text-sm text-red-200 mt-1">{errors.postalCode}</p>}
             </div>
-          </div>
-          
-          <div className="w-3/4 mb-6">
-            <input 
-              name="street"
-              placeholder="Street Address" 
-              className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.street ? 'border-red-500' : 'border-black'}`}
-              value={formData.street}
-              onChange={handleChange}
-            />
-            {errors.street && <p className="text-sm text-red-200 mt-1">{errors.street}</p>}
           </div>
           
           <div className="w-3/4 flex justify-between mb-4">

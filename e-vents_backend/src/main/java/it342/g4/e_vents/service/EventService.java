@@ -1,13 +1,14 @@
 package it342.g4.e_vents.service;
 
-import it342.g4.e_vents.model.Event;
-import it342.g4.e_vents.repository.EventRepository;
-import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import it342.g4.e_vents.model.Event;
+import it342.g4.e_vents.repository.EventRepository;
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Service for managing Event entities

@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { userService } from "../services/apiService";
 
 export default function EventCreation() {
   const navigate = useNavigate();

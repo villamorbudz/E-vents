@@ -133,7 +133,44 @@ public class UserService {
      * @return Array of city names
      */
     public String[] getCities(String country, String region) {
-        return new String[]{"---"};
+        if (country.equals("United States")) {
+            switch (region) {
+                case "California":
+                    return new String[]{"Los Angeles", "San Francisco", "San Diego", "Sacramento"};
+                case "Florida":
+                    return new String[]{"Miami", "Orlando", "Tampa", "Jacksonville"};
+                case "Texas":
+                    return new String[]{"Houston", "Dallas", "Austin", "San Antonio"};
+                default:
+                    return new String[]{"City1", "City2"};
+            }
+        } else if (country.equals("Canada")) {
+            switch (region) {
+                case "Ontario":
+                    return new String[]{"Toronto", "Ottawa", "Hamilton", "London"};
+                case "Quebec":
+                    return new String[]{"Montreal", "Quebec City", "Laval", "Gatineau"};
+                case "British Columbia":
+                    return new String[]{"Vancouver", "Victoria", "Kelowna", "Surrey"};
+                default:
+                    return new String[]{"City1", "City2"};
+            }
+        } else if (country.equals("United Kingdom")) {
+            switch (region) {
+                case "England":
+                    return new String[]{"London", "Manchester", "Birmingham", "Liverpool"};
+                case "Scotland":
+                    return new String[]{"Edinburgh", "Glasgow", "Aberdeen", "Dundee"};
+                case "Wales":
+                    return new String[]{"Cardiff", "Swansea", "Newport", "Wrexham"};
+                case "Northern Ireland":
+                    return new String[]{"Belfast", "Derry", "Lisburn", "Newry"};
+                default:
+                    return new String[]{"City1", "City2"};
+            }
+        } else {
+            return new String[]{"Other City"};
+        }
     }
 
     /**
@@ -169,6 +206,35 @@ public class UserService {
     public User editUser(User user) {
         return userRepository.save(user);
     }
+
+    /**
+ * Updates a user's profile information
+ * @param id User ID to update
+ * @param updatedUser Updated user data
+ * @return Optional containing the updated user or empty if not found
+ */
+public Optional<User> updateUser(Long id, User updatedUser) {
+    Optional<User> existingUser = getUser(id);
+    
+    if (existingUser.isPresent()) {
+        User user = existingUser.get();
+        
+        // Update fields (excluding password and email which require special handling)
+        user.setFirstName(updatedUser.getFirstName());
+        user.setLastName(updatedUser.getLastName());
+        user.setContactNumber(updatedUser.getContactNumber());
+        user.setBirthdate(updatedUser.getBirthdate());
+        user.setCountry(updatedUser.getCountry());
+        user.setRegion(updatedUser.getRegion());
+        user.setCity(updatedUser.getCity());
+        user.setPostalCode(updatedUser.getPostalCode());
+        
+        // Save and return updated user
+        return Optional.of(userRepository.save(user));
+    }
+    
+    return Optional.empty();
+}
     
     /**
      * Soft deletes a user by setting their is_active attribute to false

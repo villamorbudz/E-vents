@@ -1,6 +1,8 @@
 package it342.g4.e_vents.controller;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,12 +11,14 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import it342.g4.e_vents.model.User;
+import it342.g4.e_vents.security.JwtUtils;
 import it342.g4.e_vents.service.UserService;
 
 /**
@@ -26,12 +30,15 @@ import it342.g4.e_vents.service.UserService;
 public class UserController {
 
     private final UserService userService;
+
+    private final JwtUtils jwtUtils;
     
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JwtUtils jwtUtils) {
         this.userService = userService;
+        this.jwtUtils = jwtUtils;
     }
-
+    
     /**
      * Registers a new user
      * @param user User data from request body
@@ -41,7 +48,26 @@ public class UserController {
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         try {
             User registeredUser = userService.registerUser(user);
-            return ResponseEntity.ok(registeredUser);
+            
+            // Generate JWT token
+            String token = jwtUtils.generateToken(registeredUser);
+            
+            // Create response with token and user info
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("userId", registeredUser.getUserId());
+            response.put("email", registeredUser.getEmail());
+            response.put("firstName", registeredUser.getFirstName());
+            response.put("lastName", registeredUser.getLastName());
+            response.put("role", registeredUser.getRole() != null ? registeredUser.getRole().getName() : "USER");
+            response.put("city", registeredUser.getCity());
+            response.put("region", registeredUser.getRegion());
+            response.put("country", registeredUser.getCountry());
+            response.put("postalCode", registeredUser.getPostalCode());
+            response.put("birthdate", registeredUser.getBirthdate());
+            response.put("contactNumber", registeredUser.getContactNumber());
+            
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -53,11 +79,24 @@ public class UserController {
      * @param password User's password
      * @return The authenticated user or error message
      */
-    @PostMapping("/login")
+     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
         try {
             User user = userService.login(email, password);
-            return ResponseEntity.ok(user);
+            
+            // Generate JWT token
+            String token = jwtUtils.generateToken(user);
+            
+            // Create response with token and user info
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("userId", user.getUserId());
+            response.put("email", user.getEmail());
+            response.put("firstName", user.getFirstName());
+            response.put("lastName", user.getLastName());
+            response.put("role", user.getRole() != null ? user.getRole().getName() : "USER");
+            
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
@@ -139,15 +178,32 @@ public class UserController {
      * @return JSON with exists flag
      */
     @GetMapping("/exists")
-public ResponseEntity<?> userExists(@RequestParam(required = false) String email) {
-    System.out.println("Incoming email: " + email);
-    if (email == null || email.trim().isEmpty()) {
-        return ResponseEntity.badRequest().body("Email parameter is required");
+    public ResponseEntity<?> userExists(@RequestParam(required = false) String email) {
+        System.out.println("Incoming email: " + email);
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Email parameter is required");
+        }
+
+        boolean exists = userService.userExists(email);
+        return ResponseEntity.ok(Collections.singletonMap("exists", exists));
     }
 
-    boolean exists = userService.userExists(email);
-    return ResponseEntity.ok(Collections.singletonMap("exists", exists));
-}
+    /**
+     * Updates a user's profile information
+     * @param id The user ID
+     * @param updatedUser Updated user data
+     * @return The updated user or 404 if not found
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+        try {
+            return userService.updateUser(id, updatedUser)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
 
     
 
