@@ -40,6 +40,9 @@ public class Event {
     @Column(nullable = false)
     private String status;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean isActive = true;
+
     public Long getEventId() {
         return eventId;
     }
@@ -102,5 +105,13 @@ public class Event {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
     }
 }

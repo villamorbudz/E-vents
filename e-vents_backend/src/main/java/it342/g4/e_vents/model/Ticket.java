@@ -5,7 +5,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "tickets")
-public class Ticket {
+public class    Ticket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ticket_id")
@@ -29,6 +29,9 @@ public class Ticket {
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date purchaseDate;
+    
+    @Column(nullable = false)
+    private boolean isActive = true;
 
     // Getters and setters
 
@@ -86,5 +89,13 @@ public class Ticket {
 
     public void setPurchaseDate(Date purchaseDate) {
         this.purchaseDate = purchaseDate;
+    }
+    
+    public boolean isActive() {
+        return isActive;
+    }
+    
+    public void setActive(boolean active) {
+        isActive = active;
     }
 }

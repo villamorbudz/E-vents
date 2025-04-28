@@ -29,6 +29,9 @@ public class TicketCategory {
 
     @Column(nullable = false)
     private String status;
+    
+    @Column(nullable = false)
+    private boolean isActive = true;
 
     // Getters and setters
 
@@ -90,5 +93,13 @@ public class TicketCategory {
 
     public int getAvailableTickets() {
         return totalTickets - ticketsSold;
+    }
+    
+    public boolean isActive() {
+        return isActive;
+    }
+    
+    public void setActive(boolean active) {
+        isActive = active;
     }
 }

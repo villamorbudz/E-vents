@@ -27,8 +27,8 @@ public class TicketController {
     }
     
     /**
-     * Retrieves all tickets
-     * @return List of all tickets
+     * Retrieves all active tickets
+     * @return List of all active tickets
      */
     @GetMapping
     public ResponseEntity<List<Ticket>> getAllTickets() {
@@ -36,7 +36,16 @@ public class TicketController {
     }
     
     /**
-     * Retrieves a ticket by ID
+     * Retrieves all tickets including inactive ones
+     * @return List of all tickets
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<Ticket>> getAllTicketsIncludingInactive() {
+        return ResponseEntity.ok(ticketService.getAllTicketsIncludingInactive());
+    }
+    
+    /**
+     * Retrieves an active ticket by ID
      * @param id The ticket ID
      * @return The ticket or 404 if not found
      */
@@ -79,26 +88,27 @@ public class TicketController {
     
     /**
      * Creates a new ticket
-     * @param ticket Ticket data from request body
+     * @param ticket The ticket to create
      * @return The created ticket
      */
-    @PostMapping
-    public ResponseEntity<Ticket> createTicket(@RequestBody Ticket ticket) {
+    @PostMapping("/create")
+    public ResponseEntity<?> createTicket(@RequestBody Ticket ticket) {
         try {
             Ticket createdTicket = ticketService.createTicket(ticket);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdTicket);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
         }
     }
     
     /**
      * Updates an existing ticket
-     * @param id The ticket ID to update
-     * @param ticketDetails Updated ticket data
-     * @return The updated ticket or error
+     * @param id The ticket ID
+     * @param ticketDetails The updated ticket details
+     * @return The updated ticket
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/edit")
     public ResponseEntity<?> updateTicket(@PathVariable Long id, @RequestBody Ticket ticketDetails) {
         try {
             // Set the ID from the path
@@ -136,15 +146,53 @@ public class TicketController {
     }
     
     /**
-     * Deletes a ticket
+     * Soft deletes a ticket
      * @param id The ticket ID to delete
      * @return Success message or error
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/cancel")
     public ResponseEntity<?> deleteTicket(@PathVariable Long id) {
         try {
-            ticketService.deleteTicket(id);
+            ticketService.softDeleteTicket(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Ticket deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Permanently deletes a ticket
+     * @param id The ticket ID to permanently delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<?> permanentlyDeleteTicket(@PathVariable Long id) {
+        try {
+            ticketService.deleteTicket(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Ticket permanently deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a soft-deleted ticket
+     * @param id The ticket ID to restore
+     * @return The restored ticket or error
+     */
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<?> restoreTicket(@PathVariable Long id) {
+        try {
+            Ticket restoredTicket = ticketService.restoreTicket(id);
+            return ResponseEntity.ok(restoredTicket);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Collections.singletonMap("error", e.getMessage()));

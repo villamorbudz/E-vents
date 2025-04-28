@@ -36,6 +36,9 @@ public class Venue {
     @Column(nullable = false)
     private double longitude;
 
+    @Column(nullable = false)
+    private boolean isActive = true;
+
     @OneToMany(mappedBy = "venue")
     @JsonBackReference
     private List<Event> events;
@@ -110,6 +113,14 @@ public class Venue {
 
     public void setLongitude(double longitude) {
         this.longitude = longitude;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     public List<Event> getEvents() {

@@ -28,29 +28,57 @@ public class ActService {
     }
 
     /**
-     * Retrieves all acts from the database
-     * @return List of all acts
+     * Retrieves all active acts from the database
+     * @return List of all active acts
      */
     public List<Act> getAllActs() {
+        return actRepository.findByIsActiveTrue();
+    }
+    
+    /**
+     * Retrieves all acts including inactive ones
+     * @return List of all acts
+     */
+    public List<Act> getAllActsIncludingInactive() {
         return actRepository.findAll();
     }
     
     /**
-     * Finds an act by its ID
+     * Finds an active act by its ID
+     * @param id The act ID to look up
+     * @return Optional containing the act if found and active
+     */
+    public Optional<Act> findActById(Long id) {
+        return actRepository.findByActIdAndIsActiveTrue(id);
+    }
+    
+    /**
+     * Finds any act by its ID (active or inactive)
      * @param id The act ID to look up
      * @return Optional containing the act if found
      */
-    public Optional<Act> findActById(Long id) {
+    public Optional<Act> findActByIdIncludingInactive(Long id) {
         return actRepository.findById(id);
     }
     
     /**
-     * Gets an act by ID or throws an exception if not found
+     * Gets an active act by ID or throws an exception if not found
+     * @param id The act ID to look up
+     * @return The act
+     * @throws EntityNotFoundException if the act is not found or inactive
+     */
+    public Act getActById(Long id) {
+        return actRepository.findByActIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new EntityNotFoundException("Act not found with ID: " + id));
+    }
+    
+    /**
+     * Gets any act by ID (active or inactive) or throws an exception if not found
      * @param id The act ID to look up
      * @return The act
      * @throws EntityNotFoundException if the act is not found
      */
-    public Act getActById(Long id) {
+    public Act getActByIdIncludingInactive(Long id) {
         return actRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Act not found with ID: " + id));
     }
@@ -90,12 +118,12 @@ public class ActService {
      * Updates an existing act
      * @param act The act with updated fields
      * @return The updated act
+     * @throws EntityNotFoundException if the act is not found or inactive
      */
     public Act updateAct(Act act) {
-        // Check if act exists
-        if (!actRepository.existsById(act.getActId())) {
-            throw new EntityNotFoundException("Act not found with ID: " + act.getActId());
-        }
+        // Check if act exists and is active
+        Act existingAct = findActById(act.getActId())
+                .orElseThrow(() -> new EntityNotFoundException("Act not found with ID: " + act.getActId()));
         
         // Process tags if they exist
         processTags(act);
@@ -104,7 +132,34 @@ public class ActService {
     }
     
     /**
-     * Deletes an act by ID
+     * Soft deletes an act by setting isActive to false
+     * @param id The ID of the act to soft delete
+     * @throws EntityNotFoundException if the act is not found
+     */
+    public void softDeleteAct(Long id) {
+        Act act = actRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Act not found with ID: " + id));
+        
+        act.setActive(false);
+        actRepository.save(act);
+    }
+    
+    /**
+     * Restores a soft-deleted act by setting isActive to true
+     * @param id The ID of the act to restore
+     * @return The restored act
+     * @throws EntityNotFoundException if the act is not found
+     */
+    public Act restoreAct(Long id) {
+        Act act = actRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Act not found with ID: " + id));
+        
+        act.setActive(true);
+        return actRepository.save(act);
+    }
+    
+    /**
+     * Permanently deletes an act by ID
      * @param id The ID of the act to delete
      * @throws EntityNotFoundException if the act is not found
      */
@@ -116,10 +171,18 @@ public class ActService {
     }
     
     /**
-     * Counts all acts in the system
+     * Counts all acts in the database (active and inactive)
      * @return The total number of acts
      */
     public long countAllActs() {
         return actRepository.count();
+    }
+    
+    /**
+     * Counts all active acts in the database
+     * @return The number of active acts
+     */
+    public long countActiveActs() {
+        return actRepository.countByIsActiveTrue();
     }
 }

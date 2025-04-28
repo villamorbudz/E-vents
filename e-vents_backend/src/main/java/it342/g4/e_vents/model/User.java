@@ -26,14 +26,67 @@ public class User {
     @Column(nullable = false)
     private String contactNumber;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
-    private Role role;
     @Column
     private String password;
 
+    @Column(nullable = false)
+    private String role;
+
+    @Column
+    private String country;
+
+    @Column
+    private String region;
+
+    @Column
+    private String city;
+
+    @Column
+    private String postalCode;
+
     @Column
     private boolean isActive = true;
+
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 
     public Long getUserId() {
         return userId;
@@ -81,14 +134,6 @@ public class User {
 
     public void setContactNumber(String contactNumber) {
         this.contactNumber = contactNumber;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
     }
 
     public String getPassword() {

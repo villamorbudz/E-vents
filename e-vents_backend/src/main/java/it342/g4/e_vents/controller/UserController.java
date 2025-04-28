@@ -57,12 +57,21 @@ public class UserController {
     }
 
     /**
-     * Retrieves all users
+     * Retrieves all active users
+     * @return List of all active users
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllActiveUsers());
+    }
+    
+    /**
+     * Retrieves all users including inactive ones
      * @return List of all users
      */
     @GetMapping("/all")
-    public ResponseEntity<?> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<?> getAllUsersIncludingInactive() {
+        return ResponseEntity.ok(userService.getAllUsersIncludingInactive());
     }
 
     /**
@@ -97,36 +106,6 @@ public class UserController {
     }
 
     /**
-     * Gets list of countries (placeholder until API integration)
-     * @return Array of country names
-     */
-    @GetMapping("/countries")
-    public ResponseEntity<?> getCountries() {
-        return ResponseEntity.ok(userService.getCountries());
-    }
-
-    /**
-     * Gets regions for a country (placeholder until API integration)
-     * @param country The country to get regions for
-     * @return Array of region names
-     */
-    @GetMapping("/regions/{country}")
-    public ResponseEntity<?> getRegions(@PathVariable String country) {
-        return ResponseEntity.ok(userService.getRegions(country));
-    }
-
-    /**
-     * Gets cities for a region (placeholder until API integration)
-     * @param country The country containing the region
-     * @param region The region to get cities for
-     * @return Array of city names
-     */
-    @GetMapping("/cities/{country}/{region}")
-    public ResponseEntity<?> getCities(@PathVariable String country, @PathVariable String region) {
-        return ResponseEntity.ok(userService.getCities(country, region));
-    }
-
-    /**
      * Checks if a user with the given email exists
      * @param email The email to check
      * @return JSON with exists flag
@@ -136,48 +115,14 @@ public class UserController {
         boolean exists = userService.userExists(email);
         return ResponseEntity.ok(Collections.singletonMap("exists", exists));
     }
-    
-    /**
-     * Soft deletes a user by setting their is_active attribute to false
-     * @param id The ID of the user to soft delete
-     * @return Success message or error
-     */
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> softDeleteUser(@PathVariable Long id) {
-        try {
-            userService.softDeleteUser(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "User deactivated successfully"));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * Restores a previously soft-deleted user by setting their is_active attribute back to true
-     * @param id The ID of the user to restore
-     * @return Success message or error
-     */
-    @PostMapping("/restore/{id}")
-    public ResponseEntity<?> restoreUser(@PathVariable Long id) {
-        try {
-            userService.restoreUser(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "User restored successfully"));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
-        }
-    }
-    
+
     /**
      * Updates an existing user
      * @param id The user ID to update
      * @param userDetails Updated user data
      * @return The updated user or error
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/edit")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
         try {
             // Verify user exists
@@ -186,14 +131,14 @@ public class UserController {
             
             // Update fields (preserve password and role)
             String currentPassword = existingUser.getPassword();
-            Role currentRole = existingUser.getRole();
-            
+            String currentRole = existingUser.getRole();
+            boolean isActive = existingUser.isActive();
+
             // Set ID from path
             userDetails.setUserId(id);
             
             // Preserve sensitive fields
             userDetails.setPassword(currentPassword);
-            userDetails.setRole(currentRole);
             
             // Update and return
             User updatedUser = userService.editUser(userDetails);
@@ -204,6 +149,61 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Soft deletes a user by setting isActive to false
+     * @param id The user ID to soft delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/deactivate")
+    public ResponseEntity<?> softDeleteUser(@PathVariable Long id) {
+        try {
+            User user = userService.softDeleteUser(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "User deactivated successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a soft-deleted user by setting isActive to true
+     * @param id The user ID to restore
+     * @return The restored user or error
+     */
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<?> restoreUser(@PathVariable Long id) {
+        try {
+            User restoredUser = userService.restoreUser(id);
+            return ResponseEntity.ok(restoredUser);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Permanently deletes a user
+     * @param id The user ID to delete
+     * @return Success message or error
+     */
+    @DeleteMapping("{id}/delete")
+    public ResponseEntity<?> permanentlyDeleteUser(@PathVariable Long id) {
+        try {
+            userService.permanentlyDeleteUser(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "User permanently deleted"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
 

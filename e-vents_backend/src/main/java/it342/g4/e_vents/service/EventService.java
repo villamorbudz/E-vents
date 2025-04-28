@@ -88,7 +88,7 @@ public class EventService {
      * @throws EntityNotFoundException if the event is not found
      */
     public Event cancelEvent(Long id) {
-        return updateEventStatus(id, "cancelled");
+        return updateEventStatus(id, "CANCELLED");
     }
     
     /**
@@ -98,9 +98,19 @@ public class EventService {
      * @throws EntityNotFoundException if the event is not found
      */
     public Event restoreEvent(Long id) {
-        return updateEventStatus(id, "scheduled");
+        return updateEventStatus(id, "SCHEDULED");
     }
-    
+
+    /**
+     * Postpones event by setting its status to 'postponed'
+     * @param id The ID of the event to restore
+     * @return The updated event
+     * @throws EntityNotFoundException if the event is not found
+     */
+    public Event postponeEvent(Long id) {
+        return updateEventStatus(id, "POSTPONED");
+    }
+
     /**
      * Deletes an event permanently from the database
      * @param id The ID of the event to delete
@@ -114,7 +124,7 @@ public class EventService {
     }
     
     /**
-     * Counts all events in the system
+     * Counts all events in the database (active and inactive)
      * @return The total number of events
      */
     public long countAllEvents() {
@@ -122,10 +132,19 @@ public class EventService {
     }
     
     /**
+     * Counts all active events in the database
+     * @return The number of active events
+     */
+    public long countActiveEvents() {
+        return eventRepository.countByIsActiveTrue();
+    }
+    
+    /**
      * Gets upcoming events ordered by date
      * @param limit The maximum number of events to return
      * @return List of upcoming events
      */
+
     public List<Event> getUpcomingEvents(int limit) {
         // This is a simple implementation that returns the first N events
         // In a real application, you would filter by date > now and order by date

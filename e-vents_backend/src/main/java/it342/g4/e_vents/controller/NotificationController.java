@@ -34,6 +34,15 @@ public class NotificationController {
      */
     @GetMapping
     public ResponseEntity<List<Notification>> getAllNotifications() {
+        return ResponseEntity.ok(notificationService.getAllActiveNotifications());
+    }
+    
+    /**
+     * Retrieves all notifications including inactive ones
+     * @return List of notifications
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<Notification>> getAllNotificationsIncludingInactive() {
         return ResponseEntity.ok(notificationService.getAllNotifications());
     }
     
@@ -44,7 +53,7 @@ public class NotificationController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<Notification> getNotificationById(@PathVariable Long id) {
-        return notificationService.getNotificationById(id)
+        return notificationService.getActiveNotificationById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -56,7 +65,7 @@ public class NotificationController {
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Notification>> getUserNotifications(@PathVariable Long userId) {
-        return ResponseEntity.ok(notificationService.getUserNotifications(userId));
+        return ResponseEntity.ok(notificationService.getActiveUserNotifications(userId));
     }
     
     /**
@@ -66,7 +75,7 @@ public class NotificationController {
      */
     @GetMapping("/user/{userId}/unread")
     public ResponseEntity<List<Notification>> getUnreadNotifications(@PathVariable Long userId) {
-        return ResponseEntity.ok(notificationService.getUnreadNotifications(userId));
+        return ResponseEntity.ok(notificationService.getActiveUnreadNotifications(userId));
     }
     
     /**
@@ -76,7 +85,7 @@ public class NotificationController {
      */
     @GetMapping("/user/{userId}/count")
     public ResponseEntity<Map<String, Long>> countUnreadNotifications(@PathVariable Long userId) {
-        long count = notificationService.countUnreadNotifications(userId);
+        long count = notificationService.countActiveUnreadNotifications(userId);
         return ResponseEntity.ok(Collections.singletonMap("count", count));
     }
     
@@ -85,7 +94,7 @@ public class NotificationController {
      * @param request The notification request
      * @return The created notification
      */
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Notification> createNotification(@RequestBody NotificationRequest request) {
         try {
             Notification notification = notificationService.createNotification(
@@ -108,7 +117,7 @@ public class NotificationController {
      * @param request The event notification request
      * @return List of created notifications
      */
-    @PostMapping("/event")
+    @PostMapping("/event/notify")
     public ResponseEntity<List<Notification>> notifyEventAttendees(@RequestBody EventNotificationRequest request) {
         try {
             List<Notification> notifications = notificationService.notifyEventAttendees(
@@ -141,6 +150,25 @@ public class NotificationController {
     }
     
     /**
+     * Marks a notification as unread
+     * @param id The notification ID
+     * @return The updated notification or error
+     */
+    @PutMapping("/{id}/unread")
+    public ResponseEntity<?> markAsUnread(@PathVariable Long id) {
+        try {
+            Notification notification = notificationService.markAsUnread(id);
+            return ResponseEntity.ok(notification);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
      * Marks all notifications for a user as read
      * @param userId The user ID
      * @return Number of notifications marked as read
@@ -161,7 +189,7 @@ public class NotificationController {
      * @param notification The updated notification data
      * @return The updated notification
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/edit")
     public ResponseEntity<?> updateNotification(@PathVariable Long id, @RequestBody Notification notification) {
         try {
             // Set the ID from the path
@@ -180,15 +208,53 @@ public class NotificationController {
     }
     
     /**
-     * Deletes a notification
+     * Permanently deletes a notification
      * @param id The notification ID
      * @return Success message or error
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/delete")
     public ResponseEntity<?> deleteNotification(@PathVariable Long id) {
         try {
             notificationService.deleteNotification(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "Notification deleted successfully"));
+            return ResponseEntity.ok(Collections.singletonMap("message", "Notification permanently deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Soft deletes a notification
+     * @param id The notification ID
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivateNotification(@PathVariable Long id) {
+        try {
+            notificationService.softDeleteNotification(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Notification deactivated successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a soft-deleted notification
+     * @param id The notification ID
+     * @return The restored notification or error
+     */
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<?> restoreNotification(@PathVariable Long id) {
+        try {
+            Notification restoredNotification = notificationService.restoreNotification(id);
+            return ResponseEntity.ok(restoredNotification);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Collections.singletonMap("error", e.getMessage()));

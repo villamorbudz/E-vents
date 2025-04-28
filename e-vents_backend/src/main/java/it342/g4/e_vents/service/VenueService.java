@@ -27,6 +27,14 @@ public class VenueService {
      * @return List of all venues
      */
     public List<Venue> getAllVenues() {
+        return venueRepository.findByIsActiveTrue();
+    }
+    
+    /**
+     * Retrieves all venues including inactive ones
+     * @return List of all venues
+     */
+    public List<Venue> getAllVenuesIncludingInactive() {
         return venueRepository.findAll();
     }
     
@@ -36,7 +44,7 @@ public class VenueService {
      * @return Optional containing the venue if found
      */
     public Optional<Venue> findVenueById(Long id) {
-        return venueRepository.findById(id);
+        return venueRepository.findByVenueIdAndIsActiveTrue(id);
     }
     
     /**
@@ -46,7 +54,7 @@ public class VenueService {
      * @throws EntityNotFoundException if the venue is not found
      */
     public Venue getVenueById(Long id) {
-        return venueRepository.findById(id)
+        return venueRepository.findByVenueIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new EntityNotFoundException("Venue not found with ID: " + id));
     }
     
@@ -56,6 +64,7 @@ public class VenueService {
      * @return The created venue with ID
      */
     public Venue createVenue(Venue venue) {
+        venue.setActive(true);
         return venueRepository.save(venue);
     }
 
@@ -70,7 +79,7 @@ public class VenueService {
     public Venue findOrCreateVenue(String name, String address, String city, String country) {
         String normalizedName = name.trim();
         String normalizedAddress = address.trim();
-        Optional<Venue> existing = venueRepository.findByNameIgnoreCaseAndAddressIgnoreCase(normalizedName, normalizedAddress);
+        Optional<Venue> existing = venueRepository.findByNameIgnoreCaseAndAddressIgnoreCaseAndIsActiveTrue(normalizedName, normalizedAddress);
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -79,6 +88,7 @@ public class VenueService {
         newVenue.setAddress(normalizedAddress);
         if (city != null) newVenue.setCity(city.trim());
         if (country != null) newVenue.setCountry(country.trim());
+        newVenue.setActive(true);
         return venueRepository.save(newVenue);
     }
     
@@ -88,15 +98,41 @@ public class VenueService {
      * @return The updated venue
      */
     public Venue updateVenue(Venue venue) {
-        // Check if venue exists
-        if (!venueRepository.existsById(venue.getVenueId())) {
-            throw new EntityNotFoundException("Venue not found with ID: " + venue.getVenueId());
-        }
+        // Check if venue exists and is active
+        Venue existingVenue = venueRepository.findByVenueIdAndIsActiveTrue(venue.getVenueId())
+                .orElseThrow(() -> new EntityNotFoundException("Venue not found with ID: " + venue.getVenueId()));
+        
+        // Preserve the active status
+        venue.setActive(existingVenue.isActive());
         return venueRepository.save(venue);
     }
     
     /**
-     * Deletes a venue by ID
+     * Soft deletes a venue by ID (sets isActive to false)
+     * @param id The ID of the venue to soft delete
+     * @throws EntityNotFoundException if the venue is not found
+     */
+    public void softDeleteVenue(Long id) {
+        Venue venue = venueRepository.findByVenueIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new EntityNotFoundException("Venue not found with ID: " + id));
+        venue.setActive(false);
+        venueRepository.save(venue);
+    }
+    
+    /**
+     * Restores a soft-deleted venue by ID (sets isActive to true)
+     * @param id The ID of the venue to restore
+     * @throws EntityNotFoundException if the venue is not found
+     */
+    public Venue restoreVenue(Long id) {
+        Venue venue = venueRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Venue not found with ID: " + id));
+        venue.setActive(true);
+        return venueRepository.save(venue);
+    }
+    
+    /**
+     * Permanently deletes a venue by ID
      * @param id The ID of the venue to delete
      * @throws EntityNotFoundException if the venue is not found
      */
@@ -108,10 +144,18 @@ public class VenueService {
     }
     
     /**
-     * Counts all venues in the system
+     * Counts all venues in the database (active and inactive)
      * @return The total number of venues
      */
     public long countAllVenues() {
         return venueRepository.count();
+    }
+    
+    /**
+     * Counts all active venues in the database
+     * @return The number of active venues
+     */
+    public long countActiveVenues() {
+        return venueRepository.countByIsActiveTrue();
     }
 }

@@ -1,8 +1,6 @@
 package it342.g4.e_vents.service;
 
-import it342.g4.e_vents.model.Role;
 import it342.g4.e_vents.model.User;
-import it342.g4.e_vents.repository.RoleRepository;
 import it342.g4.e_vents.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +14,11 @@ import java.util.Optional;
 public class UserService {
     
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     
     @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -31,6 +27,22 @@ public class UserService {
      * @return List of all users
      */
     public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
+     * Retrieves all active users from the database
+     * @return List of all active users
+     */
+    public List<User> getAllActiveUsers() {
+        return userRepository.findByIsActiveTrue();
+    }
+    
+    /**
+     * Retrieves all users from the database including inactive ones
+     * @return List of all users
+     */
+    public List<User> getAllUsersIncludingInactive() {
         return userRepository.findAll();
     }
 
@@ -54,14 +66,10 @@ public class UserService {
             throw new RuntimeException("Error: User already exists");
         }
 
+        user.setRole("USER"); // Default role
+        user.setActive(true); // Set user as active by default
         // Encrypt the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
-        // Set default role to 'attendee' with roleId 1
-        Role defaultRole = roleRepository.findById(1L)
-                .orElseThrow(() -> new RuntimeException("Default role not found"));
-        user.setRole(defaultRole);
-
         return userRepository.save(user);
     }
 
@@ -81,58 +89,6 @@ public class UserService {
         }
 
         return user;
-    }
-
-    /**
-     * Gets list of countries (placeholder until API integration)
-     * @return Array of country names
-     */
-    public String[] getCountries() {
-        return new String[]{"---"};
-    }
-
-    /**
-     * Gets regions for a country (placeholder until API integration)
-     * @param country The country to get regions for
-     * @return Array of region names
-     */
-    public String[] getRegions(String country) {
-        return new String[]{"---"};
-    }
-
-    /**
-     * Gets cities for a region (placeholder until API integration)
-     * @param country The country containing the region
-     * @param region The region to get cities for
-     * @return Array of city names
-     */
-    public String[] getCities(String country, String region) {
-        return new String[]{"---"};
-    }
-
-    /**
-     * Checks if a user with the given email exists
-     * @param email The email to check
-     * @return true if user exists, false otherwise
-     */
-    public boolean userExists(String email) {
-        return userRepository.existsByEmail(email);
-    }
-
-    /**
-     * Changes a user's password by email
-     * @param email The email of the user
-     * @param newPassword The new password (plain text)
-     * @return true if password changed successfully, false if user not found
-     */
-    public boolean changePasswordByEmail(String email, String newPassword) {
-        return userRepository.findByEmail(email)
-                .map(user -> {
-                    user.setPassword(passwordEncoder.encode(newPassword));
-                    userRepository.save(user);
-                    return true;
-                })
-                .orElse(false);
     }
 
     /**
@@ -165,6 +121,31 @@ public class UserService {
     }
     
     /**
+     * Checks if a user with the given email exists
+     * @param email The email to check
+     * @return true if user exists, false otherwise
+     */
+    public boolean userExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    /**
+     * Changes a user's password by email
+     * @param email The email of the user
+     * @param newPassword The new password (plain text)
+     * @return true if password changed successfully, false if user not found
+     */
+    public boolean changePasswordByEmail(String email, String newPassword) {
+        return userRepository.findByEmail(email)
+                .map(user -> {
+                    user.setPassword(passwordEncoder.encode(newPassword));
+                    userRepository.save(user);
+                    return true;
+                })
+                .orElse(false);
+    }
+    
+    /**
      * Helper method to update a user's active status
      * @param userId The ID of the user to update
      * @param activeStatus The new active status
@@ -180,11 +161,31 @@ public class UserService {
     }
     
     /**
-     * Counts all users in the system
+     * Counts all users in the database (active and inactive)
      * @return The total number of users
      */
     public long countAllUsers() {
         return userRepository.count();
+    }
+    
+    /**
+     * Counts all active users in the database
+     * @return The number of active users
+     */
+    public long countActiveUsers() {
+        return userRepository.countByIsActiveTrue();
+    }
+    
+    /**
+     * Permanently deletes a user from the database
+     * @param userId The ID of the user to delete
+     * @throws EntityNotFoundException if the user is not found
+     */
+    public void permanentlyDeleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
+        
+        userRepository.delete(user);
     }
     
     /**
