@@ -1,239 +1,111 @@
-ActController (/api/acts)
-
-GET /
-Retrieves all active acts.
-
-GET /all
-Retrieves all acts, including inactive ones.
-
-GET /{id}
-Retrieves an active act by ID.
-
-POST /create
-Creates a new act.
-
-PUT /{id}/edit
-Updates an existing act.
-
-DELETE /{id}
-Deactivates (soft-deletes) an act.
-
-POST /restore/{id}
-Restores a previously deactivated act.
-
-CategoryController (/api/categories)
-
-GET /
-Retrieves all active categories.
-
-GET /all
-Retrieves all categories, including inactive ones.
-
-GET /{id}
-Retrieves an active category by ID.
-
-POST /create
-Creates a new category.
-
-PUT /{id}/edit
-Updates an existing category.
-
-DELETE /{id}
-Deactivates (soft-deletes) a category.
-
-POST /restore/{id}
-Restores a previously deactivated category.
-
-EventController (/api/events)
-
-GET /
-Retrieves all events.
-
-GET /{id}
-Retrieves an event by ID.
-
-GET /venues
-Retrieves all venues.
-
-GET /acts
-Retrieves all acts.
-
-POST /
-Creates a new event.
-
-PUT /{id}
-Updates an event.
-
-DELETE /{id}
-Deactivates (soft-deletes) an event.
-
-POST /restore/{id}
-Restores a previously deactivated event.
-
-NotificationController (/api/notifications)
-
-GET /
-Retrieves all notifications.
-
-GET /all
-Retrieves all notifications, including inactive ones.
-
-GET /{id}
-Retrieves a notification by ID.
-
-GET /user/{userId}
-Retrieves all notifications for a specific user.
-
-GET /user/{userId}/unread
-Retrieves unread notifications for a specific user.
-
-POST /
-Creates a new notification.
-
-PUT /{id}
-Updates a notification.
-
-DELETE /{id}
-Deactivates (soft-deletes) a notification.
-
-POST /restore/{id}
-Restores a previously deactivated notification.
-
-TagController (/api/tags)
-
-GET /
-Retrieves all active tags.
-
-GET /all
-Retrieves all tags, including inactive ones.
-
-GET /{id}
-Retrieves an active tag by ID.
-
-GET /by-category/{categoryId}
-Retrieves tags by category.
-
-POST /
-Creates a new tag.
-
-PUT /{id}
-Updates a tag.
-
-DELETE /{id}
-Deactivates (soft-deletes) a tag.
-
-POST /restore/{id}
-Restores a previously deactivated tag.
-
-TicketCategoryController (/api/ticket-categories)
-
-GET /
-Retrieves all active ticket categories.
-
-GET /all
-Retrieves all ticket categories, including inactive ones.
-
-GET /{id}
-Retrieves an active ticket category by ID.
-
-GET /status/{status}
-Retrieves ticket categories by status.
-
-GET /search?name=
-Retrieves ticket categories by name.
-
-GET /available
-Retrieves ticket categories with available tickets.
-
-POST /
-Creates a new ticket category.
-
-PUT /{id}
-Updates a ticket category.
-
-DELETE /{id}
-Deactivates (soft-deletes) a ticket category.
-
-POST /restore/{id}
-Restores a previously deactivated ticket category.
-
-TicketController (/api/tickets)
-
-GET /
-Retrieves all active tickets.
-
-GET /all
-Retrieves all tickets, including inactive ones.
-
-GET /{id}
-Retrieves an active ticket by ID.
-
-GET /user/{userId}
-Retrieves tickets by user ID.
-
-GET /event/{eventId}
-Retrieves tickets by event ID.
-
-GET /status/{status}
-Retrieves tickets by status.
-
-POST /
-Creates a new ticket.
-
-PUT /{id}
-Updates an existing ticket.
-
-DELETE /{id}
-Deactivates (soft-deletes) a ticket.
-
-POST /restore/{id}
-Restores a previously deactivated ticket.
-
-UserController (/api/users)
-
-POST /register
-Registers a new user.
-
-POST /login
-Authenticates a user using email and password.
-
-GET /
-Retrieves all active users.
-
-GET /all
-Retrieves all users, including inactive ones.
-
-GET /{id}
-Retrieves a user by ID.
-
-PUT /{id}
-Updates a user’s information.
-
-DELETE /{id}
-Deactivates (soft-deletes) a user.
-
-POST /restore/{id}
-Restores a previously deactivated user.
-
-VenueController (/api/venues)
-
-GET /
-Retrieves all active venues.
-
-GET /all
-Retrieves all venues, including inactive ones.
-
-GET /{id}
-Retrieves an active venue by ID.
-
-POST /create
-Creates a new venue (or returns existing if already present).
-
-PUT /{id}
-Updates a venue.
-
-DELETE /{id}
-Deactivates (soft-deletes) a venue.
-
-POST /restore/{id}
-Restores a previously deactivated venue.
+<h1>API Endpoint Reference</h1>
+
+<h2>ActController (<code>/api/acts</code>)</h2>
+<ul>
+  <li><b>GET /</b> – Retrieves all active acts.</li>
+  <li><b>GET /all</b> – Retrieves all acts, including inactive ones.</li>
+  <li><b>GET /{id}</b> – Retrieves an active act by ID.</li>
+  <li><b>POST /create</b> – Creates a new act.</li>
+  <li><b>PUT /{id}/edit</b> – Updates an existing act.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) an act.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated act.</li>
+</ul>
+
+<h2>CategoryController (<code>/api/categories</code>)</h2>
+<ul>
+  <li><b>GET /</b> – Retrieves all active categories.</li>
+  <li><b>GET /all</b> – Retrieves all categories, including inactive ones.</li>
+  <li><b>GET /{id}</b> – Retrieves an active category by ID.</li>
+  <li><b>POST /create</b> – Creates a new category.</li>
+  <li><b>PUT /{id}/edit</b> – Updates an existing category.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a category.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated category.</li>
+</ul>
+
+<h2>EventController (<code>/api/events</code>)</h2>
+<ul>
+  <li><b>GET /</b> – Retrieves all events.</li>
+  <li><b>GET /{id}</b> – Retrieves an event by ID.</li>
+  <li><b>GET /venues</b> – Retrieves all venues.</li>
+  <li><b>GET /acts</b> – Retrieves all acts.</li>
+  <li><b>POST /</b> – Creates a new event.</li>
+  <li><b>PUT /{id}</b> – Updates an event.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) an event.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated event.</li>
+</ul>
+
+<h2>NotificationController (<code>/api/notifications</code>)</h2>
+<ul>
+  <li><b>GET /</b> – Retrieves all notifications.</li>
+  <li><b>GET /all</b> – Retrieves all notifications, including inactive ones.</li>
+  <li><b>GET /{id}</b> – Retrieves a notification by ID.</li>
+  <li><b>GET /user/{userId}</b> – Retrieves all notifications for a specific user.</li>
+  <li><b>GET /user/{userId}/unread</b> – Retrieves unread notifications for a specific user.</li>
+  <li><b>POST /</b> – Creates a new notification.</li>
+  <li><b>PUT /{id}</b> – Updates a notification.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a notification.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated notification.</li>
+</ul>
+
+<h2>TagController (<code>/api/tags</code>)</h2>
+<ul>
+  <li><b>GET /</b> – Retrieves all active tags.</li>
+  <li><b>GET /all</b> – Retrieves all tags, including inactive ones.</li>
+  <li><b>GET /{id}</b> – Retrieves an active tag by ID.</li>
+  <li><b>GET /by-category/{categoryId}</b> – Retrieves tags by category.</li>
+  <li><b>POST /</b> – Creates a new tag.</li>
+  <li><b>PUT /{id}</b> – Updates a tag.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a tag.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated tag.</li>
+</ul>
+
+<h2>TicketCategoryController (<code>/api/ticket-categories</code>)</h2>
+<ul>
+  <li><b>GET /</b> – Retrieves all active ticket categories.</li>
+  <li><b>GET /all</b> – Retrieves all ticket categories, including inactive ones.</li>
+  <li><b>GET /{id}</b> – Retrieves an active ticket category by ID.</li>
+  <li><b>GET /status/{status}</b> – Retrieves ticket categories by status.</li>
+  <li><b>GET /search?name=</b> – Retrieves ticket categories by name.</li>
+  <li><b>GET /available</b> – Retrieves ticket categories with available tickets.</li>
+  <li><b>POST /</b> – Creates a new ticket category.</li>
+  <li><b>PUT /{id}</b> – Updates a ticket category.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a ticket category.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated ticket category.</li>
+</ul>
+
+<h2>TicketController (<code>/api/tickets</code>)</h2>
+<ul>
+  <li><b>GET /</b> – Retrieves all active tickets.</li>
+  <li><b>GET /all</b> – Retrieves all tickets, including inactive ones.</li>
+  <li><b>GET /{id}</b> – Retrieves an active ticket by ID.</li>
+  <li><b>GET /user/{userId}</b> – Retrieves tickets by user ID.</li>
+  <li><b>GET /event/{eventId}</b> – Retrieves tickets by event ID.</li>
+  <li><b>GET /status/{status}</b> – Retrieves tickets by status.</li>
+  <li><b>POST /</b> – Creates a new ticket.</li>
+  <li><b>PUT /{id}</b> – Updates an existing ticket.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a ticket.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated ticket.</li>
+</ul>
+
+<h2>UserController (<code>/api/users</code>)</h2>
+<ul>
+  <li><b>POST /register</b> – Registers a new user.</li>
+  <li><b>POST /login</b> – Authenticates a user using email and password.</li>
+  <li><b>GET /</b> – Retrieves all active users.</li>
+  <li><b>GET /all</b> – Retrieves all users, including inactive ones.</li>
+  <li><b>GET /{id}</b> – Retrieves a user by ID.</li>
+  <li><b>PUT /{id}</b> – Updates a user’s information.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a user.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated user.</li>
+</ul>
+
+<h2>VenueController (<code>/api/venues</code>)</h2>
+<ul>
+  <li><b>GET /</b> – Retrieves all active venues.</li>
+  <li><b>GET /all</b> – Retrieves all venues, including inactive ones.</li>
+  <li><b>GET /{id}</b> – Retrieves an active venue by ID.</li>
+  <li><b>POST /create</b> – Creates a new venue (or returns existing if already present).</li>
+  <li><b>PUT /{id}</b> – Updates a venue.</li>
+  <li><b>DELETE /{id}</b> – Deactivates (soft-deletes) a venue.</li>
+  <li><b>POST /restore/{id}</b> – Restores a previously deactivated venue.</li>
+</ul>
