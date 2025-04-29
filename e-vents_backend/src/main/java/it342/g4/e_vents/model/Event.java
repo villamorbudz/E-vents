@@ -41,6 +41,11 @@ public class Event {
     private Time time;
 
     @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonManagedReference
+    private User creator;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "venue_id", nullable = false)
     @JsonManagedReference
     private Venue venue;
@@ -125,5 +130,13 @@ public class Event {
 
     public void setBanner(String banner) {
         this.banner = banner;
+    }
+
+    public User getCreator() {
+        return creator;
+    }
+    
+    public void setCreator(User creator) {
+        this.creator = creator;
     }
 }
