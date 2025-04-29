@@ -42,6 +42,9 @@ public class Event {
 
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean isActive = true;
+    
+    @Column
+    private String bannerImagePath;
 
     public Long getEventId() {
         return eventId;
@@ -113,5 +116,13 @@ public class Event {
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+    
+    public String getBannerImagePath() {
+        return bannerImagePath;
+    }
+    
+    public void setBannerImagePath(String bannerImagePath) {
+        this.bannerImagePath = bannerImagePath;
     }
 }

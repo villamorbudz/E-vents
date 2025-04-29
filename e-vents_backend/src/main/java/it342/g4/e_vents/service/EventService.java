@@ -5,6 +5,7 @@ import it342.g4.e_vents.repository.EventRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,10 +17,12 @@ import java.util.Optional;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final FileStorageService fileStorageService;
     
     @Autowired
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, FileStorageService fileStorageService) {
         this.eventRepository = eventRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -152,5 +155,55 @@ public class EventService {
                 .filter(event -> "scheduled".equalsIgnoreCase(event.getStatus()))
                 .limit(limit)
                 .toList();
+    }
+    
+    /**
+     * Uploads a banner image for an event
+     * @param id The ID of the event
+     * @param file The image file to upload
+     * @return The updated event with banner image path
+     * @throws EntityNotFoundException if the event is not found
+     */
+    public Event uploadBannerImage(Long id, MultipartFile file) {
+        Event event = getEventById(id);
+        
+        // Delete old banner if exists
+        if (event.getBannerImagePath() != null) {
+            String oldFilename = fileStorageService.getFilenameFromPath(event.getBannerImagePath());
+            if (oldFilename != null) {
+                fileStorageService.deleteFile(oldFilename);
+            }
+        }
+        
+        // Store new file
+        String filename = fileStorageService.storeFile(file);
+        
+        // Update event with new banner path
+        event.setBannerImagePath("/api/events/images/" + filename);
+        return eventRepository.save(event);
+    }
+    
+    /**
+     * Deletes the banner image for an event
+     * @param id The ID of the event
+     * @return The updated event without banner image
+     * @throws EntityNotFoundException if the event is not found
+     */
+    public Event deleteBannerImage(Long id) {
+        Event event = getEventById(id);
+        
+        // Delete file if exists
+        if (event.getBannerImagePath() != null) {
+            String filename = fileStorageService.getFilenameFromPath(event.getBannerImagePath());
+            if (filename != null) {
+                fileStorageService.deleteFile(filename);
+            }
+            
+            // Update event to remove banner path
+            event.setBannerImagePath(null);
+            return eventRepository.save(event);
+        }
+        
+        return event;
     }
 }
