@@ -24,29 +24,57 @@ public class TicketService {
     }
     
     /**
-     * Retrieves all tickets from the database
-     * @return List of all tickets
+     * Retrieves all active tickets from the database
+     * @return List of all active tickets
      */
     public List<Ticket> getAllTickets() {
+        return ticketRepository.findByIsActiveTrue();
+    }
+    
+    /**
+     * Retrieves all tickets including inactive ones
+     * @return List of all tickets
+     */
+    public List<Ticket> getAllTicketsIncludingInactive() {
         return ticketRepository.findAll();
     }
     
     /**
-     * Finds a ticket by its ID
+     * Finds an active ticket by its ID
+     * @param id The ticket ID to look up
+     * @return Optional containing the ticket if found and active
+     */
+    public Optional<Ticket> findTicketById(Long id) {
+        return ticketRepository.findByTicketIdAndIsActiveTrue(id);
+    }
+    
+    /**
+     * Finds any ticket by its ID (active or inactive)
      * @param id The ticket ID to look up
      * @return Optional containing the ticket if found
      */
-    public Optional<Ticket> findTicketById(Long id) {
+    public Optional<Ticket> findTicketByIdIncludingInactive(Long id) {
         return ticketRepository.findById(id);
     }
     
     /**
-     * Gets a ticket by ID or throws an exception if not found
+     * Gets an active ticket by ID or throws an exception if not found
+     * @param id The ticket ID to look up
+     * @return The ticket
+     * @throws EntityNotFoundException if the ticket is not found or inactive
+     */
+    public Ticket getTicketById(Long id) {
+        return ticketRepository.findByTicketIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found with ID: " + id));
+    }
+    
+    /**
+     * Gets any ticket by ID (active or inactive) or throws an exception if not found
      * @param id The ticket ID to look up
      * @return The ticket
      * @throws EntityNotFoundException if the ticket is not found
      */
-    public Ticket getTicketById(Long id) {
+    public Ticket getTicketByIdIncludingInactive(Long id) {
         return ticketRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found with ID: " + id));
     }
@@ -62,6 +90,9 @@ public class TicketService {
             ticket.setPurchaseDate(new Date());
         }
         
+        // Ensure ticket is active
+        ticket.setActive(true);
+        
         return ticketRepository.save(ticket);
     }
     
@@ -71,15 +102,15 @@ public class TicketService {
      * @return The updated ticket
      */
     public Ticket updateTicket(Ticket ticket) {
-        // Check if ticket exists
-        if (!ticketRepository.existsById(ticket.getTicketId())) {
-            throw new EntityNotFoundException("Ticket not found with ID: " + ticket.getTicketId());
-        }
+        // Check if ticket exists and is active
+        Ticket existingTicket = findTicketById(ticket.getTicketId())
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found with ID: " + ticket.getTicketId()));
+        
         return ticketRepository.save(ticket);
     }
     
     /**
-     * Deletes a ticket by ID
+     * Permanently deletes a ticket by ID
      * @param id The ID of the ticket to delete
      * @throws EntityNotFoundException if the ticket is not found
      */
@@ -88,6 +119,29 @@ public class TicketService {
             throw new EntityNotFoundException("Ticket not found with ID: " + id);
         }
         ticketRepository.deleteById(id);
+    }
+    
+    /**
+     * Soft deletes a ticket by setting isActive to false
+     * @param id The ID of the ticket to soft delete
+     * @throws EntityNotFoundException if the ticket is not found
+     */
+    public void softDeleteTicket(Long id) {
+        Ticket ticket = getTicketByIdIncludingInactive(id);
+        ticket.setActive(false);
+        ticketRepository.save(ticket);
+    }
+    
+    /**
+     * Restores a soft-deleted ticket by setting isActive to true
+     * @param id The ID of the ticket to restore
+     * @return The restored ticket
+     * @throws EntityNotFoundException if the ticket is not found
+     */
+    public Ticket restoreTicket(Long id) {
+        Ticket ticket = getTicketByIdIncludingInactive(id);
+        ticket.setActive(true);
+        return ticketRepository.save(ticket);
     }
     
     /**
@@ -103,29 +157,45 @@ public class TicketService {
     }
     
     /**
-     * Finds tickets by user ID
+     * Finds active tickets by user ID
      * @param userId The user ID
-     * @return List of tickets for the user
+     * @return List of active tickets for the user
      */
     public List<Ticket> findTicketsByUserId(Long userId) {
-        return ticketRepository.findByUserId(userId);
+        return ticketRepository.findByUserIdAndIsActiveTrue(userId);
     }
     
     /**
-     * Finds tickets by event ID
+     * Finds active tickets by event ID
      * @param eventId The event ID
-     * @return List of tickets for the event
+     * @return List of active tickets for the event
      */
     public List<Ticket> findTicketsByEventId(Long eventId) {
-        return ticketRepository.findByEventId(eventId);
+        return ticketRepository.findByEventIdAndIsActiveTrue(eventId);
     }
     
     /**
-     * Finds tickets by status
+     * Finds active tickets by status
      * @param status The ticket status
-     * @return List of tickets with the specified status
+     * @return List of active tickets with the specified status
      */
     public List<Ticket> findTicketsByStatus(String status) {
-        return ticketRepository.findByStatus(status);
+        return ticketRepository.findByStatusAndIsActiveTrue(status);
+    }
+    
+    /**
+     * Counts all tickets in the database (active and inactive)
+     * @return The total number of tickets
+     */
+    public long countAllTickets() {
+        return ticketRepository.count();
+    }
+    
+    /**
+     * Counts all active tickets in the database
+     * @return The number of active tickets
+     */
+    public long countActiveTickets() {
+        return ticketRepository.countByIsActiveTrue();
     }
 }

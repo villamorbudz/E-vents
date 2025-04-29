@@ -103,12 +103,21 @@ public class UserController {
     }
 
     /**
-     * Retrieves all users
+     * Retrieves all active users
+     * @return List of all active users
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllActiveUsers());
+    }
+    
+    /**
+     * Retrieves all users including inactive ones
      * @return List of all users
      */
     @GetMapping("/all")
-    public ResponseEntity<?> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<?> getAllUsersIncludingInactive() {
+        return ResponseEntity.ok(userService.getAllUsersIncludingInactive());
     }
 
     /**
@@ -140,36 +149,6 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
-    }
-
-    /**
-     * Gets list of countries (placeholder until API integration)
-     * @return Array of country names
-     */
-    @GetMapping("/countries")
-    public ResponseEntity<?> getCountries() {
-        return ResponseEntity.ok(userService.getCountries());
-    }
-
-    /**
-     * Gets regions for a country (placeholder until API integration)
-     * @param country The country to get regions for
-     * @return Array of region names
-     */
-    @GetMapping("/regions/{country}")
-    public ResponseEntity<?> getRegions(@PathVariable String country) {
-        return ResponseEntity.ok(userService.getRegions(country));
-    }
-
-    /**
-     * Gets cities for a region (placeholder until API integration)
-     * @param country The country containing the region
-     * @param region The region to get cities for
-     * @return Array of city names
-     */
-    @GetMapping("/cities/{country}/{region}")
-    public ResponseEntity<?> getCities(@PathVariable String country, @PathVariable String region) {
-        return ResponseEntity.ok(userService.getCities(country, region));
     }
 
     /**

@@ -27,8 +27,8 @@ public class VenueController {
     }
     
     /**
-     * Retrieves all venues
-     * @return List of all venues
+     * Retrieves all active venues
+     * @return List of all active venues
      */
     @GetMapping
     public ResponseEntity<List<Venue>> getAllVenues() {
@@ -36,7 +36,16 @@ public class VenueController {
     }
     
     /**
-     * Retrieves a venue by ID
+     * Retrieves all venues including inactive ones
+     * @return List of all venues
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<Venue>> getAllVenuesIncludingInactive() {
+        return ResponseEntity.ok(venueService.getAllVenuesIncludingInactive());
+    }
+    
+    /**
+     * Retrieves an active venue by ID
      * @param id The venue ID
      * @return The venue or 404 if not found
      */
@@ -52,7 +61,7 @@ public class VenueController {
      * @param venue Venue data from request body
      * @return The created venue
      */
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Venue> createVenue(@RequestBody Venue venue) {
         try {
             Venue result = venueService.findOrCreateVenue(
@@ -79,7 +88,7 @@ public class VenueController {
      * @param venueDetails Updated venue data
      * @return The updated venue or error
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/edit")
     public ResponseEntity<?> updateVenue(@PathVariable Long id, @RequestBody Venue venueDetails) {
         try {
             // Set the ID from the path
@@ -98,15 +107,53 @@ public class VenueController {
     }
     
     /**
-     * Deletes a venue
-     * @param id The venue ID to delete
+     * Soft deletes a venue (marks it as inactive)
+     * @param id The venue ID to soft delete
      * @return Success message or error
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteVenue(@PathVariable Long id) {
+    @DeleteMapping("/{id}/deactivate")
+    public ResponseEntity<?> softDeleteVenue(@PathVariable Long id) {
+        try {
+            venueService.softDeleteVenue(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Venue soft deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a soft-deleted venue
+     * @param id The venue ID to restore
+     * @return The restored venue or error
+     */
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<?> restoreVenue(@PathVariable Long id) {
+        try {
+            Venue restoredVenue = venueService.restoreVenue(id);
+            return ResponseEntity.ok(restoredVenue);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Permanently deletes a venue
+     * @param id The venue ID to permanently delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<?> permanentlyDeleteVenue(@PathVariable Long id) {
         try {
             venueService.deleteVenue(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "Venue deleted successfully"));
+            return ResponseEntity.ok(Collections.singletonMap("message", "Venue permanently deleted successfully"));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Collections.singletonMap("error", e.getMessage()));

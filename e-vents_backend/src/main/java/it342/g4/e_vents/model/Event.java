@@ -57,8 +57,11 @@ public class Event {
     @Column(nullable = false)
     private String status;
 
-    @Column(nullable = false)
-    private String banner;
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean isActive = true;
+    
+    @Column
+    private String bannerImagePath;
 
     public Long getEventId() {
         return eventId;
@@ -124,19 +127,19 @@ public class Event {
         this.description = description;
     }
 
-    public String getBanner() {
-        return banner;
+    public boolean isActive() {
+        return isActive;
     }
 
-    public void setBanner(String banner) {
-        this.banner = banner;
-    }
-
-    public User getCreator() {
-        return creator;
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
     }
     
-    public void setCreator(User creator) {
-        this.creator = creator;
+    public String getBannerImagePath() {
+        return bannerImagePath;
+    }
+    
+    public void setBannerImagePath(String bannerImagePath) {
+        this.bannerImagePath = bannerImagePath;
     }
 }

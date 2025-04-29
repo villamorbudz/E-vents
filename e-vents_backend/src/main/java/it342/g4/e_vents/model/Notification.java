@@ -21,6 +21,7 @@ public class Notification {
     
     private String type; // "EVENT_UPDATE", "REMINDER", "SYSTEM", etc.
     
+    @Column(name = "`read`")
     private boolean read;
     
     private LocalDateTime createdAt;
@@ -31,6 +32,9 @@ public class Notification {
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
+    
+    @Column(nullable = false)
+    private boolean isActive = true;
     
     // Constructors
     public Notification() {
@@ -122,5 +126,13 @@ public class Notification {
 
     public void setEvent(Event event) {
         this.event = event;
+    }
+    
+    public boolean isActive() {
+        return isActive;
+    }
+    
+    public void setActive(boolean active) {
+        isActive = active;
     }
 }

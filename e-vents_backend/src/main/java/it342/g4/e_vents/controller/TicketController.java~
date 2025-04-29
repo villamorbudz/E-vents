@@ -91,7 +91,7 @@ public class TicketController {
      * @param ticket The ticket to create
      * @return The created ticket
      */
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<?> createTicket(@RequestBody Ticket ticket) {
         try {
             Ticket createdTicket = ticketService.createTicket(ticket);
@@ -108,7 +108,7 @@ public class TicketController {
      * @param ticketDetails The updated ticket details
      * @return The updated ticket
      */
-    @PutMapping("/{id}/edit")
+    @PutMapping("/{id}")
     public ResponseEntity<?> updateTicket(@PathVariable Long id, @RequestBody Ticket ticketDetails) {
         try {
             // Set the ID from the path
@@ -150,7 +150,7 @@ public class TicketController {
      * @param id The ticket ID to delete
      * @return Success message or error
      */
-    @DeleteMapping("/{id}/cancel")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTicket(@PathVariable Long id) {
         try {
             ticketService.softDeleteTicket(id);
@@ -169,7 +169,7 @@ public class TicketController {
      * @param id The ticket ID to permanently delete
      * @return Success message or error
      */
-    @DeleteMapping("/{id}/delete")
+    @DeleteMapping("/{id}/permanent")
     public ResponseEntity<?> permanentlyDeleteTicket(@PathVariable Long id) {
         try {
             ticketService.deleteTicket(id);

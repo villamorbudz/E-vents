@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import it342.g4.e_vents.model.Event;
 import it342.g4.e_vents.repository.EventRepository;
@@ -17,10 +18,12 @@ import jakarta.persistence.EntityNotFoundException;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final FileStorageService fileStorageService;
     
     @Autowired
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, FileStorageService fileStorageService) {
         this.eventRepository = eventRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -89,7 +92,7 @@ public class EventService {
      * @throws EntityNotFoundException if the event is not found
      */
     public Event cancelEvent(Long id) {
-        return updateEventStatus(id, "cancelled");
+        return updateEventStatus(id, "CANCELLED");
     }
     
     /**
@@ -99,9 +102,19 @@ public class EventService {
      * @throws EntityNotFoundException if the event is not found
      */
     public Event restoreEvent(Long id) {
-        return updateEventStatus(id, "scheduled");
+        return updateEventStatus(id, "SCHEDULED");
     }
-    
+
+    /**
+     * Postpones event by setting its status to 'postponed'
+     * @param id The ID of the event to restore
+     * @return The updated event
+     * @throws EntityNotFoundException if the event is not found
+     */
+    public Event postponeEvent(Long id) {
+        return updateEventStatus(id, "POSTPONED");
+    }
+
     /**
      * Deletes an event permanently from the database
      * @param id The ID of the event to delete
@@ -115,7 +128,7 @@ public class EventService {
     }
     
     /**
-     * Counts all events in the system
+     * Counts all events in the database (active and inactive)
      * @return The total number of events
      */
     public long countAllEvents() {
@@ -123,10 +136,19 @@ public class EventService {
     }
     
     /**
+     * Counts all active events in the database
+     * @return The number of active events
+     */
+    public long countActiveEvents() {
+        return eventRepository.countByIsActiveTrue();
+    }
+    
+    /**
      * Gets upcoming events ordered by date
      * @param limit The maximum number of events to return
      * @return List of upcoming events
      */
+
     public List<Event> getUpcomingEvents(int limit) {
         // This is a simple implementation that returns the first N events
         // In a real application, you would filter by date > now and order by date
@@ -134,5 +156,55 @@ public class EventService {
                 .filter(event -> "scheduled".equalsIgnoreCase(event.getStatus()))
                 .limit(limit)
                 .toList();
+    }
+    
+    /**
+     * Uploads a banner image for an event
+     * @param id The ID of the event
+     * @param file The image file to upload
+     * @return The updated event with banner image path
+     * @throws EntityNotFoundException if the event is not found
+     */
+    public Event uploadBannerImage(Long id, MultipartFile file) {
+        Event event = getEventById(id);
+        
+        // Delete old banner if exists
+        if (event.getBannerImagePath() != null) {
+            String oldFilename = fileStorageService.getFilenameFromPath(event.getBannerImagePath());
+            if (oldFilename != null) {
+                fileStorageService.deleteFile(oldFilename);
+            }
+        }
+        
+        // Store new file
+        String filename = fileStorageService.storeFile(file);
+        
+        // Update event with new banner path
+        event.setBannerImagePath("/api/events/images/" + filename);
+        return eventRepository.save(event);
+    }
+    
+    /**
+     * Deletes the banner image for an event
+     * @param id The ID of the event
+     * @return The updated event without banner image
+     * @throws EntityNotFoundException if the event is not found
+     */
+    public Event deleteBannerImage(Long id) {
+        Event event = getEventById(id);
+        
+        // Delete file if exists
+        if (event.getBannerImagePath() != null) {
+            String filename = fileStorageService.getFilenameFromPath(event.getBannerImagePath());
+            if (filename != null) {
+                fileStorageService.deleteFile(filename);
+            }
+            
+            // Update event to remove banner path
+            event.setBannerImagePath(null);
+            return eventRepository.save(event);
+        }
+        
+        return event;
     }
 }

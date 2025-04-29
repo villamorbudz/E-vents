@@ -28,6 +28,9 @@ public class Act {
     @Lob
     private String description;
 
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "act_tags",
@@ -71,6 +74,14 @@ public class Act {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     public List<Tags> getTags() {

@@ -1,0 +1,184 @@
+package it342.g4.e_vents.controller;
+
+import it342.g4.e_vents.model.TicketCategory;
+import it342.g4.e_vents.service.TicketCategoryService;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Controller for ticket category-related operations
+ */
+@RestController
+@RequestMapping("/api/ticket-categories")
+@CrossOrigin(origins = "*")
+public class TicketCategoryController {
+
+    private final TicketCategoryService ticketCategoryService;
+    
+    @Autowired
+    public TicketCategoryController(TicketCategoryService ticketCategoryService) {
+        this.ticketCategoryService = ticketCategoryService;
+    }
+    
+    /**
+     * Retrieves all active ticket categories
+     * @return List of all active ticket categories
+     */
+    @GetMapping
+    public ResponseEntity<List<TicketCategory>> getAllTicketCategories() {
+        return ResponseEntity.ok(ticketCategoryService.getAllTicketCategories());
+    }
+    
+    /**
+     * Retrieves all ticket categories including inactive ones
+     * @return List of all ticket categories
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<TicketCategory>> getAllTicketCategoriesIncludingInactive() {
+        return ResponseEntity.ok(ticketCategoryService.getAllTicketCategoriesIncludingInactive());
+    }
+    
+    /**
+     * Retrieves an active ticket category by ID
+     * @param id The ticket category ID
+     * @return The ticket category or 404 if not found
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<TicketCategory> getTicketCategoryById(@PathVariable Long id) {
+        return ticketCategoryService.findTicketCategoryById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * Retrieves ticket categories by status
+     * @param status The ticket category status
+     * @return List of ticket categories with the specified status
+     */
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<TicketCategory>> getTicketCategoriesByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(ticketCategoryService.findTicketCategoriesByStatus(status));
+    }
+    
+    /**
+     * Retrieves ticket categories by name
+     * @param name The ticket category name
+     * @return List of ticket categories with the specified name
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<TicketCategory>> getTicketCategoriesByName(@RequestParam String name) {
+        return ResponseEntity.ok(ticketCategoryService.findTicketCategoriesByName(name));
+    }
+    
+    /**
+     * Retrieves ticket categories with available tickets
+     * @return List of ticket categories with available tickets
+     */
+    @GetMapping("/available")
+    public ResponseEntity<List<TicketCategory>> getAvailableTicketCategories() {
+        return ResponseEntity.ok(ticketCategoryService.findAvailableTicketCategories());
+    }
+    
+    /**
+     * Creates a new ticket category
+     * @param ticketCategory The ticket category to create
+     * @return The created ticket category
+     */
+    @PostMapping("/create")
+    public ResponseEntity<?> createTicketCategory(@RequestBody TicketCategory ticketCategory) {
+        try {
+            TicketCategory createdTicketCategory = ticketCategoryService.createTicketCategory(ticketCategory);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdTicketCategory);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Updates an existing ticket category
+     * @param id The ticket category ID
+     * @param ticketCategoryDetails The updated ticket category details
+     * @return The updated ticket category
+     */
+    @PutMapping("/{id}/edit")
+    public ResponseEntity<?> updateTicketCategory(@PathVariable Long id, @RequestBody TicketCategory ticketCategoryDetails) {
+        try {
+            // Set the ID from the path
+            ticketCategoryDetails.setTicketCategoryId(id);
+            
+            // Update and return
+            TicketCategory updatedTicketCategory = ticketCategoryService.updateTicketCategory(ticketCategoryDetails);
+            return ResponseEntity.ok(updatedTicketCategory);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Soft deletes a ticket category
+     * @param id The ticket category ID to delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/deactivate")
+    public ResponseEntity<?> deleteTicketCategory(@PathVariable Long id) {
+        try {
+            ticketCategoryService.softDeleteTicketCategory(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Ticket category deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Permanently deletes a ticket category
+     * @param id The ticket category ID to permanently delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<?> permanentlyDeleteTicketCategory(@PathVariable Long id) {
+        try {
+            ticketCategoryService.deleteTicketCategory(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Ticket category permanently deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a soft-deleted ticket category
+     * @param id The ticket category ID to restore
+     * @return The restored ticket category or error
+     */
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<?> restoreTicketCategory(@PathVariable Long id) {
+        try {
+            TicketCategory restoredTicketCategory = ticketCategoryService.restoreTicketCategory(id);
+            return ResponseEntity.ok(restoredTicketCategory);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+}

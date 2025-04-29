@@ -27,8 +27,8 @@ public class ActController {
     }
     
     /**
-     * Retrieves all acts
-     * @return List of all acts
+     * Retrieves all active acts
+     * @return List of all active acts
      */
     @GetMapping
     public ResponseEntity<List<Act>> getAllActs() {
@@ -36,7 +36,16 @@ public class ActController {
     }
     
     /**
-     * Retrieves an act by ID
+     * Retrieves all acts including inactive ones
+     * @return List of all acts
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<Act>> getAllActsIncludingInactive() {
+        return ResponseEntity.ok(actService.getAllActsIncludingInactive());
+    }
+    
+    /**
+     * Retrieves an active act by ID
      * @param id The act ID
      * @return The act or 404 if not found
      */
@@ -52,7 +61,7 @@ public class ActController {
      * @param act Act data from request body
      * @return The created act
      */
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Act> createAct(@RequestBody Act act) {
         try {
             Act createdAct = actService.createAct(act);
@@ -68,7 +77,7 @@ public class ActController {
      * @param actDetails Updated act data
      * @return The updated act or error
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/edit")
     public ResponseEntity<?> updateAct(@PathVariable Long id, @RequestBody Act actDetails) {
         try {
             // Set the ID from the path
@@ -87,15 +96,53 @@ public class ActController {
     }
     
     /**
-     * Deletes an act
-     * @param id The act ID to delete
+     * Soft deletes an act by setting isActive to false
+     * @param id The act ID to soft delete
      * @return Success message or error
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAct(@PathVariable Long id) {
+    @DeleteMapping("/{id}/deactivate")
+    public ResponseEntity<?> softDeleteAct(@PathVariable Long id) {
+        try {
+            actService.softDeleteAct(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Act deactivated successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a soft-deleted act by setting isActive to true
+     * @param id The act ID to restore
+     * @return The restored act or error
+     */
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<?> restoreAct(@PathVariable Long id) {
+        try {
+            Act restoredAct = actService.restoreAct(id);
+            return ResponseEntity.ok(restoredAct);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Permanently deletes an act
+     * @param id The act ID to permanently delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<?> permanentlyDeleteAct(@PathVariable Long id) {
         try {
             actService.deleteAct(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "Act deleted successfully"));
+            return ResponseEntity.ok(Collections.singletonMap("message", "Act permanently deleted"));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Collections.singletonMap("error", e.getMessage()));
