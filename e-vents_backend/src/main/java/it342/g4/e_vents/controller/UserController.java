@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import it342.g4.e_vents.dto.LoginRequest;
 import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.security.JwtUtils;
 import it342.g4.e_vents.service.UserService;
@@ -59,7 +61,7 @@ public class UserController {
             response.put("email", registeredUser.getEmail());
             response.put("firstName", registeredUser.getFirstName());
             response.put("lastName", registeredUser.getLastName());
-            response.put("role", registeredUser.getRole() != null ? registeredUser.getRole().getName() : "USER");
+            response.put("role", registeredUser.getRole() != null ? registeredUser.getRole() : "USER");
             response.put("city", registeredUser.getCity());
             response.put("region", registeredUser.getRegion());
             response.put("country", registeredUser.getCountry());
@@ -79,7 +81,7 @@ public class UserController {
      * @param password User's password
      * @return The authenticated user or error message
      */
-     @PostMapping("/login")
+     /*  @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
         try {
             User user = userService.login(email, password);
@@ -94,13 +96,34 @@ public class UserController {
             response.put("email", user.getEmail());
             response.put("firstName", user.getFirstName());
             response.put("lastName", user.getLastName());
-            response.put("role", user.getRole() != null ? user.getRole().getName() : "USER");
+            response.put("role", user.getRole() != null ? user.getRole() : "USER");
             
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
+    }*/
+
+    @PostMapping("/login")
+public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    try {
+        User user = userService.login(loginRequest.getEmail(), loginRequest.getPassword());
+
+        String token = jwtUtils.generateToken(user);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("userId", user.getUserId());
+        response.put("email", user.getEmail());
+        response.put("firstName", user.getFirstName());
+        response.put("lastName", user.getLastName());
+        response.put("role", user.getRole() != null ? user.getRole() : "USER");
+
+        return ResponseEntity.ok(response);
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
     }
+}
 
     /**
      * Retrieves all active users
@@ -174,13 +197,81 @@ public class UserController {
      * @return The updated user or 404 if not found
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+    try {
+        // Log incoming request details
+        System.out.println("Updating user with ID: " + id);
+        
+        // Authorization check
+        if (!isAuthorizedForUser(id)) {
+            System.out.println("Authorization failed for user update. ID: " + id);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Collections.singletonMap("error", "You are not authorized to update this user profile"));
+        }
+        
+        // Ensure ID in path matches ID in body
+        if (updatedUser.getUserId() != null && !updatedUser.getUserId().equals(id)) {
+            return ResponseEntity.badRequest()
+                .body(Collections.singletonMap("error", "User ID in request body doesn't match path parameter"));
+        }
+        
+        // Set the ID from the path parameter
+        updatedUser.setUserId(id);
+        
+        return userService.updateUser(id, updatedUser)
+                .map(user -> {
+                    System.out.println("User updated successfully: " + user.getUserId());
+                    return ResponseEntity.ok(user);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    } catch (RuntimeException e) {
+        System.out.println("Error updating user: " + e.getMessage());
+        e.printStackTrace();
+        return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+    }
+}
+
+    /**
+ * Helper method to verify if the authenticated user has permission to access/modify 
+ * the requested user profile
+ */
+    private boolean isAuthorizedForUser(Long userId) {
         try {
-            return userService.updateUser(id, updatedUser)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+            // Get current authentication
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null) {
+                System.out.println("No authentication found in context");
+                return false;
+            }
+            
+            // Get email from authentication
+            String email = authentication.getName();
+            System.out.println("Authenticated email: " + email);
+            
+            // Check if user is admin or the same user
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            
+            if (isAdmin) {
+                System.out.println("Admin access granted");
+                return true;
+            }
+            
+            // Get user by ID to check if it matches authenticated user
+            var optionalUser = userService.getUser(userId);
+            if (optionalUser.isEmpty()) {
+                System.out.println("User ID not found: " + userId);
+                return false;
+            }
+            
+            var user = optionalUser.get();
+            boolean isSameUser = user.getEmail().equals(email);
+            System.out.println("User match check: " + isSameUser);
+            
+            return isSameUser;
+        } catch (Exception e) {
+            System.out.println("Error in authorization check: " + e.getMessage());
+            return false;
         }
     }
 

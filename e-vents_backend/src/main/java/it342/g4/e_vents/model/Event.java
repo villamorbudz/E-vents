@@ -142,4 +142,12 @@ public class Event {
     public void setBannerImagePath(String bannerImagePath) {
         this.bannerImagePath = bannerImagePath;
     }
+
+    public User getCreator() {
+        return creator;
+    }
+
+    public void setCreator(User creator) {
+        this.creator = creator;
+    }
 }

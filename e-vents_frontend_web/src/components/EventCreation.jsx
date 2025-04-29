@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { userService } from "../services/apiService";
+import { useState, useEffect } from "react";
+import { eventService, userService } from "../services/apiService";
+import VenueManagement from "./VenueManagement"; // Import the new component
 
 export default function EventCreation() {
   const navigate = useNavigate();
@@ -10,8 +11,33 @@ export default function EventCreation() {
   const [selectedDate, setSelectedDate] = useState("");
   const [bannerImage, setBannerImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [venueName, setVenueName] = useState("");
+  const [venues, setVenues] = useState([]);
+  const [selectedVenue, setSelectedVenue] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showVenueForm, setShowVenueForm] = useState(false); // New state for showing venue form
+
+  // Fetch venues from API on component mount
+  useEffect(() => {
+    fetchVenues();
+  }, []);
+
+  // Function to fetch venues
+  const fetchVenues = async () => {
+    try {
+      const venuesData = await eventService.getVenues();
+      setVenues(venuesData);
+    } catch (error) {
+      console.error("Error fetching venues:", error);
+      setErrorMessage("Failed to load venues. Please try again later.");
+    }
+  };
+
+  // Handle venue added
+  const handleVenueAdded = (newVenue) => {
+    setVenues(prevVenues => [...prevVenues, newVenue]);
+    setSelectedVenue(newVenue.id);
+  };
 
   // Handle banner image upload
   const handleImageUpload = (e) => {
@@ -26,8 +52,9 @@ export default function EventCreation() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     // Get today's date and check if the selected date is at least 7 days ahead
     const today = new Date();
@@ -36,26 +63,51 @@ export default function EventCreation() {
     const diffInDays = diffInTime / (1000 * 3600 * 24);
 
     // Validate form fields and date selection
-    if (!eventName || !eventDescription || !selectedDate || !selectedTime || !venueName || !bannerImage) {
+    if (!eventName || !eventDescription || !selectedDate || !selectedTime || !selectedVenue || !bannerImage) {
       setErrorMessage("All fields must be filled.");
+      setIsLoading(false);
       return;
     }
 
     if (diffInDays < 7) {
       setErrorMessage("Please select a date at least 7 days from now.");
+      setIsLoading(false);
       return;
     }
 
-    const eventData = {
-      name: eventName,
-      description: eventDescription,
-      date: selectedDate,
-      time: selectedTime,
-      venue: venueName,
-    };
+    try {
+      // Get current user data from localStorage
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const userId = userData.userId;
 
-    localStorage.setItem("eventBasicInfo", JSON.stringify(eventData));
-    navigate("/create/ticketing");
+      if (!userId) {
+        setErrorMessage("User authentication required. Please log in again.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Create event request object
+      const eventRequest = {
+        name: eventName,
+        description: eventDescription,
+        date: selectedDate,
+        time: selectedTime,
+        venueId: selectedVenue,
+        creatorId: userId,
+        lineupIds: [] // Can be populated later if needed
+      };
+
+      // Store event data in localStorage for multi-step form
+      localStorage.setItem("eventBasicInfo", JSON.stringify(eventRequest));
+      
+      // Navigate to next step
+      navigate("/create/ticketing");
+    } catch (error) {
+      console.error("Error preparing event data:", error);
+      setErrorMessage("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -89,6 +141,18 @@ export default function EventCreation() {
             </div>
           )}
           
+          {/* Venue Management Modal */}
+          {showVenueForm && (
+            <div className="fixed top-0 left-0 right-0 bottom-0 flex justify-center items-center z-50 bg-black bg-opacity-70">
+              <div className="w-full max-w-md">
+                <VenueManagement 
+                  onVenueAdded={handleVenueAdded} 
+                  onClose={() => setShowVenueForm(false)} 
+                />
+              </div>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col md:flex-row gap-8">
               {/* Left Side - Event Details */}
@@ -107,12 +171,12 @@ export default function EventCreation() {
 
                 <div>
                   <label className="block text-gray-400 mb-1">Event Description:</label>
-                  <input
-                    type="text"
+                  <textarea
                     placeholder="Enter Description"
                     className="w-full p-2 rounded bg-white text-black"
                     value={eventDescription}
                     onChange={(e) => setEventDescription(e.target.value)}
+                    rows="3"
                     required
                   />
                 </div>
@@ -153,15 +217,29 @@ export default function EventCreation() {
                 </div>
 
                 <div>
-                  <label className="block text-gray-400 mb-2">Venue:</label>
-                  <input
-                    type="text"
-                    placeholder="Enter Address"
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-gray-400">Venue:</label>
+                    <button
+                      type="button"
+                      className="text-[#5798FF] hover:text-blue-400 text-sm"
+                      onClick={() => setShowVenueForm(true)}
+                    >
+                      + Add New Venue
+                    </button>
+                  </div>
+                  <select
                     className="w-full p-2 rounded bg-white text-black"
-                    value={venueName}
-                    onChange={(e) => setVenueName(e.target.value)}
+                    value={selectedVenue}
+                    onChange={(e) => setSelectedVenue(e.target.value)}
                     required
-                  />
+                  >
+                    <option value="">Select a venue</option>
+                    {venues.map((venue) => (
+                      <option key={venue.id} value={venue.id}>
+                        {venue.name} - {venue.address}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -213,8 +291,9 @@ export default function EventCreation() {
               <button
                 type="submit"
                 className="bg-[#BD0027] text-white px-8 py-2 rounded-full"
+                disabled={isLoading}
               >
-                Proceed
+                {isLoading ? "Processing..." : "Proceed"}
               </button>
             </div>
           </form>

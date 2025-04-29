@@ -2,7 +2,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import backgroundImage from '../assets/images/loginBG.png';
 import { userService } from '../services/apiService';
 
@@ -12,6 +12,24 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(null);
+
+  // Enhanced check if user is already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    
+    console.log('Login page loaded - Auth check:', { 
+      tokenExists: !!token, 
+      isLoggedIn: isLoggedIn === 'true'
+    });
+    
+    // Only redirect if both token exists and isLoggedIn is true
+    if (token && isLoggedIn === 'true') {
+      console.log('User already logged in, redirecting to homeseller');
+      navigate('/homeseller');
+    }
+  }, [navigate]);
 
   const handleNavigateSignup = () => {
     navigate("/signup");
@@ -34,20 +52,48 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setDebugInfo(null);
 
     if (!validateLogin()) return;
 
     setIsLoading(true);
 
     try {
+      // Clear any existing auth data before attempting login
+      localStorage.removeItem('token');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('isLoggedIn');
+      
+      console.log('Attempting login for:', email);
       const userData = await userService.login(email, password);
       
-      // Store user data in localStorage
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userData', JSON.stringify(userData));
-      localStorage.setItem('userEmail', email);
+      // Verify the token was properly stored
+      const token = localStorage.getItem('token');
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
       
-      navigate("/homeseller");
+      // Debug information
+      const debugData = {
+        tokenReceived: !!userData.token,
+        tokenStored: !!token,
+        isLoggedInFlag: isLoggedIn,
+        userId: userData.userId
+      };
+      
+      setDebugInfo(debugData);
+      console.log('Login debug info:', debugData);
+      
+      if (!token) {
+        setError('Authentication failed - token not stored correctly');
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('Login successful, redirecting to homeseller...');
+      
+      // Small delay to ensure token is properly stored before navigation
+      setTimeout(() => {
+        navigate("/homeseller", { replace: true });
+      }, 500);
     } catch (err) {
       setError(typeof err === 'string' ? err : 'Invalid email or password');
       console.error('Login error:', err);
@@ -90,22 +136,47 @@ export default function Login() {
               {error}
             </div>
           )}
+          
+          {debugInfo && (
+            <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-2 rounded mb-4 w-1/2 text-sm text-left">
+              <p>Debug Info:</p>
+              <ul>
+                <li>Token received: {debugInfo.tokenReceived ? 'Yes' : 'No'}</li>
+                <li>Token stored: {debugInfo.tokenStored ? 'Yes' : 'No'}</li>
+                <li>Login flag: {debugInfo.isLoggedInFlag}</li>
+                <li>User ID: {debugInfo.userId}</li>
+              </ul>
+            </div>
+          )}
 
           <input
             type="text"
+            id="email"
+            name="email"
             placeholder="Email or Name"
             className="w-1/2 p-3 mb-4 rounded-md bg-white text-black border-2 border-black"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            aria-label="Email or Name"
           />
           <input
             type="password"
+            id="password"
+            name="password"
             placeholder="Password"
             className="w-1/2 p-3 mb-4 rounded-md bg-white text-black border-2 border-black"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            aria-label="Password"
           />
-          <p className="text-sm underline mb-6 cursor-pointer" onClick={handleForgotPassword}>Forgot Password?</p>
+          <button 
+            type="button" 
+            className="text-sm underline mb-6 cursor-pointer"
+            onClick={handleForgotPassword}
+            aria-label="Forgot Password"
+          >
+            Forgot Password?
+          </button>
 
           <p className="mb-3">or login using</p>
           <div className="flex gap-4 mb-6">
@@ -113,6 +184,7 @@ export default function Login() {
               type="button"
               className="bg-white p-2 rounded-md hover:bg-gray-100 transition-colors"
               onClick={() => handleSocialLogin('Google')}
+              aria-label="Login with Google"
             >
               <FcGoogle size={24} />
             </button>
@@ -120,6 +192,7 @@ export default function Login() {
               type="button"
               className="bg-white p-2 rounded-md hover:bg-gray-100 transition-colors"
               onClick={() => handleSocialLogin('Facebook')}
+              aria-label="Login with Facebook"
             >
               <FaFacebook size={24} color="#4267B2" />
             </button>
@@ -129,6 +202,7 @@ export default function Login() {
             type="submit"
             className="bg-white text-black font-semibold px-10 py-2 rounded-md mb-6 flex items-center justify-center hover:bg-gray-100 transition-colors"
             disabled={isLoading}
+            aria-label={isLoading ? "Logging in" : "Login"}
           >
             {isLoading ? (
               <>
@@ -146,9 +220,13 @@ export default function Login() {
 
         <p className="text-sm">
           Don't have an account?{" "}
-          <span onClick={handleNavigateSignup} className="underline cursor-pointer hover:text-gray-200 transition-colors">
+          <button 
+            onClick={handleNavigateSignup} 
+            className="underline cursor-pointer hover:text-gray-200 transition-colors"
+            aria-label="Sign up"
+          >
             SIGN UP
-          </span>
+          </button>
         </p>
       </motion.div>
 

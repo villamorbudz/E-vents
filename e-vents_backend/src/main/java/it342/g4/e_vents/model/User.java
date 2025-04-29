@@ -3,12 +3,9 @@ import java.util.Date;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -46,35 +43,12 @@ public class User {
     @Column(nullable = false)
     private String postalCode;
 
-    @Column(nullable = false)
-    private String country;
-
-    @Column(nullable = false)
-    private String region;
-
-    @Column(nullable = false)
-    private String city;
-
-    @Column(nullable = false)
-    private String postalCode;
-
     @Column
     private String password;
 
     @Column(nullable = false)
     private String role;
 
-    @Column
-    private String country;
-
-    @Column
-    private String region;
-
-    @Column
-    private String city;
-
-    @Column
-    private String postalCode;
 
     @Column
     private boolean isActive = true;
@@ -183,35 +157,5 @@ public class User {
     public void setActive(boolean active) {
         isActive = active;
     }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
+   
 }

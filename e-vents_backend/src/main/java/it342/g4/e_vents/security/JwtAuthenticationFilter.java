@@ -19,37 +19,59 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
-
+    
     @Autowired
     public JwtAuthenticationFilter(JwtUtils jwtUtils) {
         this.jwtUtils = jwtUtils;
     }
-
+    
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
-        String header = request.getHeader("Authorization");
-        
-        if (header == null || !header.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+        try {
+            // Extract token from Authorization header
+            String header = request.getHeader("Authorization");
+            
+            // Debug logging
+            System.out.println("JWT Filter - Request path: " + request.getRequestURI());
+            System.out.println("JWT Filter - Auth header: " + (header != null ? header.substring(0, Math.min(20, header.length())) + "..." : "null"));
+            
+            if (header == null || !header.startsWith("Bearer ")) {
+                System.out.println("No Bearer token found in request, continuing filter chain");
+                filterChain.doFilter(request, response);
+                return;
+            }
+            
+            // Extract actual token
+            String token = header.substring(7);
+            
+            // Validate token
+            if (!jwtUtils.validateToken(token)) {
+                System.out.println("Invalid token, continuing filter chain without authentication");
+                filterChain.doFilter(request, response);
+                return;
+            }
+            
+            // Extract user details
+            String email = jwtUtils.getEmailFromToken(token);
+            List<SimpleGrantedAuthority> authorities = jwtUtils.getAuthoritiesFromToken(token);
+            
+            System.out.println("JWT Filter - Valid token for user: " + email);
+            System.out.println("JWT Filter - Authorities: " + authorities);
+            
+            // Create authentication object
+            UsernamePasswordAuthenticationToken authentication = 
+                new UsernamePasswordAuthenticationToken(email, null, authorities);
+            
+            // Set authentication in Spring Security context
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            System.out.println("JWT Filter - Authentication set in security context");
+        } catch (Exception e) {
+            System.out.println("JWT Filter - Error: " + e.getMessage());
+            e.printStackTrace();
         }
         
-        String token = header.substring(7);
-        
-        if (!jwtUtils.validateToken(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        
-        String email = jwtUtils.getEmailFromToken(token);
-        List<SimpleGrantedAuthority> authorities = jwtUtils.getAuthoritiesFromToken(token);
-        
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                email, null, authorities);
-        
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        // Continue filter chain
         filterChain.doFilter(request, response);
     }
 }

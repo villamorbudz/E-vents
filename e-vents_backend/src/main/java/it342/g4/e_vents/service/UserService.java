@@ -7,14 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import it342.g4.e_vents.model.Role;
-import it342.g4.e_vents.model.User;
-import it342.g4.e_vents.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
 import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -272,30 +264,6 @@ public Optional<User> updateUser(Long id, User updatedUser) {
         return updateUserActiveStatus(userId, true);
     }
     
-    /**
-     * Checks if a user with the given email exists
-     * @param email The email to check
-     * @return true if user exists, false otherwise
-     */
-    public boolean userExists(String email) {
-        return userRepository.existsByEmail(email);
-    }
-
-    /**
-     * Changes a user's password by email
-     * @param email The email of the user
-     * @param newPassword The new password (plain text)
-     * @return true if password changed successfully, false if user not found
-     */
-    public boolean changePasswordByEmail(String email, String newPassword) {
-        return userRepository.findByEmail(email)
-                .map(user -> {
-                    user.setPassword(passwordEncoder.encode(newPassword));
-                    userRepository.save(user);
-                    return true;
-                })
-                .orElse(false);
-    }
     
     /**
      * Helper method to update a user's active status
