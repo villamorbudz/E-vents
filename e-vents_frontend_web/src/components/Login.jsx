@@ -59,13 +59,11 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Clear any existing auth data before attempting login
-      localStorage.removeItem('token');
-      localStorage.removeItem('userData');
-      localStorage.removeItem('isLoggedIn');
-      
+      // Don't clear auth data here - we'll handle it in the service
       console.log('Attempting login for:', email);
-      const userData = await userService.login(email, password);
+      
+      // Add preventRedirect flag to signal we don't want the service to handle redirects
+      const userData = await userService.login(email, password, true);
       
       // Verify the token was properly stored
       const token = localStorage.getItem('token');
@@ -95,8 +93,23 @@ export default function Login() {
         navigate("/homeseller", { replace: true });
       }, 500);
     } catch (err) {
-      setError(typeof err === 'string' ? err : 'Invalid email or password');
-      console.error('Login error:', err);
+      // Don't clear console or navigate away for connection errors
+      console.error('Login error details:', err);
+      
+      // If it's a connection error, display the message but keep the page as is
+      if (err && err.isConnectionError) {
+        console.error('Connection error detected - preserving state for debugging', err);
+        setError(err.message || 'Server connection error');
+        // Log the full error object and stack trace
+        console.log('Full error object:', err);
+        console.log('Original error:', err.originalError);
+        if (err.originalError && err.originalError.stack) {
+          console.log('Error stack:', err.originalError.stack);
+        }
+      } else {
+        // For standard auth errors, show the message
+        setError(typeof err === 'string' ? err : (err.message || 'Invalid email or password'));
+      }
     } finally {
       setIsLoading(false);
     }

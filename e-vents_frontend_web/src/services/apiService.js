@@ -1,4 +1,4 @@
-// src/services/apiService.js - FIXED VERSION
+// src/services/apiService.js - FIXED VERSION WITH ERROR HANDLING IMPROVEMENTS
 
 import axios from 'axios';
 
@@ -134,6 +134,16 @@ api.interceptors.response.use(
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       console.error('Authentication error:', error.response.status);
       
+      // Don't redirect when there's no response or for connection errors
+      if (window.preventAuthRedirect) {
+        console.log('Preventing auth redirect due to debug mode');
+        return Promise.reject({
+          message: 'Authentication error: ' + error.response.status,
+          originalError: error,
+          isAuthError: true
+        });
+      }
+      
       // Clear authentication data
       clearAuthData();
       
@@ -147,17 +157,31 @@ api.interceptors.response.use(
       });
     }
     
+    // For connection errors, add a flag to prevent redirection
+    if (!error.response) {
+      console.error('Connection error detected in interceptor:', error);
+      // Set a flag to prevent page refreshes
+      window.preventAuthRedirect = true;
+      
+      // Add connection error flag
+      error.isConnectionError = true;
+    }
+    
     return Promise.reject(error);
   }
 );
 
 export const userService = {
-  async login(email, password) {
+  async login(email, password, preventRedirect = false) {
     try {
       console.log('Attempting login for:', email);
       
-      // Clear any existing auth data first to prevent conflicts
-      clearAuthData();
+      // Only clear auth data if not in debug mode
+      if (!preventRedirect) {
+        clearAuthData();
+      } else {
+        console.log('Debug mode: Preserving existing auth data');
+      }
       
       // FIXED: Send credentials in request body instead of params
       const response = await api.post('/users/login', {
@@ -202,23 +226,34 @@ export const userService = {
     } catch (error) {
       console.error('Login request error:', error);
       
-      // IMPROVED: Better error handling to show more specific errors
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        if (error.response.status === 401) {
-          throw 'Invalid email or password';
-        } else if (error.response.data && error.response.data.message) {
-          throw error.response.data.message;
-        } else {
-          throw `Server error: ${error.response.status}`;
-        }
-      } else if (error.request) {
-        // The request was made but no response was received
-        throw 'Server is not responding. Please try again later.';
+      // For connection errors, preserve state and prevent navigation
+      if (!error.response) {
+        console.log('%c⚠️ CONNECTION ERROR DETECTED - DEBUG MODE', 'background: #ffcc00; color: #000; font-weight: bold; padding: 2px 5px;');
+        console.log('Error details:', error);
+        
+        // Keep full error object for debugging
+        const connectionError = {
+          message: !error.request ? 'Error connecting to server' : 'Server is not responding. Please try again later.',
+          isConnectionError: true,
+          originalError: error,
+          stack: error.stack,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Log additional debug info
+        console.log('Browser details:', navigator.userAgent);
+        console.log('Error timestamp:', connectionError.timestamp);
+        
+        throw connectionError;
+      }
+      
+      // IMPROVED: Better error handling for server responses
+      if (error.response.status === 401) {
+        throw 'Invalid email or password';
+      } else if (error.response.data && error.response.data.message) {
+        throw error.response.data.message;
       } else {
-        // Something happened in setting up the request that triggered an Error
-        throw 'Error connecting to server';
+        throw `Server error: ${error.response.status}`;
       }
     }
   },

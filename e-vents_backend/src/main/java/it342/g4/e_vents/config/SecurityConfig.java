@@ -60,7 +60,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/register", "/api/users/login", "/api/users/exists").permitAll()
                 .requestMatchers("/api/users/countries", "/api/users/regions/**", "/api/users/cities/**").permitAll()
                 // Important: Allow OPTIONS requests for CORS preflight
-                .requestMatchers("OPTIONS", "/**").permitAll()
+                .requestMatchers("/OPTIONS", "/**").permitAll()
                 // Protected endpoints - require authentication
                 .anyRequest().authenticated()
             )
