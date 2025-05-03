@@ -2,7 +2,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import backgroundImage from '../assets/images/loginBG.png';
 import { userService } from '../services/apiService';
 
@@ -12,38 +12,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showAdminPrompt, setShowAdminPrompt] = useState(false);
-
-  const ADMIN_EMAIL = "admin@events.com";
-  const ADMIN_PASSWORD = "admin123";
-  const ADMIN_TOKEN = "admin-mock-token-123456789";
-
-  useEffect(() => {
-    // Check if this is the first time the app is running
-    const adminConfigured = localStorage.getItem('adminConfigured');
-    
-    if (!adminConfigured) {
-      // Set up the admin user in localStorage for demo purposes
-      const adminUser = {
-        id: "admin-001",
-        name: "Admin User",
-        email: ADMIN_EMAIL,
-        role: "ADMIN"
-      };
-      
-      // Store the admin credential information
-      localStorage.setItem('adminConfigured', 'true');
-      localStorage.setItem('adminUser', JSON.stringify(adminUser));
-      
-      // Show admin login prompt
-      setShowAdminPrompt(true);
-      
-      // Auto-fill admin email after 1 second
-      setTimeout(() => {
-        setEmail(ADMIN_EMAIL);
-      }, 1000);
-    }
-  }, []);
 
   const handleNavigateSignup = () => {
     navigate("/signup");
@@ -72,27 +40,6 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Check for admin login
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        // Get the admin user data
-        const adminUser = JSON.parse(localStorage.getItem('adminUser'));
-        
-        // Store user data in localStorage with admin token
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userData', JSON.stringify(adminUser));
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('adminToken', ADMIN_TOKEN); // Store admin token specifically
-        localStorage.setItem('token', ADMIN_TOKEN); // Also store as regular token
-        
-        // Navigate to admin dashboard
-        setTimeout(() => {
-          navigate('/admin');
-        }, 1000);
-        
-        return;
-      }
-      
-      // Regular user login through API
       const userData = await userService.login(email, password);
       
       // Store user data in localStorage
@@ -101,9 +48,7 @@ export default function Login() {
       localStorage.setItem('userEmail', email);
       
       if (userData.role === 'ADMIN') {
-        // For admins coming from the API, also set the admin token
-        localStorage.setItem('adminToken', userData.token);
-        navigate('/adminPage');
+        navigate('/admin');
       } else {
         navigate('/homeseller'); // Or wherever regular users should go
       }
@@ -124,11 +69,6 @@ export default function Login() {
     alert(`${provider} login is not implemented yet.`);
   };
 
-  const handleAdminPromptClose = () => {
-    setShowAdminPrompt(false);
-  };
-
-
   return (
     <div
       className="flex h-screen w-full bg-cover bg-center relative"
@@ -139,27 +79,6 @@ export default function Login() {
         backgroundSize: 'cover',
       }}
     >
-      {/* Admin credentials prompt */}
-      {showAdminPrompt && (
-        <div className="absolute top-4 right-4 z-50 bg-white p-4 rounded-lg shadow-lg text-black">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold">Admin Login Available</h3>
-            <button 
-              onClick={handleAdminPromptClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
-          </div>
-          <p className="mb-2">You can login as admin with:</p>
-          <div className="bg-gray-100 p-2 rounded mb-2">
-            <p><b>Email:</b> {ADMIN_EMAIL}</p>
-            <p><b>Password:</b> {ADMIN_PASSWORD}</p>
-          </div>
-          <p className="text-sm text-gray-600">This will give you access to the admin dashboard.</p>
-        </div>
-      )}
-
       {/* Left red login panel */}
       <motion.div
         initial={{ x: 0 }}

@@ -16,38 +16,13 @@ export const api = axios.create({
 // Add interceptor to add JWT token to requests
 api.interceptors.request.use(
   (config) => {
-    // For admin endpoints, try to use admin token first
-    if (config.url.includes('/users/all') || 
-        config.url.includes('/admin')) {
-      const adminToken = localStorage.getItem('adminToken');
-      if (adminToken) {
-        config.headers['Authorization'] = `Bearer ${adminToken}`;
-        return config;
-      }
-    }
-    
-    // For regular endpoints, use the normal token
-    const token = localStorage.getItem('jwtToken') || localStorage.getItem('token');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
   },
   (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor to handle auth errors
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    if (error.response && error.response.status === 403) {
-      console.warn('Access forbidden - you may not have the right permissions');
-      // You could redirect to login here or show an error message
-    }
     return Promise.reject(error);
   }
 );
@@ -63,11 +38,6 @@ export const userService = {
       // Store token in localStorage
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        
-        // If user is admin, also save as admin token
-        if (response.data.role === 'ADMIN') {
-          localStorage.setItem('adminToken', response.data.token);
-        }
       }
       
       return response.data;
@@ -79,7 +49,6 @@ export const userService = {
     }
   },
   
-  // Register user
   async register(userData) {
     try {
       console.log("Sending to API:", userData);  // Log before sending
@@ -89,11 +58,6 @@ export const userService = {
       // Store token in localStorage
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        
-        // If registered as admin, also save admin token
-        if (response.data.role === 'ADMIN') {
-          localStorage.setItem('adminToken', response.data.token);
-        }
       }
       
       return response.data;
@@ -153,7 +117,6 @@ export const userService = {
   // Logout - remove token
   logout() {
     localStorage.removeItem('token');
-    localStorage.removeItem('adminToken'); // Also remove admin token
     localStorage.removeItem('userData');
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userEmail');
@@ -162,12 +125,6 @@ export const userService = {
   // Check if user is authenticated
   isAuthenticated() {
     return localStorage.getItem('token') !== null;
-  },
-  
-  // Check if user is admin
-  isAdmin() {
-    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    return userData.role === 'ADMIN';
   },
 
   //fetch user
