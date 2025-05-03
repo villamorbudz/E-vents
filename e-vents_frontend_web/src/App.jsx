@@ -11,6 +11,7 @@ import TicketingDetails from './components/TicketingDetails';
 import Profile from './components/Profile';
 import AdminPage from './components/AdminPage';
 import { userService } from './services/apiService';
+import EventsLandingPage from './components/LandingPage';
 import './styles/AdminPage.css';
 import { AnimatePresence } from "framer-motion";
 import './App.css'
@@ -36,7 +37,7 @@ function App() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<EventsLandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignupStep1 />} />
         <Route path="/signup/personal-info" element={<SignupStep2 />} />
