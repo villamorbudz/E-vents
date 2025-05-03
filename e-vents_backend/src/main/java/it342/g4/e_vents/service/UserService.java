@@ -291,4 +291,18 @@ public Optional<User> updateUser(Long id, User updatedUser) {
                 .limit(limit)
                 .toList();
     }
+
+    /**
+     * Add this method to your existing UserService class
+     * Deletes a user by ID
+     * @param id The user ID
+     * @return true if deleted, false if not found
+     */
+    public boolean deleteUser(Long id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
 }

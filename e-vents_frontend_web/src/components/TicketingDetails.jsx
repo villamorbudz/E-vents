@@ -168,9 +168,9 @@ export default function TicketingDetails() {
         
         {/* This should be Save button instead of Payment button */}
         <div className="flex justify-center mt-16">
-          <Link to="/create/details/payment">
+          <Link to="/homeseller">
             <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full">
-              Proceed to Payment
+              Create
             </button>
           </Link>
         </div>

@@ -11,6 +11,7 @@ export default function EventCreation() {
   const [bannerImage, setBannerImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [venueName, setVenueName] = useState("");
+  const [hostLineup, setHostLineup] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   // Handle banner image upload
@@ -36,7 +37,7 @@ export default function EventCreation() {
     const diffInDays = diffInTime / (1000 * 3600 * 24);
 
     // Validate form fields and date selection
-    if (!eventName || !eventDescription || !selectedDate || !selectedTime || !venueName || !bannerImage) {
+    if (!eventName || !eventDescription || !selectedDate || !selectedTime || !venueName || !bannerImage || !hostLineup) {
       setErrorMessage("All fields must be filled.");
       return;
     }
@@ -52,6 +53,7 @@ export default function EventCreation() {
       date: selectedDate,
       time: selectedTime,
       venue: venueName,
+      hostLineup: hostLineup,
     };
 
     localStorage.setItem("eventBasicInfo", JSON.stringify(eventData));
@@ -72,7 +74,6 @@ export default function EventCreation() {
 
       {/* Main Content */}
       <div className="bg-gray-900 p-8">
-        <h1 className="text-2xl font-semibold text-red-600 mb-8">Create your Event</h1>
         <div className="max-w-6xl mx-auto">
           {/* Error Message Pop-up */}
           {errorMessage && (
@@ -117,39 +118,52 @@ export default function EventCreation() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-gray-400 mb-2">Date:</label>
-                  <input
-                    type="date"
-                    className="w-full p-2 rounded bg-white text-black"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    required
-                  />
+                <div className="flex gap-4">
+                  <div className="w-1/2">
+                    <label className="block text-gray-400 mb-2">Event Date:</label>
+                    <input
+                      type="date"
+                      className="w-full p-2 rounded bg-white text-black"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <label className="block text-gray-400 mb-2">Time:</label>
+                    <select
+                      className="w-full p-2 rounded bg-white text-black"
+                      value={selectedTime}
+                      onChange={(e) => setSelectedTime(e.target.value)}
+                      required
+                    >
+                      <option value="">Select</option>
+                      <option value="9:00 AM">9:00 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="12:00 PM">12:00 PM</option>
+                      <option value="1:00 PM">1:00 PM</option>
+                      <option value="2:00 PM">2:00 PM</option>
+                      <option value="3:00 PM">3:00 PM</option>
+                      <option value="4:00 PM">4:00 PM</option>
+                      <option value="5:00 PM">5:00 PM</option>
+                      <option value="6:00 PM">6:00 PM</option>
+                      <option value="7:00 PM">7:00 PM</option>
+                      <option value="8:00 PM">8:00 PM</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-gray-400 mb-2">Time:</label>
-                  <select
+                  <label className="block text-gray-400 mb-2">Host/Lineup:</label>
+                  <input
+                    type="text"
+                    placeholder="Enter Host/Lineup"
                     className="w-full p-2 rounded bg-white text-black"
-                    value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
+                    value={hostLineup}
+                    onChange={(e) => setHostLineup(e.target.value)}
                     required
-                  >
-                    <option value="">Select</option>
-                    <option value="9:00 AM">9:00 AM</option>
-                    <option value="10:00 AM">10:00 AM</option>
-                    <option value="11:00 AM">11:00 AM</option>
-                    <option value="12:00 PM">12:00 PM</option>
-                    <option value="1:00 PM">1:00 PM</option>
-                    <option value="2:00 PM">2:00 PM</option>
-                    <option value="3:00 PM">3:00 PM</option>
-                    <option value="4:00 PM">4:00 PM</option>
-                    <option value="5:00 PM">5:00 PM</option>
-                    <option value="6:00 PM">6:00 PM</option>
-                    <option value="7:00 PM">7:00 PM</option>
-                    <option value="8:00 PM">8:00 PM</option>
-                  </select>
+                  />
                 </div>
 
                 <div>
@@ -169,7 +183,7 @@ export default function EventCreation() {
               <div className="w-full md:w-1/2">
                 <label className="block text-gray-400 mb-2">Banner:</label>
                 <div
-                  className="border-2 border-dashed border-gray-400 rounded-lg h-64 flex flex-col items-center justify-center bg-white text-gray-500 cursor-pointer overflow-hidden"
+                  className="border-2 border-dashed border-gray-400 rounded-lg h-64 flex flex-col items-center justify-center bg-gray-100 text-gray-500 cursor-pointer overflow-hidden"
                   onClick={() => document.getElementById('banner-upload').click()}
                 >
                   {previewUrl ? (
@@ -212,7 +226,7 @@ export default function EventCreation() {
             <div className="flex justify-center mt-8">
               <button
                 type="submit"
-                className="bg-[#BD0027] text-white px-8 py-2 rounded-full"
+                className="bg-red-500 text-white px-8 py-2 rounded-full hover:bg-red-600"
               >
                 Proceed
               </button>
