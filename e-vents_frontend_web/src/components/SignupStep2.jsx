@@ -211,7 +211,7 @@ export default function SignupStep2() {
       localStorage.setItem("userEmail", registeredUser.email);
       
       // Redirect to home page or dashboard
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       setErrors(prev => ({ 
         ...prev, 
@@ -417,7 +417,7 @@ export default function SignupStep2() {
         
         <p className="text-sm mt-4">
           Already have an account?{" "}
-          <Link to="/" className="underline hover:text-gray-200 transition-colors">SIGN IN</Link>
+          <Link to="/login" className="underline hover:text-gray-200 transition-colors">SIGN IN</Link>
         </p>
       </motion.div>
     </div>

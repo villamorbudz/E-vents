@@ -1,140 +1,677 @@
-import React, { useState, useEffect } from 'react';
-import { adminService } from '../services/adminApiService';
-import UserEditForm from '../components/UserEditForm';
+import { useState, useEffect } from 'react';
+import { api } from '../services/apiService';
+import { userService } from "../services/apiService";
+import { FaEdit, FaTrash, FaUndo, FaUserPlus, FaSearch } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { Link, useNavigate } from "react-router-dom";
+import '../styles/AdminPage.css';
 
-const AdminPage = () => {
+function AdminPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editingUser, setEditingUser] = useState(null);
-  const [showEditForm, setShowEditForm] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [countries, setCountries] = useState([]);
+  const [regions, setRegions] = useState([]);
+  const [cities, setCities] = useState([]);
+  const navigate = useNavigate();
 
-  // Load users on component mount
+  // Form state for editing and creating users
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    contactNumber: '',
+    birthdate: '',
+    country: '',
+    region: '',
+    city: '',
+    postalCode: ''
+  });
+
   useEffect(() => {
+    // Check if the current user is an admin
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (!userData || userData.role !== 'ADMIN') {
+      setError('Only administrators can access this page');
+      return;
+    }
+
     fetchUsers();
+    fetchCountries();
   }, []);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const data = await adminService.getAllUsers();
-      setUsers(data);
-      setError(null);
+      const response = await api.get('/users/all');
+      setUsers(response.data);
+      setLoading(false);
     } catch (err) {
-      setError('Failed to load users. ' + (typeof err === 'string' ? err : err.message));
-    } finally {
+      setError('Failed to fetch users');
+      console.error('Error fetching users:', err);
       setLoading(false);
     }
   };
 
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    setShowEditForm(true);
+  const fetchCountries = async () => {
+    try {
+      const response = await api.get('/users/countries');
+      setCountries(response.data);
+    } catch (err) {
+      console.error('Error fetching countries:', err);
+    }
   };
 
-  const handleDelete = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await adminService.deleteUser(userId);
-        setUsers(users.filter(user => user.userId !== userId));
-        alert('User deleted successfully');
-      } catch (err) {
-        alert('Failed to delete user: ' + (typeof err === 'string' ? err : err.message));
+  const fetchRegions = async (country) => {
+    try {
+      const response = await api.get(`/users/regions/${country}`);
+      setRegions(response.data);
+    } catch (err) {
+      console.error('Error fetching regions:', err);
+    }
+  };
+
+  const fetchCities = async (country, region) => {
+    try {
+      const response = await api.get(`/users/cities/${country}/${region}`);
+      setCities(response.data);
+    } catch (err) {
+      console.error('Error fetching cities:', err);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+
+    // Fetch regions when country changes
+    if (name === 'country') {
+      fetchRegions(value);
+      setFormData(prev => ({
+        ...prev,
+        region: '',
+        city: ''
+      }));
+    }
+
+    // Fetch cities when region changes
+    if (name === 'region') {
+      fetchCities(formData.country, value);
+      setFormData(prev => ({
+        ...prev,
+        city: ''
+      }));
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setCurrentUser(user);
+    setFormData({
+      userId: user.userId,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      contactNumber: user.contactNumber || '',
+      birthdate: user.birthdate ? new Date(user.birthdate).toISOString().split('T')[0] : '',
+      country: user.country || '',
+      region: user.region || '',
+      city: user.city || '',
+      postalCode: user.postalCode || ''
+    });
+
+    // Fetch regions and cities for the selected country and region
+    if (user.country) {
+      fetchRegions(user.country);
+      if (user.region) {
+        fetchCities(user.country, user.region);
       }
     }
+
+    setIsEditModalOpen(true);
   };
 
-  const handleUpdateUser = async (updatedUser) => {
+  const handleDeleteUser = (user) => {
+    setCurrentUser(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
     try {
-      const result = await adminService.updateUser(updatedUser.userId, updatedUser);
-      setUsers(users.map(user => 
-        user.userId === updatedUser.userId ? result : user
-      ));
-      setShowEditForm(false);
-      alert('User updated successfully');
+      await api.delete(`/users/${currentUser.userId}`);
+      setUsers(users.filter(user => user.userId !== currentUser.userId));
+      setIsDeleteModalOpen(false);
+      setCurrentUser(null);
     } catch (err) {
-      alert('Failed to update user: ' + (typeof err === 'string' ? err : err.message));
+      console.error('Error deleting user:', err);
+      setError('Failed to delete user');
     }
   };
 
-  const handleCancel = () => {
-    setShowEditForm(false);
-    setEditingUser(null);
+  const handleCreateUser = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      contactNumber: '',
+      birthdate: '',
+      country: '',
+      region: '',
+      city: '',
+      postalCode: ''
+    });
+    setIsCreateModalOpen(true);
   };
 
-  if (loading) return <div className="admin-page">Loading...</div>;
-  if (error) return <div className="admin-page error">{error}</div>;
+  const submitCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      const userData = {
+        ...formData,
+        birthdate: formData.birthdate ? new Date(formData.birthdate) : null
+      };
+
+      const response = await api.post('/users/register', userData);
+      setUsers([...users, response.data]);
+      setIsCreateModalOpen(false);
+    } catch (err) {
+      console.error('Error creating user:', err);
+      setError('Failed to create user');
+    }
+  };
+
+  const submitEditUser = async (e) => {
+    e.preventDefault();
+    try {
+      const userData = {
+        ...formData,
+        birthdate: formData.birthdate ? new Date(formData.birthdate) : null
+      };
+
+      const response = await api.put(`/users/${currentUser.userId}`, userData);
+      
+      setUsers(users.map(user => 
+        user.userId === currentUser.userId ? response.data : user
+      ));
+      
+      setIsEditModalOpen(false);
+      setCurrentUser(null);
+    } catch (err) {
+      console.error('Error updating user:', err);
+      setError('Failed to update user');
+    }
+  };
+
+  const toggleUserActive = async (user) => {
+    try {
+      const endpoint = user.active ? 
+        `/users/${user.userId}/deactivate` : 
+        `/users/${user.userId}/activate`;
+      
+      await api.put(endpoint);
+      
+      // Update the user in the local state
+      setUsers(users.map(u => 
+        u.userId === user.userId ? { ...u, active: !u.active } : u
+      ));
+    } catch (err) {
+      console.error('Error toggling user active status:', err);
+      setError('Failed to update user status');
+    }
+  };
+
+  // Filter users based on search term
+  const filteredUsers = users.filter(user => {
+    const searchTermLower = searchTerm.toLowerCase();
+    return (
+      (user.firstName && user.firstName.toLowerCase().includes(searchTermLower)) ||
+      (user.lastName && user.lastName.toLowerCase().includes(searchTermLower)) ||
+      (user.email && user.email.toLowerCase().includes(searchTermLower))
+    );
+  });
+
+  if (error && error === 'Only administrators can access this page') {
+    return (
+      <div className="admin-error-container">
+        <h2>Access Denied</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  const handleLogout = () => {
+      userService.logout(); 
+      navigate("/login");        
+    };
 
   return (
-    <div className="admin-page">
-      <h1>User Administration</h1>
+    <div className="admin-container">
+      <h1 className="admin-title">User Administration</h1>
+
+      {/* Logout Button */}
+      <button 
+        onClick={handleLogout} 
+        className="logout-button text-black hover:underline bg-transparent border-none cursor-pointer"
+      >
+        Logout
+      </button>
       
-      {showEditForm ? (
-        <UserEditForm 
-          user={editingUser} 
-          onUpdate={handleUpdateUser} 
-          onCancel={handleCancel} 
-        />
+      {error && <div className="admin-error">{error}</div>}
+      
+      <div className="admin-controls">
+        <div className="admin-search">
+          <FaSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+        
+        <button className="admin-button create-button" onClick={handleCreateUser}>
+          <FaUserPlus /> New User
+        </button>
+        
+      </div>
+      
+      {loading ? (
+        <div className="admin-loading">Loading users...</div>
       ) : (
-        <>
-          <table className="user-table">
+        <div className="admin-table-container">
+          <table className="admin-table">
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Email</th>
                 <th>Name</th>
-                <th>Role</th>
+                <th>Email</th>
+                <th>Contact</th>
                 <th>Country</th>
-                <th>Region</th>
                 <th>City</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="no-data">No users found</td>
-                </tr>
-              ) : (
-                users.map(user => (
-                  <tr key={user.userId}>
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map(user => (
+                  <tr key={user.userId} className={!user.active ? 'inactive-user' : ''}>
                     <td>{user.userId}</td>
+                    <td>{`${user.firstName} ${user.lastName}`}</td>
                     <td>{user.email}</td>
+                    <td>{user.contactNumber}</td>
+                    <td>{user.country}</td>
+                    <td>{user.city}</td>
                     <td>
-                      {user.firstName} {user.lastName}
+                      <span className={`status-badge ${user.active ? 'active' : 'inactive'}`}>
+                        {user.active ? 'Active' : 'Inactive'}
+                      </span>
                     </td>
-                    <td>{user.role?.name || 'USER'}</td>
-                    <td>{user.country || '-'}</td>
-                    <td>{user.region || '-'}</td>
-                    <td>{user.city || '-'}</td>
-                    <td className="actions">
-                      <button 
-                        className="edit-btn" 
-                        onClick={() => handleEdit(user)}
-                      >
-                        Edit
+                    <td className="action-buttons">
+                      <button className="icon-button edit" onClick={() => handleEditUser(user)}>
+                        <FaEdit />
                       </button>
-                      <button 
-                        className="delete-btn" 
-                        onClick={() => handleDelete(user.userId)}
-                      >
-                        Delete
+                      <button className="icon-button delete" onClick={() => handleDeleteUser(user)}>
+                        <FaTrash />
+                      </button>
+                      <button className="icon-button status" onClick={() => toggleUserActive(user)}>
+                        <FaUndo />
                       </button>
                     </td>
                   </tr>
                 ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="no-users">
+                    No users found
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
-          <div className="refresh-container">
-            <button className="refresh-btn" onClick={fetchUsers}>
-              Refresh Users
-            </button>
-          </div>
-        </>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {isEditModalOpen && (
+        <div className="modal-overlay">
+          <motion.div 
+            className="modal"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+          >
+            <h2>Edit User</h2>
+            <form onSubmit={submitEditUser}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="firstName">First Name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="lastName">Last Name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    readOnly
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="contactNumber">Contact Number</label>
+                  <input
+                    type="text"
+                    id="contactNumber"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="birthdate">Birthdate</label>
+                  <input
+                    type="date"
+                    id="birthdate"
+                    name="birthdate"
+                    value={formData.birthdate}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="country">Country</label>
+                  <select
+                    id="country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select Country</option>
+                    {countries.map(country => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="region">Region</label>
+                  <select
+                    id="region"
+                    name="region"
+                    value={formData.region}
+                    onChange={handleInputChange}
+                    required
+                    disabled={!formData.country}
+                  >
+                    <option value="">Select Region</option>
+                    {regions.map(region => (
+                      <option key={region} value={region}>{region}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="city">City</label>
+                  <select
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    required
+                    disabled={!formData.region}
+                  >
+                    <option value="">Select City</option>
+                    {cities.map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="postalCode">Postal Code</label>
+                  <input
+                    type="text"
+                    id="postalCode"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-buttons">
+                <button type="button" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                <button type="submit" className="primary-button">Save Changes</button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Create User Modal */}
+      {isCreateModalOpen && (
+        <div className="modal-overlay">
+          <motion.div 
+            className="modal"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+          >
+            <h2>Create New User</h2>
+            <form onSubmit={submitCreateUser}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="firstName">First Name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="lastName">Last Name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="password">Password</label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="contactNumber">Contact Number</label>
+                  <input
+                    type="text"
+                    id="contactNumber"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="birthdate">Birthdate</label>
+                  <input
+                    type="date"
+                    id="birthdate"
+                    name="birthdate"
+                    value={formData.birthdate}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="country">Country</label>
+                  <select
+                    id="country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select Country</option>
+                    {countries.map(country => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="region">Region</label>
+                  <select
+                    id="region"
+                    name="region"
+                    value={formData.region}
+                    onChange={handleInputChange}
+                    required
+                    disabled={!formData.country}
+                  >
+                    <option value="">Select Region</option>
+                    {regions.map(region => (
+                      <option key={region} value={region}>{region}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="city">City</label>
+                  <select
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    required
+                    disabled={!formData.region}
+                  >
+                    <option value="">Select City</option>
+                    {cities.map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="postalCode">Postal Code</label>
+                  <input
+                    type="text"
+                    id="postalCode"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-buttons">
+                <button type="button" onClick={() => setIsCreateModalOpen(false)}>Cancel</button>
+                <button type="submit" className="primary-button">Create User</button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && currentUser && (
+        <div className="modal-overlay">
+          <motion.div 
+            className="modal delete-modal"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+          >
+            <h2>Confirm Delete</h2>
+            <p>Are you sure you want to delete the user: <strong>{currentUser.firstName} {currentUser.lastName}</strong>?</p>
+            <p className="warning">This action cannot be undone.</p>
+            
+            <div className="form-buttons">
+              <button type="button" onClick={() => setIsDeleteModalOpen(false)}>Cancel</button>
+              <button type="button" className="delete-button" onClick={confirmDeleteUser}>Delete</button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );
-};
+}
 
 export default AdminPage;

@@ -80,7 +80,7 @@ export default function MyEventsUser() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Navbar */}
-      <div className="bg-red-600 flex justify-between items-center px-10 py-4">
+      <div className="bg-[#BD0027] flex justify-between items-center px-10 py-4">
         <div className="flex items-center">
           <span className="text-3xl font-bold">
             <span className="flex items-center">
@@ -113,7 +113,7 @@ export default function MyEventsUser() {
         {/* Calendar Section */}
         <div className="max-w-3xl mx-auto bg-gray-800 rounded-lg shadow-lg overflow-hidden">
           {/* Calendar Header */}
-          <div className="flex justify-between items-center bg-red-600 p-4">
+          <div className="flex justify-between items-center bg-[#BD0027] p-4">
             <button 
               onClick={goToPreviousMonth}
               className="text-white hover:bg-red-700 p-2 rounded-full"

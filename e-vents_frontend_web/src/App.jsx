@@ -23,20 +23,6 @@ import './App.css'
 function App() {
   const location = useLocation(); // get current route
 
-  const AdminRoute = ({ children }) => {
-    // Check if user is logged in and has admin role
-    const isAuthenticated = userService.isAuthenticated();
-    const userData = localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData')) : {};
-    const isAdmin = userData.role === 'ADMIN';
-
-    console.log("Admin route check:", { isAuthenticated, userData, isAdmin });
-    
-    if (!isAdmin) {
-      return <Navigate to="/login" />;
-    }
-    
-    return children;
-  };
 
   return (
     <AnimatePresence mode="wait">
@@ -49,7 +35,7 @@ function App() {
         <Route path="/discover" element={<DiscoverEvents />} />
         <Route path="/myevents" element={<MyEventsUser />} />
         <Route path="/userprofile" element={<ProfileUser />} />
-        <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>}/>
+        <Route path="/admin" element={<AdminPage />}/>
         <Route element={<ProtectedRoute />}>
           <Route path="/homeseller" element={<HomeSeller />} />
           <Route path="/create" element={<EventCreation />} />
