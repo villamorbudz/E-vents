@@ -12,6 +12,10 @@ import Profile from './components/Profile';
 import AdminPage from './components/AdminPage';
 import { userService } from './services/apiService';
 import EventsLandingPage from './components/LandingPage';
+import HomeUser from './components/HomeUser';
+import DiscoverEvents from './components/DiscoverEvents';
+import MyEventsUser from './components/MyEventsUser';
+import ProfileUser from './components/ProfileUser';
 import './styles/AdminPage.css';
 import { AnimatePresence } from "framer-motion";
 import './App.css'
@@ -41,6 +45,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignupStep1 />} />
         <Route path="/signup/personal-info" element={<SignupStep2 />} />
+        <Route path="/home" element={<HomeUser />} />
+        <Route path="/discover" element={<DiscoverEvents />} />
+        <Route path="/myevents" element={<MyEventsUser />} />
+        <Route path="/userprofile" element={<ProfileUser />} />
         <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>}/>
         <Route element={<ProtectedRoute />}>
           <Route path="/homeseller" element={<HomeSeller />} />

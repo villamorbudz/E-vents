@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { userService } from "../services/apiService";
 
 
-export default function HomeUser() {
+export default function DiscoverEvents() {
   const navigate = useNavigate(); // for programmatic navigation
 
   return (
@@ -27,8 +27,8 @@ export default function HomeUser() {
             </span>
           </div>
         <div className="flex gap-10 text-lg">
-          <Link to="/home" className="hover:underline text-black">Home</Link>
-          <Link to="/discover" className="hover:underline">Discover Events</Link>
+          <Link to="/home" className="hover:underline">Home</Link>
+          <Link to="/discover" className="hover:underline text-black">Discover Events</Link>
           <Link to="/myevents" className="hover:underline">My Events</Link>
           <Link to="/userprofile" className="hover:underline">Profile</Link>
         </div>
@@ -36,24 +36,8 @@ export default function HomeUser() {
 
       {/* Main Content */}
       <div className="bg-gray-900 p-8">
-        <div className="text-center items-center justify-center px-4">
-            <h1 className="text-5xl md:text-6xl font-bold mb-8 text-center">
-            Find Your Next Experience
-            </h1>
-            <p className="text-xl md:text-2xl mb-10 text-center max-w-3xl mx-auto">
-            Discover and attend the most exciting events happening around you.
-            </p>
-
-            <div className="flex justify-center md:flex-row space-y-4 md:space-y-0 md:space-x-6 mt-4">
-            <Link 
-                to="/popular" 
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-full text-center"
-            >
-                Popular Now
-            </Link>
-            </div>
-        </div>
-        </div>
+        <h1 className="text-3xl font-semibold text-red-600 mb-8">Discover Events</h1>
+      </div>
     </div>
   );
 }

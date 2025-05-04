@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { userService } from "../services/apiService";
 
 
-export default function HomePage() {
+export default function HomeSeller() {
   const navigate = useNavigate(); // for programmatic navigation
 
   return (
