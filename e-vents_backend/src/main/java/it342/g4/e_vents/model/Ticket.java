@@ -1,7 +1,7 @@
 package it342.g4.e_vents.model;
 
 import jakarta.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tickets")
@@ -11,24 +11,22 @@ public class Ticket {
     @Column(name = "ticket_id")
     private Long ticketId;
 
-    @Column(nullable = false)
-    private Long eventId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ticket_category_id", nullable = false)
+    private TicketCategory ticketCategory;
 
-    @Column(nullable = false)
-    private Long userId;
-
-    @Column(nullable = false)
-    private Double price;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false)
     private String status;
 
     @Column(nullable = false)
-    private String name;
-
-    @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date purchaseDate;
+    private LocalDateTime purchaseDate;
+    
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
 
     // Getters and setters
 
@@ -40,28 +38,20 @@ public class Ticket {
         this.ticketId = ticketId;
     }
 
-    public Long getEventId() {
-        return eventId;
+    public TicketCategory getTicketCategory() {
+        return ticketCategory;
     }
 
-    public void setEventId(Long eventId) {
-        this.eventId = eventId;
+    public void setTicketCategory(TicketCategory ticketCategory) {
+        this.ticketCategory = ticketCategory;
     }
 
-    public Long getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getStatus() {
@@ -72,19 +62,33 @@ public class Ticket {
         this.status = status;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Date getPurchaseDate() {
+    public LocalDateTime getPurchaseDate() {
         return purchaseDate;
     }
 
-    public void setPurchaseDate(Date purchaseDate) {
+    public void setPurchaseDate(LocalDateTime purchaseDate) {
         this.purchaseDate = purchaseDate;
+    }
+    
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+    
+    // Convenience methods to access ticketCategory and event information
+    
+    public String getName() {
+        return ticketCategory != null ? ticketCategory.getName() : null;
+    }
+    
+    public Double getPrice() {
+        return ticketCategory != null ? ticketCategory.getPrice() : null;
+    }
+    
+    public Event getEvent() {
+        return ticketCategory != null ? ticketCategory.getEvent() : null;
     }
 }

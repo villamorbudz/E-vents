@@ -27,22 +27,43 @@ public class CategoryController {
     }
     
     /**
-     * Retrieves all categories
-     * @return List of all categories
+     * Retrieves all active categories
+     * @return List of all active categories
      */
     @GetMapping
+    public ResponseEntity<List<Category>> getAllActiveCategories() {
+        return ResponseEntity.ok(categoryService.getAllActiveCategories());
+    }
+    
+    /**
+     * Retrieves all categories, including inactive ones
+     * @return List of all categories
+     */
+    @GetMapping("/all")
     public ResponseEntity<List<Category>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
     
     /**
-     * Retrieves a category by ID
+     * Retrieves an active category by ID
      * @param id The category ID
      * @return The category or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
-        return categoryService.getCategoryById(id)
+    public ResponseEntity<Category> getActiveCategoryById(@PathVariable Long id) {
+        return categoryService.getActiveCategoryById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * Retrieves a category by name
+     * @param name The category name
+     * @return The category or 404 if not found
+     */
+    @GetMapping("/name/{name}")
+    public ResponseEntity<Category> getCategoryByName(@PathVariable String name) {
+        return categoryService.getCategoryByName(name)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -50,16 +71,17 @@ public class CategoryController {
     /**
      * Creates a new category
      * @param category Category data from request body
-     * @return The created category
+     * @return The created category or error
      */
-    @PostMapping
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
-        try {
-            Category createdCategory = categoryService.saveCategory(category);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdCategory);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+    @PostMapping("/create")
+    public ResponseEntity<?> createCategory(@RequestBody Category category) {
+        if (categoryService.existsByName(category.getName())) {
+            return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Collections.singletonMap("message", "Category with this name already exists"));
         }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(categoryService.saveCategory(category));
     }
     
     /**
@@ -68,7 +90,7 @@ public class CategoryController {
      * @param categoryDetails Updated category data
      * @return The updated category or error
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/edit")
     public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
         try {
             // Verify category exists
@@ -91,19 +113,61 @@ public class CategoryController {
     }
     
     /**
-     * Deletes a category
-     * @param id The category ID to delete
+     * Deactivates (soft-deletes) a category
+     * @param id The category ID to deactivate
      * @return Success message or error
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+    @DeleteMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivateCategory(@PathVariable Long id) {
+        try {
+            // Verify category exists
+            categoryService.getCategoryById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Category not found with ID: " + id));
+            
+            categoryService.deactivateCategory(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Category deactivated successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a previously deactivated category
+     * @param id The category ID to restore
+     * @return Success message or error
+     */
+    @PostMapping("/restore/{id}")
+    public ResponseEntity<?> restoreCategory(@PathVariable Long id) {
+        try {
+            categoryService.restoreCategory(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Category restored successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Permanently deletes a category
+     * @param id The category ID to permanently delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<?> deleteCategoryPermanently(@PathVariable Long id) {
         try {
             // Verify category exists
             categoryService.getCategoryById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Category not found with ID: " + id));
             
             categoryService.deleteCategory(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "Category deleted successfully"));
+            return ResponseEntity.ok(Collections.singletonMap("message", "Category permanently deleted"));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Collections.singletonMap("error", e.getMessage()));

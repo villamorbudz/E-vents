@@ -9,35 +9,39 @@ public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long notificationId;
-    
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-    
+
     private String title;
-    
+
     @Column(length = 1000)
     private String message;
-    
+
     private String type; // "EVENT_UPDATE", "REMINDER", "SYSTEM", etc.
-    
+
+    @Column(name = "`read`")
     private boolean read;
-    
+
     private LocalDateTime createdAt;
-    
+
     private LocalDateTime readAt;
-    
+
     // For event-related notifications
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
-    
+
+    @Column(nullable = false)
+    private boolean isActive = true;
+
     // Constructors
     public Notification() {
         this.createdAt = LocalDateTime.now();
         this.read = false;
     }
-    
+
     public Notification(User user, String title, String message, String type) {
         this();
         this.user = user;
@@ -45,12 +49,12 @@ public class Notification {
         this.message = message;
         this.type = type;
     }
-    
+
     public Notification(User user, String title, String message, String type, Event event) {
         this(user, title, message, type);
         this.event = event;
     }
-    
+
     // Getters and Setters
     public Long getNotificationId() {
         return notificationId;
@@ -122,5 +126,13 @@ public class Notification {
 
     public void setEvent(Event event) {
         this.event = event;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 }

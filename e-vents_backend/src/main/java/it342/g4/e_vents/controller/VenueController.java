@@ -8,11 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Controller for venue-related operations
+ * REST Controller for venue-related operations
  */
 @RestController
 @RequestMapping("/api/venues")
@@ -27,8 +27,7 @@ public class VenueController {
     }
     
     /**
-     * Retrieves all venues
-     * @return List of all venues
+     * Get all venues
      */
     @GetMapping
     public ResponseEntity<List<Venue>> getAllVenues() {
@@ -36,83 +35,85 @@ public class VenueController {
     }
     
     /**
-     * Retrieves a venue by ID
-     * @param id The venue ID
-     * @return The venue or 404 if not found
+     * Get venue by ID
      */
     @GetMapping("/{id}")
     public ResponseEntity<Venue> getVenueById(@PathVariable Long id) {
-        return venueService.findVenueById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            return ResponseEntity.ok(venueService.getVenueById(id));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     
     /**
-     * Creates a new venue
-     * @param venue Venue data from request body
-     * @return The created venue
+     * Create or update a venue
      */
     @PostMapping
     public ResponseEntity<Venue> createVenue(@RequestBody Venue venue) {
         try {
-            Venue result = venueService.findOrCreateVenue(
-                venue.getName(),
-                venue.getAddress(),
-                venue.getCity(),
-                venue.getCountry()
-            );
-            // If the venue already existed, return 200 OK, else 201 Created
-            boolean isNew = result.getVenueId().equals(venue.getVenueId()) == false;
-            if (isNew) {
-                return ResponseEntity.status(HttpStatus.CREATED).body(result);
-            } else {
-                return ResponseEntity.ok(result);
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            Venue savedVenue = venueService.createVenue(venue);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedVenue);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
         }
     }
-    
+
     /**
-     * Updates an existing venue
-     * @param id The venue ID to update
-     * @param venueDetails Updated venue data
-     * @return The updated venue or error
+     * Find or create a venue using Google Places data
+     */
+    @PostMapping("/places")
+    public ResponseEntity<Venue> findOrCreateVenue(@RequestBody Map<String, Object> placeData) {
+        try {
+            String name = (String) placeData.get("name");
+            String formattedAddress = (String) placeData.get("formattedAddress");
+            String googlePlaceId = (String) placeData.get("placeId");
+            double latitude = ((Number) placeData.get("latitude")).doubleValue();
+            double longitude = ((Number) placeData.get("longitude")).doubleValue();
+
+            Venue venue = venueService.findOrCreateVenue(
+                name,
+                formattedAddress,
+                googlePlaceId,
+                latitude,
+                longitude
+            );
+            return ResponseEntity.ok(venue);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    /**
+     * Update an existing venue
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateVenue(@PathVariable Long id, @RequestBody Venue venueDetails) {
+    public ResponseEntity<Venue> updateVenue(@PathVariable Long id, @RequestBody Venue venue) {
         try {
-            // Set the ID from the path
-            venueDetails.setVenueId(id);
-            
-            // Update and return
-            Venue updatedVenue = venueService.updateVenue(venueDetails);
-            return ResponseEntity.ok(updatedVenue);
+            venue.setVenueId(id);
+            return ResponseEntity.ok(venueService.updateVenue(venue));
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Collections.singletonMap("error", e.getMessage()));
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
         }
     }
-    
+
     /**
-     * Deletes a venue
-     * @param id The venue ID to delete
-     * @return Success message or error
+     * Search venues by query
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteVenue(@PathVariable Long id) {
-        try {
-            venueService.deleteVenue(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "Venue deleted successfully"));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        }
+    @GetMapping("/search")
+    public ResponseEntity<List<Venue>> searchVenues(@RequestParam String query) {
+        return ResponseEntity.ok(venueService.searchVenues(query));
+    }
+
+    /**
+     * Get venue by Google Place ID
+     */
+    @GetMapping("/places/{placeId}")
+    public ResponseEntity<Venue> getVenueByPlaceId(@PathVariable String placeId) {
+        return venueService.findByGooglePlaceId(placeId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

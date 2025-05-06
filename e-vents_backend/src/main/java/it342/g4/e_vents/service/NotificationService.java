@@ -2,8 +2,8 @@ package it342.g4.e_vents.service;
 
 import it342.g4.e_vents.model.Event;
 import it342.g4.e_vents.model.Notification;
-import it342.g4.e_vents.model.Ticket;
 import it342.g4.e_vents.model.User;
+import it342.g4.e_vents.repository.EventRepository;
 import it342.g4.e_vents.repository.NotificationRepository;
 import it342.g4.e_vents.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -11,191 +11,153 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class NotificationService {
-    
+
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final TicketService ticketService;
-    
+    private final EventRepository eventRepository;
+
     @Autowired
-    public NotificationService(NotificationRepository notificationRepository, 
-                              UserRepository userRepository,
-                              TicketService ticketService) {
+    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository, EventRepository eventRepository) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
-        this.ticketService = ticketService;
+        this.eventRepository = eventRepository;
     }
-    
+
     /**
-     * Get all notifications
+     * Retrieves all active notifications
+     * @return List of all active notifications
+     */
+    public List<Notification> getAllActiveNotifications() {
+        return notificationRepository.findByIsActiveTrue();
+    }
+
+    /**
+     * Retrieves all notifications, including inactive ones
      * @return List of all notifications
      */
     public List<Notification> getAllNotifications() {
         return notificationRepository.findAll();
     }
-    
+
     /**
-     * Get notification by ID
-     * @param id Notification ID
-     * @return The notification if found
+     * Retrieves a notification by ID
+     * @param id The notification ID
+     * @return Optional containing the notification if found
      */
     public Optional<Notification> getNotificationById(Long id) {
         return notificationRepository.findById(id);
     }
-    
+
     /**
-     * Get all notifications for a specific user
-     * @param userId User ID
-     * @return List of notifications for the user
+     * Retrieves all notifications for a specific user
+     * @param userId The user ID
+     * @return List of active notifications for the specified user
      */
-    public List<Notification> getUserNotifications(Long userId) {
-        return notificationRepository.findByUserUserIdOrderByCreatedAtDesc(userId);
+    public List<Notification> getNotificationsByUserId(Long userId) {
+        return notificationRepository.findByUserUserIdAndIsActiveTrue(userId);
     }
-    
+
     /**
-     * Get unread notifications for a specific user
-     * @param userId User ID
-     * @return List of unread notifications
+     * Retrieves unread notifications for a specific user
+     * @param userId The user ID
+     * @return List of unread active notifications for the specified user
      */
-    public List<Notification> getUnreadNotifications(Long userId) {
-        return notificationRepository.findByUserUserIdAndReadFalseOrderByCreatedAtDesc(userId);
+    public List<Notification> getUnreadNotificationsByUserId(Long userId) {
+        return notificationRepository.findByUserUserIdAndReadFalseAndIsActiveTrue(userId);
     }
-    
+
     /**
-     * Count unread notifications for a user
-     * @param userId User ID
-     * @return Count of unread notifications
+     * Creates a new notification
+     * @param notification The notification to create
+     * @return The created notification with ID
+     * @throws EntityNotFoundException if the user or event is not found
      */
-    public long countUnreadNotifications(Long userId) {
-        return notificationRepository.countByUserUserIdAndReadFalse(userId);
-    }
-    
-    /**
-     * Create a notification for a specific user
-     * @param userId User ID
-     * @param title Notification title
-     * @param message Notification message
-     * @param type Notification type
-     * @param event Related event (optional)
-     * @return The created notification
-     */
-    public Notification createNotification(Long userId, String title, String message, String type, Event event) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
-            
-        Notification notification = new Notification();
-        notification.setUser(user);
-        notification.setTitle(title);
-        notification.setMessage(message);
-        notification.setType(type);
-        notification.setRead(false);
+    public Notification createNotification(Notification notification) {
+        // Verify user exists
+        if (notification.getUser() != null) {
+            User user = userRepository.findById(notification.getUser().getUserId())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + notification.getUser().getUserId()));
+            notification.setUser(user);
+        }
+        
+        // Verify event exists if provided
+        if (notification.getEvent() != null) {
+            Event event = eventRepository.findById(notification.getEvent().getEventId())
+                    .orElseThrow(() -> new EntityNotFoundException("Event not found with ID: " + notification.getEvent().getEventId()));
+            notification.setEvent(event);
+        }
+        
+        // Set default values
+        notification.setActive(true);
         notification.setCreatedAt(LocalDateTime.now());
-        notification.setEvent(event);
+        notification.setRead(false);
         
         return notificationRepository.save(notification);
     }
-    
+
     /**
-     * Create a notification for a specific user (without event)
-     * @param userId User ID
-     * @param title Notification title
-     * @param message Notification message
-     * @param type Notification type
-     * @return The created notification
-     */
-    public Notification createNotification(Long userId, String title, String message, String type) {
-        return createNotification(userId, title, message, type, null);
-    }
-    
-    /**
-     * Create notifications for all users attending an event
-     * @param eventId Event ID
-     * @param title Notification title
-     * @param message Notification message
-     * @param type Notification type
-     * @return List of created notifications
-     */
-    public List<Notification> notifyEventAttendees(Long eventId, String title, String message, String type) {
-        List<Ticket> tickets = ticketService.findTicketsByEventId(eventId);
-        List<Notification> notifications = new ArrayList<>();
-        
-        Event event = tickets.isEmpty() ? null : tickets.get(0).getEvent();
-        
-        for (Ticket ticket : tickets) {
-            if ("confirmed".equals(ticket.getStatus())) {
-                User user = ticket.getUser();
-                Notification notification = createNotification(
-                    user.getUserId(),
-                    title,
-                    message,
-                    type,
-                    event
-                );
-                notifications.add(notification);
-            }
-        }
-        
-        return notifications;
-    }
-    
-    /**
-     * Mark a notification as read
-     * @param notificationId Notification ID
+     * Updates an existing notification
+     * @param id The ID of the notification to update
+     * @param notificationDetails Updated notification data
      * @return The updated notification
+     * @throws EntityNotFoundException if the notification is not found
      */
-    public Notification markAsRead(Long notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
-            .orElseThrow(() -> new EntityNotFoundException("Notification not found with ID: " + notificationId));
-            
+    public Notification updateNotification(Long id, Notification notificationDetails) {
+        Notification existingNotification = notificationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found with ID: " + id));
+        
+        // Update fields
+        existingNotification.setTitle(notificationDetails.getTitle());
+        existingNotification.setMessage(notificationDetails.getMessage());
+        existingNotification.setType(notificationDetails.getType());
+        
+        return notificationRepository.save(existingNotification);
+    }
+
+    /**
+     * Marks a notification as read
+     * @param id The ID of the notification to mark as read
+     * @return The updated notification
+     * @throws EntityNotFoundException if the notification is not found
+     */
+    public Notification markNotificationAsRead(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found with ID: " + id));
+        
         notification.setRead(true);
         notification.setReadAt(LocalDateTime.now());
         
         return notificationRepository.save(notification);
     }
-    
+
     /**
-     * Mark all notifications for a user as read
-     * @param userId User ID
-     * @return Number of notifications marked as read
+     * Deactivates (soft-deletes) a notification
+     * @param id The ID of the notification to deactivate
+     * @throws EntityNotFoundException if the notification is not found
      */
-    public int markAllAsRead(Long userId) {
-        List<Notification> unreadNotifications = notificationRepository.findByUserUserIdAndReadFalseOrderByCreatedAtDesc(userId);
-        LocalDateTime now = LocalDateTime.now();
+    public void deactivateNotification(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found with ID: " + id));
         
-        for (Notification notification : unreadNotifications) {
-            notification.setRead(true);
-            notification.setReadAt(now);
-        }
+        notification.setActive(false);
+        notificationRepository.save(notification);
+    }
+
+    /**
+     * Restores a previously deactivated notification
+     * @param id The ID of the notification to restore
+     * @throws EntityNotFoundException if the notification is not found
+     */
+    public void restoreNotification(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found with ID: " + id));
         
-        notificationRepository.saveAll(unreadNotifications);
-        return unreadNotifications.size();
-    }
-    
-    /**
-     * Delete a notification
-     * @param notificationId Notification ID
-     */
-    public void deleteNotification(Long notificationId) {
-        if (!notificationRepository.existsById(notificationId)) {
-            throw new EntityNotFoundException("Notification not found with ID: " + notificationId);
-        }
-        notificationRepository.deleteById(notificationId);
-    }
-    
-    /**
-     * Update an existing notification
-     * @param notification The notification with updated fields
-     * @return The updated notification
-     */
-    public Notification updateNotification(Notification notification) {
-        if (!notificationRepository.existsById(notification.getNotificationId())) {
-            throw new EntityNotFoundException("Notification not found with ID: " + notification.getNotificationId());
-        }
-        return notificationRepository.save(notification);
+        notification.setActive(true);
+        notificationRepository.save(notification);
     }
 }

@@ -14,6 +14,9 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean active = true;
+
     @OneToMany(mappedBy = "category")
     private List<Tags> tags;
 
@@ -31,6 +34,14 @@ public class Category {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public List<Tags> getTags() {

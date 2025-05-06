@@ -17,7 +17,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/admin/tags")
-public class TagsController {
+public class agsController {
 
     private final TagsService tagsService;
     private final CategoryService categoryService;

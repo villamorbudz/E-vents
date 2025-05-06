@@ -22,11 +22,15 @@ public class Act {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private String category;
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     @Lob
     private String description;
+
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean active = true;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -57,11 +61,11 @@ public class Act {
         this.name = name;
     }
 
-    public String getCategory() {
+    public Category getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(Category category) {
         this.category = category;
     }
 
@@ -71,6 +75,14 @@ public class Act {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public List<Tags> getTags() {

@@ -15,21 +15,15 @@ import it342.g4.e_vents.service.UserService;
 import it342.g4.e_vents.service.VenueService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,9 +37,7 @@ public class AdminController {
     
     @InitBinder
     public void initBinder(WebDataBinder binder) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        dateFormat.setLenient(false);
-        binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, true));
+        // No need for custom date/time binding as Spring handles LocalDate/LocalTime natively
     }
 
     private final UserService userService;
@@ -69,12 +61,9 @@ public class AdminController {
         this.tagsService = tagsService;
         this.categoryService = categoryService;
     }
-    
+
     /**
      * Admin dashboard home page with dynamic entity management
-     * @param model Model for view
-     * @param entityType Optional parameter to specify which entity tab to show (users, events, venues, acts)
-     * @return Dashboard view
      */
     @GetMapping
     public String dashboard(Model model, @RequestParam(required = false, defaultValue = "dashboard") String entityType) {
@@ -123,6 +112,7 @@ public class AdminController {
             columns.put("eventId", "ID");
             columns.put("name", "Name");
             columns.put("date", "Date");
+            columns.put("time", "Time");
             columns.put("venue.name", "Venue");
             columns.put("status", "Status");
             model.addAttribute("columns", columns);
@@ -138,7 +128,7 @@ public class AdminController {
             Map<String, String> columns = new HashMap<>();
             columns.put("venueId", "ID");
             columns.put("name", "Name");
-            columns.put("address", "Location");
+            columns.put("formattedAddress", "Location");
             model.addAttribute("columns", columns);
             
         } else if ("acts".equals(entityType)) {
@@ -286,7 +276,6 @@ public class AdminController {
     @GetMapping("/events/new")
     public String newEventForm(Model model) {
         model.addAttribute("event", new Event());
-        model.addAttribute("venues", venueService.getAllVenues());
         model.addAttribute("acts", actService.getAllActs());
         model.addAttribute("pageTitle", "Create New Event");
         return "admin/event-form";
@@ -317,7 +306,7 @@ public class AdminController {
             
             // Format date for HTML5 date input
             if (event.getDate() != null) {
-                String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(event.getDate());
+                String formattedDate = event.getDate().toString();
                 model.addAttribute("formattedDate", formattedDate);
                 
                 // For debugging
@@ -326,8 +315,18 @@ public class AdminController {
                 System.out.println("Event date is null");
             }
             
+            // Format time for HTML5 time input
+            if (event.getTime() != null) {
+                String formattedTime = event.getTime().toString();
+                model.addAttribute("formattedTime", formattedTime);
+                
+                // For debugging
+                System.out.println("Formatted time: " + formattedTime);
+            } else {
+                System.out.println("Event time is null");
+            }
+            
             model.addAttribute("event", event);
-            model.addAttribute("venues", venueService.getAllVenues());
             model.addAttribute("acts", actService.getAllActs());
             model.addAttribute("pageTitle", "Edit Event");
             return "admin/event-form";
@@ -367,81 +366,6 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage", "Error deleting event: " + e.getMessage());
         }
         return "redirect:/admin?entityType=events";
-    }
-    
-    // ==================== VENUE MANAGEMENT ====================
-    
-    /**
-     * Display form to create a new venue
-     */
-    @GetMapping("/venues/new")
-    public String newVenueForm(Model model) {
-        model.addAttribute("venue", new Venue());
-        model.addAttribute("pageTitle", "Create New Venue");
-        return "admin/venue-form";
-    }
-    
-    /**
-     * Process new venue form submission
-     */
-    @PostMapping("/venues/new")
-    public String createVenue(@ModelAttribute Venue venue, RedirectAttributes redirectAttributes) {
-        try {
-            venueService.createVenue(venue);
-            redirectAttributes.addFlashAttribute("successMessage", "Venue created successfully");
-            return "redirect:/admin?entityType=venues";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error creating venue: " + e.getMessage());
-            return "redirect:/admin/venues/new";
-        }
-    }
-    
-    /**
-     * Display form to edit an existing venue
-     */
-    @GetMapping("/venues/{id}/edit")
-    public String editVenueForm(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes) {
-        try {
-            Venue venue = venueService.getVenueById(id);
-            model.addAttribute("venue", venue);
-            model.addAttribute("pageTitle", "Edit Venue");
-            return "admin/venue-form";
-        } catch (EntityNotFoundException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/admin?entityType=venues";
-        }
-    }
-    
-    /**
-     * Process edit venue form submission
-     */
-    @PostMapping("/venues/{id}/edit")
-    public String updateVenue(@PathVariable("id") Long id, @ModelAttribute Venue venue, 
-                            RedirectAttributes redirectAttributes) {
-        try {
-            // Ensure the ID is set correctly
-            venue.setVenueId(id);
-            venueService.updateVenue(venue);
-            redirectAttributes.addFlashAttribute("successMessage", "Venue updated successfully");
-            return "redirect:/admin?entityType=venues";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error updating venue: " + e.getMessage());
-            return "redirect:/admin/venues/" + id + "/edit";
-        }
-    }
-    
-    /**
-     * Delete a venue
-     */
-    @GetMapping("/venues/{id}/delete")
-    public String deleteVenue(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
-        try {
-            venueService.deleteVenue(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Venue deleted successfully");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error deleting venue: " + e.getMessage());
-        }
-        return "redirect:/admin?entityType=venues";
     }
     
     // ==================== ACT MANAGEMENT ====================

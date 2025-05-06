@@ -8,15 +8,27 @@ import it342.g4.e_vents.service.EventService;
 import it342.g4.e_vents.service.VenueService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
 
-import java.sql.Date;
-import java.sql.Time;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Controller for event-related operations
@@ -29,12 +41,21 @@ public class EventController {
     private final EventService eventService;
     private final VenueService venueService;
     private final ActService actService;
+    private final Path bannerStorageLocation;
     
     @Autowired
     public EventController(EventService eventService, VenueService venueService, ActService actService) {
         this.eventService = eventService;
         this.venueService = venueService;
         this.actService = actService;
+        this.bannerStorageLocation = Paths.get("uploads/banners").toAbsolutePath().normalize();
+        
+        // Create directory if it doesn't exist
+        try {
+            Files.createDirectories(this.bannerStorageLocation);
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not create the directory where banners will be stored.", ex);
+        }
     }
     
     /**
@@ -47,15 +68,44 @@ public class EventController {
     }
     
     /**
+     * Retrieves all scheduled events
+     * @return List of all scheduled events
+     */
+    @GetMapping("/scheduled")
+    public ResponseEntity<List<Event>> getScheduledEvents() {
+        return ResponseEntity.ok(eventService.getEventsByStatus("SCHEDULED"));
+    }
+    
+    /**
+     * Retrieves all postponed events
+     * @return List of all postponed events
+     */
+    @GetMapping("/postponed")
+    public ResponseEntity<List<Event>> getPostponedEvents() {
+        return ResponseEntity.ok(eventService.getEventsByStatus("POSTPONED"));
+    }
+    
+    /**
+     * Retrieves all cancelled events
+     * @return List of all cancelled events
+     */
+    @GetMapping("/cancelled")
+    public ResponseEntity<List<Event>> getCancelledEvents() {
+        return ResponseEntity.ok(eventService.getEventsByStatus("CANCELLED"));
+    }
+    
+    /**
      * Retrieves an event by ID
      * @param id The event ID
      * @return The event or 404 if not found
      */
     @GetMapping("/{id}")
     public ResponseEntity<Event> getEventById(@PathVariable Long id) {
-        return eventService.findEventById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            return ResponseEntity.ok(eventService.getEventById(id));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     
     /**
@@ -98,17 +148,17 @@ public class EventController {
      * @param status Event status
      * @return Redirect to dashboard
      */
-    @PostMapping("/create")
+    @PostMapping("/create-form")
     public ModelAndView createEventForm(@RequestParam String name,
-                                   @RequestParam String date,
-                                   @RequestParam String time,
+                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time,
                                    @RequestParam Long venue,
                                    @RequestParam(value = "lineup") List<Long> lineup,
                                    @RequestParam String status) {
         Event event = new Event();
         event.setName(name);
-        event.setDate(Date.valueOf(date));
-        event.setTime(Time.valueOf(time + ":00")); // HTML time is HH:mm, SQL Time expects HH:mm:ss
+        event.setDate(date);
+        event.setTime(time);
         
         // Find venue by ID
         Venue venueObj = venueService.getAllVenues().stream()
@@ -133,12 +183,12 @@ public class EventController {
      * @param event Event data from request body
      * @return The created event
      */
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Event> createEvent(@RequestBody Event event) {
         try {
             Event createdEvent = eventService.createEvent(event);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
@@ -150,7 +200,7 @@ public class EventController {
      * @return Success message or error
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateEvent(@PathVariable Long id, @RequestBody Event eventDetails) {
+    public ResponseEntity<Event> updateEvent(@PathVariable Long id, @RequestBody Event eventDetails) {
         try {
             // Verify event exists
             Event existingEvent = eventService.getEventById(id);
@@ -167,30 +217,9 @@ public class EventController {
             Event updatedEvent = eventService.updateEvent(existingEvent);
             return ResponseEntity.ok(updatedEvent);
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Collections.singletonMap("error", e.getMessage()));
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * Cancels an event by setting its status to 'cancelled'
-     * @param id The event ID to cancel
-     * @return Success message or error
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> cancelEvent(@PathVariable Long id) {
-        try {
-            eventService.cancelEvent(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "Event cancelled successfully"));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Collections.singletonMap("error", e.getMessage()));
+            return ResponseEntity.badRequest().build();
         }
     }
     
@@ -199,7 +228,7 @@ public class EventController {
      * @param id The event ID to delete
      * @return Success message or error
      */
-    @DeleteMapping("/{id}/permanent")
+    @DeleteMapping("/{id}/delete")
     public ResponseEntity<?> deleteEventPermanently(@PathVariable Long id) {
         try {
             eventService.deleteEvent(id);
@@ -214,11 +243,11 @@ public class EventController {
     }
 
     /**
-     * Restores a cancelled event by setting its status to 'scheduled'
+     * Restores a cancelled or postponed event
      * @param id The event ID to restore
      * @return Success message or error
      */
-    @PutMapping("/{id}/restore")
+    @PostMapping("/restore/{id}")
     public ResponseEntity<?> restoreEvent(@PathVariable Long id) {
         try {
             eventService.restoreEvent(id);
@@ -230,5 +259,145 @@ public class EventController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Collections.singletonMap("error", e.getMessage()));
         }
+    }
+    
+    /**
+     * Cancels an event by setting its status to CANCELLED
+     * @param id The event ID to cancel
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelEvent(@PathVariable Long id) {
+        try {
+            eventService.cancelEvent(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Event cancelled successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Postpones an event by setting its status to POSTPONED
+     * @param id The event ID to postpone
+     * @return Success message or error
+     */
+    @PutMapping("/{id}/postpone")
+    public ResponseEntity<?> postponeEvent(@PathVariable Long id) {
+        try {
+            eventService.postponeEvent(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Event postponed successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Uploads a banner image for an event
+     * @param id The event ID
+     * @param file The image file to upload
+     * @return Success message or error
+     */
+    @PostMapping("/{id}/banner")
+    public ResponseEntity<?> uploadBanner(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        try {
+            // Verify event exists
+            Event event = eventService.getEventById(id);
+            
+            // Generate unique filename
+            String fileExtension = getFileExtension(file.getOriginalFilename());
+            String fileName = UUID.randomUUID().toString() + fileExtension;
+            
+            // Save file
+            Path targetLocation = this.bannerStorageLocation.resolve(fileName);
+            Files.copy(file.getInputStream(), targetLocation);
+            
+            // Update event with banner path
+            event.setBannerImage(fileName);
+            eventService.updateEvent(event);
+            
+            return ResponseEntity.ok(Collections.singletonMap("message", "Banner uploaded successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Deletes the banner image for an event
+     * @param id The event ID
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/banner")
+    public ResponseEntity<?> deleteBanner(@PathVariable Long id) {
+        try {
+            // Verify event exists
+            Event event = eventService.getEventById(id);
+            
+            // Delete file if exists
+            if (event.getBannerImage() != null && !event.getBannerImage().isEmpty()) {
+                Path filePath = this.bannerStorageLocation.resolve(event.getBannerImage()).normalize();
+                Files.deleteIfExists(filePath);
+                
+                // Update event
+                event.setBannerImage(null);
+                eventService.updateEvent(event);
+            }
+            
+            return ResponseEntity.ok(Collections.singletonMap("message", "Banner deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Serves image files from the file system
+     * @param filename The image filename
+     * @return The image file
+     */
+    @GetMapping("/images/{filename:.+}")
+    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
+        try {
+            Path filePath = this.bannerStorageLocation.resolve(filename).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+            
+            if (resource.exists()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG)
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * Helper method to extract file extension
+     */
+    private String getFileExtension(String filename) {
+        if (filename == null) {
+            return "";
+        }
+        int lastIndexOf = filename.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return "";
+        }
+        return filename.substring(lastIndexOf);
     }
 }

@@ -27,22 +27,31 @@ public class ActController {
     }
     
     /**
-     * Retrieves all acts
-     * @return List of all acts
+     * Retrieves all active acts
+     * @return List of all active acts
      */
     @GetMapping
     public ResponseEntity<List<Act>> getAllActs() {
+        return ResponseEntity.ok(actService.getAllActiveActs());
+    }
+    
+    /**
+     * Retrieves all acts, including inactive ones
+     * @return List of all acts
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<Act>> getAllActsIncludingInactive() {
         return ResponseEntity.ok(actService.getAllActs());
     }
     
     /**
-     * Retrieves an act by ID
+     * Retrieves an active act by ID
      * @param id The act ID
      * @return The act or 404 if not found
      */
     @GetMapping("/{id}")
     public ResponseEntity<Act> getActById(@PathVariable Long id) {
-        return actService.findActById(id)
+        return actService.findActiveActById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -52,7 +61,7 @@ public class ActController {
      * @param act Act data from request body
      * @return The created act
      */
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Act> createAct(@RequestBody Act act) {
         try {
             Act createdAct = actService.createAct(act);
@@ -68,7 +77,7 @@ public class ActController {
      * @param actDetails Updated act data
      * @return The updated act or error
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/edit")
     public ResponseEntity<?> updateAct(@PathVariable Long id, @RequestBody Act actDetails) {
         try {
             // Set the ID from the path
@@ -87,15 +96,53 @@ public class ActController {
     }
     
     /**
-     * Deletes an act
-     * @param id The act ID to delete
+     * Deactivates (soft-deletes) an act
+     * @param id The act ID to deactivate
      * @return Success message or error
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAct(@PathVariable Long id) {
+    public ResponseEntity<?> deactivateAct(@PathVariable Long id) {
+        try {
+            actService.deactivateAct(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Act deactivated successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a previously deactivated act
+     * @param id The act ID to restore
+     * @return Success message or error
+     */
+    @PostMapping("/restore/{id}")
+    public ResponseEntity<?> restoreAct(@PathVariable Long id) {
+        try {
+            actService.restoreAct(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Act restored successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Permanently deletes an act
+     * @param id The act ID to permanently delete
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<?> deleteActPermanently(@PathVariable Long id) {
         try {
             actService.deleteAct(id);
-            return ResponseEntity.ok(Collections.singletonMap("message", "Act deleted successfully"));
+            return ResponseEntity.ok(Collections.singletonMap("message", "Act permanently deleted"));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Collections.singletonMap("error", e.getMessage()));

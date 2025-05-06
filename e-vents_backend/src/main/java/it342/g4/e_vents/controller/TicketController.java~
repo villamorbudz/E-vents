@@ -1,0 +1,178 @@
+package it342.g4.e_vents.controller;
+
+import it342.g4.e_vents.model.Ticket;
+import it342.g4.e_vents.service.TicketService;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Controller for ticket-related operations
+ */
+@RestController
+@RequestMapping("/api/tickets")
+@CrossOrigin(origins = "*")
+public class TicketController {
+
+    private final TicketService ticketService;
+    
+    @Autowired
+    public TicketController(TicketService ticketService) {
+        this.ticketService = ticketService;
+    }
+    
+    /**
+     * Retrieves all active tickets
+     * @return List of all active tickets
+     */
+    @GetMapping
+    public ResponseEntity<List<Ticket>> getAllActiveTickets() {
+        return ResponseEntity.ok(ticketService.getAllActiveTickets());
+    }
+    
+    /**
+     * Retrieves all tickets, including inactive ones
+     * @return List of all tickets
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<Ticket>> getAllTickets() {
+        return ResponseEntity.ok(ticketService.getAllTickets());
+    }
+    
+    /**
+     * Retrieves an active ticket by ID
+     * @param id The ticket ID
+     * @return The ticket or 404 if not found
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Ticket> getActiveTicketById(@PathVariable Long id) {
+        return ticketService.getActiveTicketById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * Retrieves tickets by user ID
+     * @param userId The user ID
+     * @return List of active tickets for the specified user
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Ticket>> getTicketsByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(ticketService.getTicketsByUserId(userId));
+    }
+    
+    /**
+     * Retrieves tickets by event ID
+     * @param eventId The event ID
+     * @return List of active tickets for the specified event
+     */
+    @GetMapping("/event/{eventId}")
+    public ResponseEntity<List<Ticket>> getTicketsByEventId(@PathVariable Long eventId) {
+        return ResponseEntity.ok(ticketService.getTicketsByEventId(eventId));
+    }
+    
+    /**
+     * Retrieves tickets by ticket category ID
+     * @param ticketCategoryId The ticket category ID
+     * @return List of active tickets for the specified ticket category
+     */
+    @GetMapping("/category/{ticketCategoryId}")
+    public ResponseEntity<List<Ticket>> getTicketsByTicketCategoryId(@PathVariable Long ticketCategoryId) {
+        return ResponseEntity.ok(ticketService.getTicketsByTicketCategoryId(ticketCategoryId));
+    }
+    
+    /**
+     * Retrieves tickets by status
+     * @param status The status to filter by
+     * @return List of tickets with the specified status
+     */
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<Ticket>> getTicketsByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(ticketService.getTicketsByStatus(status));
+    }
+    
+    /**
+     * Creates a new ticket (purchases a ticket)
+     * @param ticket Ticket data from request body
+     * @return The created ticket or error
+     */
+    @PostMapping
+    public ResponseEntity<?> createTicket(@RequestBody Ticket ticket) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ticketService.createTicket(ticket));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Updates an existing ticket
+     * @param id The ticket ID to update
+     * @param ticketDetails Updated ticket data
+     * @return The updated ticket or error
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateTicket(@PathVariable Long id, @RequestBody Ticket ticketDetails) {
+        try {
+            Ticket updatedTicket = ticketService.updateTicket(id, ticketDetails);
+            return ResponseEntity.ok(updatedTicket);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Deactivates (soft-deletes) a ticket
+     * @param id The ticket ID to deactivate
+     * @return Success message or error
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deactivateTicket(@PathVariable Long id) {
+        try {
+            ticketService.deactivateTicket(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Ticket deactivated successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a previously deactivated ticket
+     * @param id The ticket ID to restore
+     * @return Success message or error
+     */
+    @PostMapping("/restore/{id}")
+    public ResponseEntity<?> restoreTicket(@PathVariable Long id) {
+        try {
+            ticketService.restoreTicket(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "Ticket restored successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+}

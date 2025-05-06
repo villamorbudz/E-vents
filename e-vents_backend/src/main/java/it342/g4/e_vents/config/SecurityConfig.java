@@ -38,7 +38,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:8080"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true);
@@ -60,6 +60,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/countries", "/api/users/regions/**", "/api/users/cities/**").permitAll()
                 .requestMatchers("/login", "/signup/**", "/forgot-password").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+                // Swagger UI endpoints
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**", "/v3/api-docs/**").permitAll()
                 // Protected endpoints
                 .anyRequest().authenticated()
             )
@@ -73,5 +75,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-
-

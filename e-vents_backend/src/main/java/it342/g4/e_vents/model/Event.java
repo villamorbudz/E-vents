@@ -1,6 +1,8 @@
 package it342.g4.e_vents.model;
 
 import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.List;
 
@@ -22,6 +24,11 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "events")
 public class Event {
+    // Status constants
+    public static final String STATUS_SCHEDULED = "SCHEDULED";
+    public static final String STATUS_POSTPONED = "POSTPONED";
+    public static final String STATUS_CANCELLED = "CANCELLED";
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "event_id")
@@ -35,10 +42,10 @@ public class Event {
 
     @Column(nullable = false)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private Date date;
+    private LocalDate date;
 
     @Column(nullable = false)
-    private Time time;
+    private LocalTime time;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "venue_id", nullable = false)
@@ -50,10 +57,10 @@ public class Event {
     private List<Act> lineup;
 
     @Column(nullable = false)
-    private String status;
+    private String status = STATUS_SCHEDULED;
 
-    @Column(nullable = false)
-    private String banner;
+    @Column
+    private String bannerImage;
 
     public Long getEventId() {
         return eventId;
@@ -71,19 +78,19 @@ public class Event {
         this.name = name;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 
-    public Time getTime() {
+    public LocalTime getTime() {
         return time;
     }
 
-    public void setTime(Time time) {
+    public void setTime(LocalTime time) {
         this.time = time;
     }
 
@@ -118,12 +125,12 @@ public class Event {
     public void setDescription(String description) {
         this.description = description;
     }
-
-    public String getBanner() {
-        return banner;
+    
+    public String getBannerImage() {
+        return bannerImage;
     }
 
-    public void setBanner(String banner) {
-        this.banner = banner;
+    public void setBannerImage(String bannerImage) {
+        this.bannerImage = bannerImage;
     }
 }

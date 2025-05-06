@@ -15,20 +15,11 @@ public class Venue {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private String address;
+    @Column(unique = true)
+    private String googlePlaceId;
 
     @Column(nullable = false)
-    private String city;
-
-    @Column(nullable = false)
-    private String state;
-
-    @Column(nullable = false)
-    private String country;
-
-    @Column(nullable = false)
-    private String postalCode;
+    private String formattedAddress;
 
     @Column(nullable = false)
     private double latitude;
@@ -56,44 +47,20 @@ public class Venue {
         this.name = name;
     }
 
-    public String getAddress() {
-        return address;
+    public String getGooglePlaceId() {
+        return googlePlaceId;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setGooglePlaceId(String googlePlaceId) {
+        this.googlePlaceId = googlePlaceId;
     }
 
-    public String getCity() {
-        return city;
+    public String getFormattedAddress() {
+        return formattedAddress;
     }
 
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
+    public void setFormattedAddress(String formattedAddress) {
+        this.formattedAddress = formattedAddress;
     }
 
     public double getLatitude() {

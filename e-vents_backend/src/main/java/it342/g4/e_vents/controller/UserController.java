@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.security.JwtUtils;
 import it342.g4.e_vents.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Controller for user-related operations
@@ -129,7 +130,7 @@ public class UserController {
      * @param id The user ID
      * @return Success message or error
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/delete")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
             boolean deleted = userService.deleteUser(id);
@@ -138,6 +139,40 @@ public class UserController {
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "User not found"));
             }
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Soft deletes a user by setting their is_active attribute to false
+     * @param id The user ID
+     * @return Success message or error
+     */
+    @PutMapping("/{id}/deactivate")
+    public ResponseEntity<?> softDeleteUser(@PathVariable Long id) {
+        try {
+            User user = userService.softDeleteUser(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "User soft deleted successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Restores a previously soft-deleted user by setting their is_active attribute back to true
+     * @param id The user ID
+     * @return Success message or error
+     */
+    @PutMapping("/restore/{id}")
+    public ResponseEntity<?> restoreUser(@PathVariable Long id) {
+        try {
+            User user = userService.restoreUser(id);
+            return ResponseEntity.ok(Collections.singletonMap("message", "User restored successfully"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
@@ -224,8 +259,6 @@ public class UserController {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
-
-    
 
     /**
      * DTO for password change requests

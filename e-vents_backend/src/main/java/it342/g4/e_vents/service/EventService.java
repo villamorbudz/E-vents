@@ -2,11 +2,14 @@ package it342.g4.e_vents.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import it342.g4.e_vents.model.Event;
+import it342.g4.e_vents.model.Venue;
 import it342.g4.e_vents.repository.EventRepository;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -17,6 +20,8 @@ import jakarta.persistence.EntityNotFoundException;
 public class EventService {
 
     private final EventRepository eventRepository;
+    @Autowired
+    private VenueService venueService;
     
     @Autowired
     public EventService(EventRepository eventRepository) {
@@ -29,6 +34,41 @@ public class EventService {
      */
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
+    }
+    
+    /**
+     * Retrieves all events with a specific status
+     * @param status The status to filter by
+     * @return List of events with the specified status
+     */
+    public List<Event> getEventsByStatus(String status) {
+        return eventRepository.findAll().stream()
+                .filter(event -> status.equals(event.getStatus()))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Gets all scheduled events
+     * @return List of scheduled events
+     */
+    public List<Event> getScheduledEvents() {
+        return getEventsByStatus(Event.STATUS_SCHEDULED);
+    }
+    
+    /**
+     * Gets all postponed events
+     * @return List of postponed events
+     */
+    public List<Event> getPostponedEvents() {
+        return getEventsByStatus(Event.STATUS_POSTPONED);
+    }
+    
+    /**
+     * Gets all cancelled events
+     * @return List of cancelled events
+     */
+    public List<Event> getCancelledEvents() {
+        return getEventsByStatus(Event.STATUS_CANCELLED);
     }
     
     /**
@@ -56,7 +96,27 @@ public class EventService {
      * @param event The event to create
      * @return The created event with ID
      */
+    @Transactional
     public Event createEvent(Event event) {
+        // Handle venue creation/lookup
+        if (event.getVenue() != null) {
+            Venue venueData = event.getVenue();
+            // Try to find existing venue by Google Place ID
+            Venue venue = venueService.findByGooglePlaceId(venueData.getGooglePlaceId())
+                .orElseGet(() -> {
+                    // Create new venue if it doesn't exist
+                    return venueService.createVenue(venueData);
+                });
+            event.setVenue(venue);
+        } else {
+            throw new IllegalArgumentException("Venue is required");
+        }
+
+        // Set default status if not specified
+        if (event.getStatus() == null) {
+            event.setStatus(Event.STATUS_SCHEDULED);
+        }
+
         return eventRepository.save(event);
     }
     
@@ -83,23 +143,33 @@ public class EventService {
     }
     
     /**
-     * Cancels an event by setting its status to 'cancelled'
+     * Cancels an event by setting its status to CANCELLED
      * @param id The ID of the event to cancel
      * @return The updated event
      * @throws EntityNotFoundException if the event is not found
      */
     public Event cancelEvent(Long id) {
-        return updateEventStatus(id, "cancelled");
+        return updateEventStatus(id, Event.STATUS_CANCELLED);
     }
     
     /**
-     * Restores a cancelled event by setting its status to 'scheduled'
+     * Postpones an event by setting its status to POSTPONED
+     * @param id The ID of the event to postpone
+     * @return The updated event
+     * @throws EntityNotFoundException if the event is not found
+     */
+    public Event postponeEvent(Long id) {
+        return updateEventStatus(id, Event.STATUS_POSTPONED);
+    }
+    
+    /**
+     * Restores a cancelled or postponed event by setting its status to SCHEDULED
      * @param id The ID of the event to restore
      * @return The updated event
      * @throws EntityNotFoundException if the event is not found
      */
     public Event restoreEvent(Long id) {
-        return updateEventStatus(id, "scheduled");
+        return updateEventStatus(id, Event.STATUS_SCHEDULED);
     }
     
     /**
@@ -131,7 +201,7 @@ public class EventService {
         // This is a simple implementation that returns the first N events
         // In a real application, you would filter by date > now and order by date
         return eventRepository.findAll().stream()
-                .filter(event -> "scheduled".equalsIgnoreCase(event.getStatus()))
+                .filter(event -> Event.STATUS_SCHEDULED.equals(event.getStatus()))
                 .limit(limit)
                 .toList();
     }

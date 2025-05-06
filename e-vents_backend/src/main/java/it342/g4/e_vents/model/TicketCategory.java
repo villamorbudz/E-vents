@@ -14,7 +14,7 @@ public class TicketCategory {
     private String name;
 
     @Column(nullable = false)
-    private Double basePrice;
+    private Double price;
 
     @Lob
     private String description;
@@ -29,6 +29,13 @@ public class TicketCategory {
 
     @Column(nullable = false)
     private String status;
+    
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "event_id", nullable = false)
+    private Event event;
 
     // Getters and setters
 
@@ -48,12 +55,21 @@ public class TicketCategory {
         this.name = name;
     }
 
-    public Double getBasePrice() {
-        return basePrice;
+    public Double getPrice() {
+        return price;
     }
 
-    public void setBasePrice(Double basePrice) {
-        this.basePrice = basePrice;
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+    
+    // For backward compatibility
+    public Double getBasePrice() {
+        return price;
+    }
+
+    public void setBasePrice(Double price) {
+        this.price = price;
     }
 
     public String getDescription() {
@@ -79,6 +95,10 @@ public class TicketCategory {
     public void setTicketsSold(int ticketsSold) {
         this.ticketsSold = ticketsSold;
     }
+    
+    public void incrementTicketsSold() {
+        this.ticketsSold++;
+    }
 
     public String getStatus() {
         return status;
@@ -87,8 +107,24 @@ public class TicketCategory {
     public void setStatus(String status) {
         this.status = status;
     }
+    
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
 
     public int getAvailableTickets() {
         return totalTickets - ticketsSold;
+    }
+    
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
     }
 }

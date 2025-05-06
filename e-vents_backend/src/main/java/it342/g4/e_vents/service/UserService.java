@@ -100,6 +100,8 @@ public class UserService {
      * @param country The country to get regions for
      * @return Array of region names
      */
+
+
     /*  Method to get regions for a country (placeholder until API integration)
     public String[] getRegions(String country) {
         return new String[]{"---"};
@@ -208,33 +210,33 @@ public class UserService {
     }
 
     /**
- * Updates a user's profile information
- * @param id User ID to update
- * @param updatedUser Updated user data
- * @return Optional containing the updated user or empty if not found
- */
-public Optional<User> updateUser(Long id, User updatedUser) {
-    Optional<User> existingUser = getUser(id);
-    
-    if (existingUser.isPresent()) {
-        User user = existingUser.get();
-        
-        // Update fields (excluding password and email which require special handling)
-        user.setFirstName(updatedUser.getFirstName());
-        user.setLastName(updatedUser.getLastName());
-        user.setContactNumber(updatedUser.getContactNumber());
-        user.setBirthdate(updatedUser.getBirthdate());
-        user.setCountry(updatedUser.getCountry());
-        user.setRegion(updatedUser.getRegion());
-        user.setCity(updatedUser.getCity());
-        user.setPostalCode(updatedUser.getPostalCode());
-        
-        // Save and return updated user
-        return Optional.of(userRepository.save(user));
+     * Updates a user's profile information
+     * @param id User ID to update
+     * @param updatedUser Updated user data
+     * @return Optional containing the updated user or empty if not found
+     */
+    public Optional<User> updateUser(Long id, User updatedUser) {
+        Optional<User> existingUser = getUser(id);
+
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+
+            // Update fields (excluding password and email which require special handling)
+            user.setFirstName(updatedUser.getFirstName());
+            user.setLastName(updatedUser.getLastName());
+            user.setContactNumber(updatedUser.getContactNumber());
+            user.setBirthdate(updatedUser.getBirthdate());
+            user.setCountry(updatedUser.getCountry());
+            user.setRegion(updatedUser.getRegion());
+            user.setCity(updatedUser.getCity());
+            user.setPostalCode(updatedUser.getPostalCode());
+
+            // Save and return updated user
+            return Optional.of(userRepository.save(user));
+        }
+
+        return Optional.empty();
     }
-    
-    return Optional.empty();
-}
     
     /**
      * Soft deletes a user by setting their is_active attribute to false

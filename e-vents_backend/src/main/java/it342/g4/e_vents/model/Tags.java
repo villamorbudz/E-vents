@@ -19,7 +19,9 @@ public class Tags {
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
-
+    
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
     public Long getTagId() {
         return tagId;
     }
@@ -42,6 +44,14 @@ public class Tags {
 
     public void setCategory(Category category) {
         this.category = category;
+    }
+    
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
     
     @ManyToMany(mappedBy = "tags")
