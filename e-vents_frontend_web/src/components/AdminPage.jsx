@@ -8,6 +8,7 @@ import '../styles/AdminPage.css';
 
 function AdminPage() {
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -31,7 +32,8 @@ function AdminPage() {
     country: '',
     region: '',
     city: '',
-    postalCode: ''
+    postalCode: '',
+    roleId: ''
   });
 
   useEffect(() => {
@@ -43,6 +45,7 @@ function AdminPage() {
     }
 
     fetchUsers();
+    fetchRoles();
     fetchCountries();
   }, []);
 
@@ -50,7 +53,11 @@ function AdminPage() {
     try {
       setLoading(true);
       const response = await api.get('/users/all');
-      setUsers(response.data);
+      // Filter out users with admin role before setting state
+      const filteredUsers = response.data.filter(user => 
+        !user.role || user.role.name !== 'ADMIN'
+      );
+      setUsers(filteredUsers);
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch users');
@@ -59,6 +66,33 @@ function AdminPage() {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      // Debug the headers being sent
+      const token = localStorage.getItem('token');
+      console.log('Using token for fetchRoles:', token);
+      
+      const response = await api.get('/roles');
+      console.log('Roles response:', response.data);
+      
+      // Filter out admin role for user creation/editing
+      const filteredRoles = response.data.filter(role => role.name !== 'ADMIN');
+      setRoles(filteredRoles);
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      
+      // Enhanced error logging
+      if (err.response) {
+        console.error('Response status:', err.response.status);
+        console.error('Response data:', err.response.data);
+        console.error('Response headers:', err.response.headers);
+      } else if (err.request) {
+        console.error('No response received:', err.request);
+      } else {
+        console.error('Error setting up request:', err.message);
+      }
+    }
+  };
   const fetchCountries = async () => {
     try {
       const response = await api.get('/users/countries');
@@ -125,7 +159,8 @@ function AdminPage() {
       country: user.country || '',
       region: user.region || '',
       city: user.city || '',
-      postalCode: user.postalCode || ''
+      postalCode: user.postalCode || '',
+      roleId: user.role ? user.role.roleId : ''
     });
 
     // Fetch regions and cities for the selected country and region
@@ -167,7 +202,8 @@ function AdminPage() {
       country: '',
       region: '',
       city: '',
-      postalCode: ''
+      postalCode: '',
+      // Remove roleId since it will be assigned a default role
     });
     setIsCreateModalOpen(true);
   };
@@ -175,13 +211,20 @@ function AdminPage() {
   const submitCreateUser = async (e) => {
     e.preventDefault();
     try {
+      // Prepare the user data without role specification
       const userData = {
         ...formData,
-        birthdate: formData.birthdate ? new Date(formData.birthdate) : null
+        birthdate: formData.birthdate ? new Date(formData.birthdate) : null,
+        // Remove role setting - will use default role from backend
       };
 
       const response = await api.post('/users/register', userData);
-      setUsers([...users, response.data]);
+      
+      // Only add the new user to the list if they don't have an admin role
+      if (!response.data.role || response.data.role.name !== 'ADMIN') {
+        setUsers([...users, response.data]);
+      }
+      
       setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Error creating user:', err);
@@ -192,16 +235,30 @@ function AdminPage() {
   const submitEditUser = async (e) => {
     e.preventDefault();
     try {
+      // Prepare the user data with proper format for role
       const userData = {
         ...formData,
-        birthdate: formData.birthdate ? new Date(formData.birthdate) : null
+        birthdate: formData.birthdate ? new Date(formData.birthdate) : null,
+        role: formData.roleId ? { roleId: formData.roleId } : null
       };
+
+      // If we're sending roleId separately from the role object for the API
+      if (userData.roleId) {
+        delete userData.roleId; // Remove roleId as it's now in the role object
+      }
 
       const response = await api.put(`/users/${currentUser.userId}`, userData);
       
-      setUsers(users.map(user => 
-        user.userId === currentUser.userId ? response.data : user
-      ));
+      // Check if the updated user now has an admin role
+      if (response.data.role && response.data.role.name === 'ADMIN') {
+        // Remove from display if now an admin
+        setUsers(users.filter(user => user.userId !== currentUser.userId));
+      } else {
+        // Update the user in the display
+        setUsers(users.map(user => 
+          user.userId === currentUser.userId ? response.data : user
+        ));
+      }
       
       setIsEditModalOpen(false);
       setCurrentUser(null);
@@ -235,7 +292,8 @@ function AdminPage() {
     return (
       (user.firstName && user.firstName.toLowerCase().includes(searchTermLower)) ||
       (user.lastName && user.lastName.toLowerCase().includes(searchTermLower)) ||
-      (user.email && user.email.toLowerCase().includes(searchTermLower))
+      (user.email && user.email.toLowerCase().includes(searchTermLower)) ||
+      (user.role && user.role.name && user.role.name.toLowerCase().includes(searchTermLower))
     );
   });
 
@@ -298,6 +356,7 @@ function AdminPage() {
                 <th>Contact</th>
                 <th>Country</th>
                 <th>City</th>
+                <th>Role</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -312,6 +371,7 @@ function AdminPage() {
                     <td>{user.contactNumber}</td>
                     <td>{user.country}</td>
                     <td>{user.city}</td>
+                    <td>{user.role ? user.role.name : 'N/A'}</td>
                     <td>
                       <span className={`status-badge ${user.active ? 'active' : 'inactive'}`}>
                         {user.active ? 'Active' : 'Inactive'}
@@ -332,7 +392,7 @@ function AdminPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="no-users">
+                  <td colSpan="9" className="no-users">
                     No users found
                   </td>
                 </tr>
@@ -416,6 +476,21 @@ function AdminPage() {
                     required
                   />
                 </div>
+                <div className="form-group">
+                  <label htmlFor="roleId">Role</label>
+                  <select
+                    id="roleId"
+                    name="roleId"
+                    value={formData.roleId}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select Role</option>
+                    {roles.map(role => (
+                      <option key={role.roleId} value={role.roleId}>{role.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="form-row">
@@ -457,7 +532,7 @@ function AdminPage() {
                   <label htmlFor="city">City</label>
                   <select
                     id="city"
-                    name="city"
+                    name="city" 
                     value={formData.city}
                     onChange={handleInputChange}
                     required
@@ -576,6 +651,8 @@ function AdminPage() {
                   />
                 </div>
               </div>
+
+              {/* Removed role selection from create user form */}
 
               <div className="form-row">
                 <div className="form-group">

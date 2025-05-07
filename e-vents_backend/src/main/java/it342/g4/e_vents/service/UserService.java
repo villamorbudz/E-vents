@@ -59,7 +59,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         
         // Set default role to 'attendee' with roleId 1
-        Role defaultRole = roleRepository.findById(1L)
+        Role defaultRole = roleRepository.findById(2L)
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
         user.setRole(defaultRole);
 

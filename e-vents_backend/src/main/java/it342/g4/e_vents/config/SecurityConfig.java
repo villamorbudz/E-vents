@@ -62,6 +62,9 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                 // Swagger UI endpoints
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**", "/v3/api-docs/**").permitAll()
+                //admin roles
+                .requestMatchers("/api/roles", "/api/roles/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                 // Protected endpoints
                 .anyRequest().authenticated()
             )

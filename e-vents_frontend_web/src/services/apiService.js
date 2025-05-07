@@ -92,6 +92,29 @@ export const userService = {
       throw 'Error registering user';
     }
   },
+
+  // New method to get current user role
+  getUserRole: () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      return userData.role || null;
+    } catch (error) {
+      console.error('Error getting user role:', error);
+      return null;
+    }
+  },
+  
+  // Check if current user has a specific role
+  hasRole: (role) => {
+    const userRole = userService.getUserRole();
+    return userRole === role;
+  },
+  
+  // Check if current user has any of the specified roles
+  hasAnyRole: (roles) => {
+    const userRole = userService.getUserRole();
+    return roles.includes(userRole);
+  },
   
   // Check if email exists
   async checkEmailExists(email) {

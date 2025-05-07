@@ -49,7 +49,9 @@ export default function Login() {
       
       if (userData.role === 'ADMIN') {
         navigate('/admin');
-      } else {
+      } else if(userData.role === 'USER'){
+        navigate('/home'); // Or wherever regular users should go
+      }else{
         navigate('/homeseller'); // Or wherever regular users should go
       }
     } catch (err) {
