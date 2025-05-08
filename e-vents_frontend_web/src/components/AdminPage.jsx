@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { api } from '../services/apiService';
-import { userService } from "../services/apiService";
+import { userService, adminService, errorHandlerService } from "../services/apiService";
 import { FaEdit, FaTrash, FaUndo, FaUserPlus, FaSearch } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import '../styles/AdminPage.css';
 
 function AdminPage() {
@@ -38,8 +37,7 @@ function AdminPage() {
 
   useEffect(() => {
     // Check if the current user is an admin
-    const userData = JSON.parse(localStorage.getItem('userData'));
-    if (!userData || userData.role !== 'ADMIN') {
+    if (!userService.isAdmin()) {
       setError('Only administrators can access this page');
       return;
     }
@@ -52,15 +50,16 @@ function AdminPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users/all');
+      const allUsers = await userService.getAllUsers();
       // Filter out users with admin role before setting state
-      const filteredUsers = response.data.filter(user => 
+      const filteredUsers = allUsers.filter(user => 
         !user.role || user.role.name !== 'ADMIN'
       );
       setUsers(filteredUsers);
       setLoading(false);
     } catch (err) {
-      setError('Failed to fetch users');
+      const errorMessage = errorHandlerService.handleError(err);
+      setError(`Failed to fetch users: ${errorMessage}`);
       console.error('Error fetching users:', err);
       setLoading(false);
     }
@@ -68,55 +67,45 @@ function AdminPage() {
 
   const fetchRoles = async () => {
     try {
-      // Debug the headers being sent
-      const token = localStorage.getItem('token');
-      console.log('Using token for fetchRoles:', token);
-      
-      const response = await api.get('/roles');
-      console.log('Roles response:', response.data);
+      const allRoles = await userService.getAllRoles();
       
       // Filter out admin role for user creation/editing
-      const filteredRoles = response.data.filter(role => role.name !== 'ADMIN');
+      const filteredRoles = allRoles.filter(role => role.name !== 'ADMIN');
       setRoles(filteredRoles);
     } catch (err) {
       console.error('Error fetching roles:', err);
-      
-      // Enhanced error logging
-      if (err.response) {
-        console.error('Response status:', err.response.status);
-        console.error('Response data:', err.response.data);
-        console.error('Response headers:', err.response.headers);
-      } else if (err.request) {
-        console.error('No response received:', err.request);
-      } else {
-        console.error('Error setting up request:', err.message);
-      }
+      const errorMessage = errorHandlerService.handleError(err);
+      setError(`Failed to fetch roles: ${errorMessage}`);
     }
   };
+
   const fetchCountries = async () => {
     try {
-      const response = await api.get('/users/countries');
-      setCountries(response.data);
+      const availableCountries = await userService.getCountries();
+      setCountries(availableCountries);
     } catch (err) {
       console.error('Error fetching countries:', err);
+      // Using default fallback from userService
     }
   };
 
   const fetchRegions = async (country) => {
     try {
-      const response = await api.get(`/users/regions/${country}`);
-      setRegions(response.data);
+      const availableRegions = await userService.getRegions(country);
+      setRegions(availableRegions);
     } catch (err) {
       console.error('Error fetching regions:', err);
+      // Using default fallback from userService
     }
   };
 
   const fetchCities = async (country, region) => {
     try {
-      const response = await api.get(`/users/cities/${country}/${region}`);
-      setCities(response.data);
+      const availableCities = await userService.getCities(country, region);
+      setCities(availableCities);
     } catch (err) {
       console.error('Error fetching cities:', err);
+      // Using default fallback from userService
     }
   };
 
@@ -147,31 +136,39 @@ function AdminPage() {
     }
   };
 
-  const handleEditUser = (user) => {
-    setCurrentUser(user);
-    setFormData({
-      userId: user.userId,
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      email: user.email || '',
-      contactNumber: user.contactNumber || '',
-      birthdate: user.birthdate ? new Date(user.birthdate).toISOString().split('T')[0] : '',
-      country: user.country || '',
-      region: user.region || '',
-      city: user.city || '',
-      postalCode: user.postalCode || '',
-      roleId: user.role ? user.role.roleId : ''
-    });
+  const handleEditUser = async (user) => {
+    try {
+      // Get the full user profile with all details
+      const userProfile = await userService.getUserById(user.userId);
+      setCurrentUser(userProfile);
+      
+      setFormData({
+        userId: userProfile.userId,
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        email: userProfile.email || '',
+        contactNumber: userProfile.contactNumber || '',
+        birthdate: userProfile.birthdate ? new Date(userProfile.birthdate).toISOString().split('T')[0] : '',
+        country: userProfile.country || '',
+        region: userProfile.region || '',
+        city: userProfile.city || '',
+        postalCode: userProfile.postalCode || '',
+        roleId: userProfile.role ? userProfile.role.roleId : ''
+      });
 
-    // Fetch regions and cities for the selected country and region
-    if (user.country) {
-      fetchRegions(user.country);
-      if (user.region) {
-        fetchCities(user.country, user.region);
+      // Fetch regions and cities for the selected country and region
+      if (userProfile.country) {
+        fetchRegions(userProfile.country);
+        if (userProfile.region) {
+          fetchCities(userProfile.country, userProfile.region);
+        }
       }
-    }
 
-    setIsEditModalOpen(true);
+      setIsEditModalOpen(true);
+    } catch (err) {
+      const errorMessage = errorHandlerService.handleError(err);
+      setError(`Failed to get user details: ${errorMessage}`);
+    }
   };
 
   const handleDeleteUser = (user) => {
@@ -181,13 +178,13 @@ function AdminPage() {
 
   const confirmDeleteUser = async () => {
     try {
-      await api.delete(`/users/${currentUser.userId}`);
+      await userService.deleteUser(currentUser.userId);
       setUsers(users.filter(user => user.userId !== currentUser.userId));
       setIsDeleteModalOpen(false);
       setCurrentUser(null);
     } catch (err) {
-      console.error('Error deleting user:', err);
-      setError('Failed to delete user');
+      const errorMessage = errorHandlerService.handleError(err);
+      setError(`Failed to delete user: ${errorMessage}`);
     }
   };
 
@@ -217,18 +214,19 @@ function AdminPage() {
         birthdate: formData.birthdate ? new Date(formData.birthdate) : null,
         // Remove role setting - will use default role from backend
       };
-
-      const response = await api.post('/users/register', userData);
+  
+      // Use a different method for admin creating users that doesn't affect current login state
+      const newUser = await userService.adminCreateUser(userData);
       
       // Only add the new user to the list if they don't have an admin role
-      if (!response.data.role || response.data.role.name !== 'ADMIN') {
-        setUsers([...users, response.data]);
+      if (!newUser.role || newUser.role.name !== 'ADMIN') {
+        setUsers([...users, newUser]);
       }
       
       setIsCreateModalOpen(false);
     } catch (err) {
-      console.error('Error creating user:', err);
-      setError('Failed to create user');
+      const errorMessage = errorHandlerService.handleError(err);
+      setError(`Failed to create user: ${errorMessage}`);
     }
   };
 
@@ -247,42 +245,42 @@ function AdminPage() {
         delete userData.roleId; // Remove roleId as it's now in the role object
       }
 
-      const response = await api.put(`/users/${currentUser.userId}`, userData);
+      const updatedUser = await userService.updateUserProfile(userData);
       
       // Check if the updated user now has an admin role
-      if (response.data.role && response.data.role.name === 'ADMIN') {
+      if (updatedUser.role && updatedUser.role.name === 'ADMIN') {
         // Remove from display if now an admin
         setUsers(users.filter(user => user.userId !== currentUser.userId));
       } else {
         // Update the user in the display
         setUsers(users.map(user => 
-          user.userId === currentUser.userId ? response.data : user
+          user.userId === currentUser.userId ? updatedUser : user
         ));
       }
       
       setIsEditModalOpen(false);
       setCurrentUser(null);
     } catch (err) {
-      console.error('Error updating user:', err);
-      setError('Failed to update user');
+      const errorMessage = errorHandlerService.handleError(err);
+      setError(`Failed to update user: ${errorMessage}`);
     }
   };
 
   const toggleUserActive = async (user) => {
     try {
-      const endpoint = user.active ? 
-        `/users/${user.userId}/deactivate` : 
-        `/users/${user.userId}/activate`;
-      
-      await api.put(endpoint);
+      if (user.active) {
+        await userService.deactivateUser(user.userId);
+      } else {
+        await userService.activateUser(user.userId);
+      }
       
       // Update the user in the local state
       setUsers(users.map(u => 
         u.userId === user.userId ? { ...u, active: !u.active } : u
       ));
     } catch (err) {
-      console.error('Error toggling user active status:', err);
-      setError('Failed to update user status');
+      const errorMessage = errorHandlerService.handleError(err);
+      setError(`Failed to update user status: ${errorMessage}`);
     }
   };
 
@@ -307,9 +305,9 @@ function AdminPage() {
   }
 
   const handleLogout = () => {
-      userService.logout(); 
-      navigate("/login");        
-    };
+    userService.logout(); 
+    // The logout function already handles navigation
+  };
 
   return (
     <div className="admin-container">
