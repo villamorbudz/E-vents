@@ -12,6 +12,9 @@ public class Role {
 
     @Column(nullable = false, unique = true)
     private String name;
+    
+    @Column(nullable = false)
+    private boolean active = true;
 
     public Long getRoleId() {
         return roleId;
@@ -27,5 +30,13 @@ public class Role {
 
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

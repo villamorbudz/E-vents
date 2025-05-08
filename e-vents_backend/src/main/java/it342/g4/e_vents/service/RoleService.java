@@ -46,4 +46,57 @@ public class RoleService {
     public Optional<Role> findRoleByName(String name) {
         return roleRepository.findByName(name);
     }
+    
+    /**
+     * Creates a new role
+     * @param role The role to create
+     * @return The created role
+     */
+    public Role createRole(Role role) {
+        return roleRepository.save(role);
+    }
+    
+    /**
+     * Updates an existing role
+     * @param id The ID of the role to update
+     * @param roleDetails The updated role details
+     * @return The updated role, or empty if the role was not found
+     */
+    public Optional<Role> updateRole(Long id, Role roleDetails) {
+        return roleRepository.findById(id)
+                .map(existingRole -> {
+                    existingRole.setName(roleDetails.getName());
+                    return roleRepository.save(existingRole);
+                });
+    }
+    
+    /**
+     * Deactivates a role by setting its active flag to false
+     * @param id The ID of the role to deactivate
+     * @return True if the role was deactivated, false if not found
+     */
+    public boolean softDeleteRole(Long id) {
+        return roleRepository.findById(id)
+                .map(role -> {
+                    role.setActive(false);
+                    roleRepository.save(role);
+                    return true;
+                })
+                .orElse(false);
+    }
+    
+    /**
+     * Activates a deactivated role
+     * @param id The ID of the role to activate
+     * @return True if the role was activated, false if not found
+     */
+    public boolean restoreRole(Long id) {
+        return roleRepository.findById(id)
+                .map(role -> {
+                    role.setActive(true);
+                    roleRepository.save(role);
+                    return true;
+                })
+                .orElse(false);
+    }
 }
