@@ -23,7 +23,7 @@ public class OpenApiConfig {
         Contact contact = new Contact();
         contact.setName("E-vents Team");
         contact.setEmail("info@e-vents.com");
-        contact.setUrl("https://www.e-vents.com");
+        contact.setUrl("https://localhost:5173");
 
         License mitLicense = new License()
                 .name("MIT License")

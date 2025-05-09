@@ -18,6 +18,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.security.JwtUtils;
 import it342.g4.e_vents.service.UserService;
@@ -29,6 +36,7 @@ import jakarta.persistence.EntityNotFoundException;
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
+@Tag(name = "User", description = "User management APIs")
 public class UserController {
 
     private final UserService userService;
@@ -47,7 +55,14 @@ public class UserController {
      * @return The registered user or error message
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
+    @Operation(summary = "Register a new user", description = "Creates a new user account in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User successfully registered", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input or email already exists", content = @Content)
+    })
+    public ResponseEntity<?> registerUser(
+            @Parameter(description = "User object to be registered", required = true) @RequestBody User user) {
         try {
             User registeredUser = userService.registerUser(user);
             
@@ -82,7 +97,15 @@ public class UserController {
      * @return The authenticated user or error message
      */
      @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
+     @Operation(summary = "Authenticate user", description = "Validates user credentials and returns a JWT token")
+     @ApiResponses(value = {
+         @ApiResponse(responseCode = "200", description = "Authentication successful", 
+                      content = @Content(mediaType = "application/json")),
+         @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)
+     })
+    public ResponseEntity<?> login(
+            @Parameter(description = "User's email address", required = true) @RequestParam String email, 
+            @Parameter(description = "User's password", required = true) @RequestParam String password) {
         try {
             User user = userService.login(email, password);
             
@@ -109,6 +132,11 @@ public class UserController {
      * @return List of all users
      */
     @GetMapping("/all")
+    @Operation(summary = "Get all users", description = "Retrieves a list of all users in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of users", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class)))
+    })
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
@@ -119,7 +147,14 @@ public class UserController {
      * @return The user or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the user", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
+    })
+    public ResponseEntity<?> getUserById(
+            @Parameter(description = "ID of the user to retrieve", required = true) @PathVariable Long id) {
         return userService.getUser(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -131,7 +166,15 @@ public class UserController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}/delete")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    @Operation(summary = "Delete a user permanently", description = "Permanently deletes a user from the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User successfully deleted", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> deleteUser(
+            @Parameter(description = "ID of the user to delete", required = true) @PathVariable Long id) {
         try {
             boolean deleted = userService.deleteUser(id);
             if (deleted) {
@@ -150,7 +193,15 @@ public class UserController {
      * @return Success message or error
      */
     @PutMapping("/{id}/deactivate")
-    public ResponseEntity<?> softDeleteUser(@PathVariable Long id) {
+    @Operation(summary = "Deactivate a user", description = "Soft deletes a user by setting their is_active attribute to false")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User successfully deactivated", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> softDeleteUser(
+            @Parameter(description = "ID of the user to deactivate", required = true) @PathVariable Long id) {
         try {
             User user = userService.softDeleteUser(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "User soft deleted successfully"));
@@ -167,7 +218,15 @@ public class UserController {
      * @return Success message or error
      */
     @PutMapping("/restore/{id}")
-    public ResponseEntity<?> restoreUser(@PathVariable Long id) {
+    @Operation(summary = "Restore a user", description = "Restores a previously deactivated user by setting their is_active attribute to true")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User successfully restored", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> restoreUser(
+            @Parameter(description = "ID of the user to restore", required = true) @PathVariable Long id) {
         try {
             User user = userService.restoreUser(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "User restored successfully"));
@@ -184,7 +243,16 @@ public class UserController {
      * @return Success message or error
      */
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest req) {
+    @Operation(summary = "Change user password", description = "Updates a user's password by their email address")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Password successfully changed", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<?> changePassword(
+            @Parameter(description = "Request containing email and new password", required = true) 
+            @RequestBody ChangePasswordRequest req) {
         try {
             boolean changed = userService.changePasswordByEmail(req.getEmail(), req.getPassword());
             if (changed) {
@@ -202,6 +270,11 @@ public class UserController {
      * @return Array of country names
      */
     @GetMapping("/countries")
+    @Operation(summary = "Get countries list", description = "Retrieves a list of available countries")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of countries", 
+                     content = @Content(mediaType = "application/json"))
+    })
     public ResponseEntity<?> getCountries() {
         return ResponseEntity.ok(userService.getCountries());
     }
@@ -212,7 +285,13 @@ public class UserController {
      * @return Array of region names
      */
     @GetMapping("/regions/{country}")
-    public ResponseEntity<?> getRegions(@PathVariable String country) {
+    @Operation(summary = "Get regions by country", description = "Retrieves a list of regions for a specific country")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of regions", 
+                     content = @Content(mediaType = "application/json"))
+    })
+    public ResponseEntity<?> getRegions(
+            @Parameter(description = "Country to get regions for", required = true) @PathVariable String country) {
         return ResponseEntity.ok(userService.getRegions(country));
     }
 
@@ -223,7 +302,14 @@ public class UserController {
      * @return Array of city names
      */
     @GetMapping("/cities/{country}/{region}")
-    public ResponseEntity<?> getCities(@PathVariable String country, @PathVariable String region) {
+    @Operation(summary = "Get cities by region", description = "Retrieves a list of cities for a specific region in a country")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of cities", 
+                     content = @Content(mediaType = "application/json"))
+    })
+    public ResponseEntity<?> getCities(
+            @Parameter(description = "Country containing the region", required = true) @PathVariable String country, 
+            @Parameter(description = "Region to get cities for", required = true) @PathVariable String region) {
         return ResponseEntity.ok(userService.getCities(country, region));
     }
 
@@ -233,7 +319,14 @@ public class UserController {
      * @return JSON with exists flag
      */
     @GetMapping("/exists")
-    public ResponseEntity<?> userExists(@RequestParam(required = false) String email) {
+    @Operation(summary = "Check if email exists", description = "Checks if a user with the given email already exists in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully checked email existence", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", description = "Email parameter is required", content = @Content)
+    })
+    public ResponseEntity<?> userExists(
+            @Parameter(description = "Email address to check", required = true) @RequestParam(required = false) String email) {
         System.out.println("Incoming email: " + email);
         if (email == null || email.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Email parameter is required");
@@ -250,7 +343,16 @@ public class UserController {
      * @return The updated user or 404 if not found
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+    @Operation(summary = "Update user profile", description = "Updates a user's profile information")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User successfully updated", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+        @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<?> updateUser(
+            @Parameter(description = "ID of the user to update", required = true) @PathVariable Long id, 
+            @Parameter(description = "Updated user details", required = true) @RequestBody User updatedUser) {
         try {
             return userService.updateUser(id, updatedUser)
                     .map(ResponseEntity::ok)
@@ -263,8 +365,12 @@ public class UserController {
     /**
      * DTO for password change requests
      */
+    @Schema(description = "Request object for changing a user's password")
     public static class ChangePasswordRequest {
+        @Schema(description = "User's email address", required = true)
         private String email;
+        
+        @Schema(description = "New password", required = true)
         private String password;
         
         public String getEmail() { 

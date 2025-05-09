@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { userService } from "../services/apiService";
+import { useState, useEffect } from "react";
+import { userService, eventService } from "../services/apiService";
+import { FaTimes } from "react-icons/fa";
 
 export default function EventCreation() {
   const navigate = useNavigate();
@@ -11,8 +12,28 @@ export default function EventCreation() {
   const [bannerImage, setBannerImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [venueName, setVenueName] = useState("");
-  const [hostLineup, setHostLineup] = useState("");
+  const [acts, setActs] = useState([]);
+  const [selectedActs, setSelectedActs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Fetch acts when component mounts
+  useEffect(() => {
+    const fetchActs = async () => {
+      setIsLoading(true);
+      try {
+        const actsData = await eventService.getAllActs();
+        setActs(actsData);
+      } catch (error) {
+        console.error('Error fetching acts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchActs();
+  }, []);
 
   // Handle banner image upload
   const handleImageUpload = (e) => {
@@ -27,60 +48,78 @@ export default function EventCreation() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage("");
 
-    // Get today's date and check if the selected date is at least 7 days ahead
-    const today = new Date();
-    const selectedDateObj = new Date(selectedDate);
-    const diffInTime = selectedDateObj - today;
-    const diffInDays = diffInTime / (1000 * 3600 * 24);
+    try {
+      // Check if user is authenticated
+      if (!userService.isAuthenticated()) {
+        setErrorMessage("You must be logged in to create an event. Please log in and try again.");
+        navigate('/login');
+        return;
+      }
+      // Get today's date and check if the selected date is at least 7 days ahead
+      const today = new Date();
+      const selectedDateObj = new Date(selectedDate);
+      const diffInTime = selectedDateObj - today;
+      const diffInDays = diffInTime / (1000 * 3600 * 24);
 
-    // Validate form fields and date selection
-    if (!eventName || !eventDescription || !selectedDate || !selectedTime || !venueName || !bannerImage || !hostLineup) {
-      setErrorMessage("All fields must be filled.");
-      return;
+      // Validate form fields and date selection
+      if (!eventName || !eventDescription || !selectedDate || !selectedTime || !venueName || selectedActs.length === 0) {
+        setErrorMessage("All fields must be filled.");
+        return;
+      }
+
+      if (diffInDays < 7) {
+        setErrorMessage("Please select a date at least 7 days from now.");
+        return;
+      }
+
+      const eventData = {
+        name: eventName,
+        description: eventDescription,
+        date: selectedDate,
+        time: selectedTime,
+        venue: venueName,
+        actIds: selectedActs.map(act => act.id),
+      };
+
+      // Create the event using the API
+      const createdEvent = await eventService.createEvent(eventData, bannerImage);
+      
+      // Navigate to ticketing details with the event ID
+      navigate(`/create/ticketing?eventId=${createdEvent.id}`);
+    } catch (error) {
+      console.error('Error creating event:', error);
+      setErrorMessage(typeof error === 'string' ? error : 'Failed to create event. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-
-    if (diffInDays < 7) {
-      setErrorMessage("Please select a date at least 7 days from now.");
-      return;
-    }
-
-    const eventData = {
-      name: eventName,
-      description: eventDescription,
-      date: selectedDate,
-      time: selectedTime,
-      venue: venueName,
-      hostLineup: hostLineup,
-    };
-
-    localStorage.setItem("eventBasicInfo", JSON.stringify(eventData));
-    navigate("/create/ticketing");
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Navbar */}
       <div className="bg-[#5798FF] flex justify-between items-center px-10 py-4">
-      <div className="flex items-center">
-            <span className="text-3xl font-bold">
-              <span className="flex items-center">
-                <svg 
-                  className="w-8 h-8 mr-1" 
-                  viewBox="0 0 24 24" 
-                  fill="white" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect x="2" y="2" width="9" height="9" />
-                  <rect x="13" y="2" width="9" height="9" />
-                  <rect x="2" y="13" width="9" height="9" />
-                </svg>
-                vents
-              </span>
+        <div className="flex items-center">
+          <span className="text-3xl font-bold">
+            <span className="flex items-center">
+              <svg 
+                className="w-8 h-8 mr-1" 
+                viewBox="0 0 24 24" 
+                fill="white" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect key="rect-1" x="2" y="2" width="9" height="9" />
+                <rect key="rect-2" x="13" y="2" width="9" height="9" />
+                <rect key="rect-3" x="2" y="13" width="9" height="9" />
+              </svg>
+              vents
             </span>
-          </div>
+          </span>
+        </div>
         <div className="flex gap-10 text-lg">
           <Link to="/homeseller" className="hover:underline">My Events</Link>
           <Link to="/create" className="hover:underline text-black">Create Events</Link>
@@ -147,39 +186,80 @@ export default function EventCreation() {
                   </div>
                   <div className="w-1/2">
                     <label className="block text-gray-400 mb-2">Time:</label>
-                    <select
+                    <input
+                      type="time"
                       className="w-full p-2 rounded bg-white text-black"
                       value={selectedTime}
                       onChange={(e) => setSelectedTime(e.target.value)}
                       required
-                    >
-                      <option value="">Select</option>
-                      <option value="9:00 AM">9:00 AM</option>
-                      <option value="10:00 AM">10:00 AM</option>
-                      <option value="11:00 AM">11:00 AM</option>
-                      <option value="12:00 PM">12:00 PM</option>
-                      <option value="1:00 PM">1:00 PM</option>
-                      <option value="2:00 PM">2:00 PM</option>
-                      <option value="3:00 PM">3:00 PM</option>
-                      <option value="4:00 PM">4:00 PM</option>
-                      <option value="5:00 PM">5:00 PM</option>
-                      <option value="6:00 PM">6:00 PM</option>
-                      <option value="7:00 PM">7:00 PM</option>
-                      <option value="8:00 PM">8:00 PM</option>
-                    </select>
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-gray-400 mb-2">Host/Lineup:</label>
-                  <input
-                    type="text"
-                    placeholder="Enter Host/Lineup"
-                    className="w-full p-2 rounded bg-white text-black"
-                    value={hostLineup}
-                    onChange={(e) => setHostLineup(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search for acts"
+                      className="w-full p-2 rounded bg-white text-black mb-2"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    {isLoading ? (
+                      <div className="w-full p-2 bg-gray-100 text-gray-500 text-center rounded">
+                        Loading acts...
+                      </div>
+                    ) : (
+                      <div className="max-h-40 overflow-y-auto bg-white rounded mb-2">
+                        {acts
+                          .filter(act => 
+                            act.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                            !selectedActs.some(selected => selected.id === act.id)
+                          )
+                          .map(act => (
+                            <div 
+                              key={act.id} 
+                              className="p-2 hover:bg-gray-100 cursor-pointer text-black"
+                              onClick={() => setSelectedActs([...selectedActs, act])}
+                            >
+                              {act.name}
+                            </div>
+                          ))
+                        }
+                        {searchTerm && 
+                          acts.filter(act => 
+                            act.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                            !selectedActs.some(selected => selected.id === act.id)
+                          ).length === 0 && (
+                            <div className="p-2 text-gray-500 text-center">
+                              No matching acts found
+                            </div>
+                          )
+                        }
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedActs.map(act => (
+                        <div 
+                          key={act.id} 
+                          className="bg-blue-500 text-white px-2 py-1 rounded-full flex items-center"
+                        >
+                          <span className="mr-1">{act.name}</span>
+                          <button 
+                            type="button"
+                            onClick={() => setSelectedActs(selectedActs.filter(a => a.id !== act.id))}
+                            className="hover:text-red-200"
+                          >
+                            <FaTimes size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedActs.length === 0 && (
+                      <div className="text-red-400 text-sm">Please select at least one act</div>
+                    )}
+                  </div>
                 </div>
 
                 <div>

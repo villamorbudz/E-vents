@@ -1,7 +1,16 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { eventService } from '../services/apiService';
 
 export default function TicketingDetails() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [eventId, setEventId] = useState(null);
+  const [event, setEvent] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
   const [categories, setCategories] = useState([
     {
       name: 'General Admission',
@@ -13,6 +22,34 @@ export default function TicketingDetails() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [photos, setPhotos] = useState([]);
   const [editingIndex, setEditingIndex] = useState(0); // Track which category is being edited
+  
+  // Extract event ID from URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('eventId');
+    
+    if (!id) {
+      setErrorMessage('No event ID provided. Please create an event first.');
+      return;
+    }
+    
+    setEventId(id);
+    fetchEventDetails(id);
+  }, [location]);
+  
+  // Fetch event details
+  const fetchEventDetails = async (id) => {
+    setIsLoading(true);
+    try {
+      const eventData = await eventService.getEventById(id);
+      setEvent(eventData);
+    } catch (error) {
+      console.error('Error fetching event details:', error);
+      setErrorMessage('Failed to load event details. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddCategory = () => {
     if (newCategoryName.trim() !== '') {
@@ -58,6 +95,76 @@ export default function TicketingDetails() {
     // Mock adding a photo
     setPhotos([...photos, 'new-photo']);
   };
+  
+  // Validate ticket categories before submission
+  const validateCategories = () => {
+    // Check if there's at least one category
+    if (categories.length === 0) {
+      setErrorMessage('Please add at least one ticket category.');
+      return false;
+    }
+    
+    // Check if all categories have required fields
+    for (const category of categories) {
+      if (!category.name || !category.price || !category.capacity) {
+        setErrorMessage('All ticket categories must have a name, price, and capacity.');
+        return false;
+      }
+      
+      // Validate price is a number
+      if (isNaN(parseFloat(category.price)) || parseFloat(category.price) <= 0) {
+        setErrorMessage('Ticket prices must be valid positive numbers.');
+        return false;
+      }
+      
+      // Validate capacity is a positive integer
+      if (isNaN(parseInt(category.capacity)) || parseInt(category.capacity) <= 0) {
+        setErrorMessage('Ticket capacity must be a valid positive number.');
+        return false;
+      }
+    }
+    
+    return true;
+  };
+  
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+    
+    if (!eventId) {
+      setErrorMessage('No event ID found. Please create an event first.');
+      return;
+    }
+    
+    if (!validateCategories()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Create each ticket category
+      for (const category of categories) {
+        const categoryData = {
+          name: category.name,
+          price: parseFloat(category.price),
+          capacity: parseInt(category.capacity),
+          description: category.description || ''
+        };
+        
+        await eventService.createTicketCategory(eventId, categoryData);
+      }
+      
+      // Navigate to the seller homepage or event details page
+      navigate('/homeseller');
+    } catch (error) {
+      console.error('Error creating ticket categories:', error);
+      setErrorMessage(typeof error === 'string' ? error : 'Failed to create ticket categories. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
@@ -74,6 +181,28 @@ export default function TicketingDetails() {
       {/* Main content */}
       <div className="flex-1 p-8 bg-gray-900">
         <h1 className="text-2xl mb-8 text-gray-300">Ticket Details</h1>
+        
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex justify-center mb-6">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+        
+        {/* Error message */}
+        {errorMessage && (
+          <div className="bg-red-500 text-white p-3 rounded mb-6">
+            {errorMessage}
+          </div>
+        )}
+        
+        {/* Event info banner */}
+        {event && (
+          <div className="bg-blue-900 p-4 rounded mb-6">
+            <h2 className="text-xl font-bold">{event.name}</h2>
+            <p className="text-sm text-gray-300">Setting up tickets for your event</p>
+          </div>
+        )}
         
         <div className="flex justify-center">
           {/* Left column */}
@@ -166,13 +295,20 @@ export default function TicketingDetails() {
           </div>
         </div>
         
-        {/* This should be Save button instead of Payment button */}
+        {/* Submit button */}
         <div className="flex justify-center mt-16">
-          <Link to="/homeseller">
-            <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full">
-              Create
-            </button>
-          </Link>
+          <button 
+            onClick={handleSubmit}
+            disabled={isSubmitting || isLoading}
+            className={`${isSubmitting ? 'bg-gray-500' : 'bg-red-500 hover:bg-red-600'} text-white px-6 py-3 rounded-full flex items-center`}
+          >
+            {isSubmitting ? (
+              <>
+                <span className="animate-spin h-5 w-5 mr-2 border-t-2 border-b-2 border-white rounded-full"></span>
+                Saving...
+              </>
+            ) : 'Create Tickets'}
+          </button>
         </div>
       </div>
     </div>

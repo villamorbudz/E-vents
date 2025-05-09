@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import backgroundImage from '../assets/images/loginBG.png';
 import { userService } from '../services/apiService';
@@ -13,16 +13,6 @@ export default function SignupStep1() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-
-  // Check for existing signup data in localStorage
-  useEffect(() => {
-    const savedData = localStorage.getItem("signupData");
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      if (parsedData.email) setEmail(parsedData.email);
-      if (parsedData.password) setPassword(parsedData.password);
-    }
-  }, []);
 
   const validateForm = () => {
     const newErrors = {};
@@ -128,7 +118,7 @@ export default function SignupStep1() {
         <h2 className="text-2xl font-bold mb-6">Create Account</h2>
         <p className="text-sm mb-4 text-center w-1/2">Please enter your email and create a password to get started</p>
         
-        <form onSubmit={handleNext} className="w-full flex flex-col items-center">
+        <form onSubmit={handleNext} className="w-full flex flex-col items-center" autoComplete="off" autoSave="off">
           {errors.form && (
             <div className="w-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-center">
               {errors.form}
@@ -142,6 +132,8 @@ export default function SignupStep1() {
               className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.email ? 'border-red-500' : 'border-black'}`}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
+              name="email-no-autofill"
             />
             {errors.email && <p className="text-sm text-red-200 mt-1">{errors.email}</p>}
           </div>
@@ -153,6 +145,8 @@ export default function SignupStep1() {
               className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.password ? 'border-red-500' : 'border-black'}`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              name="password-no-autofill"
             />
             {errors.password && <p className="text-sm text-red-200 mt-1">{errors.password}</p>}
           </div>
@@ -164,6 +158,8 @@ export default function SignupStep1() {
               className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.confirmPassword ? 'border-red-500' : 'border-black'}`}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              name="confirm-password-no-autofill"
             />
             {errors.confirmPassword && <p className="text-sm text-red-200 mt-1">{errors.confirmPassword}</p>}
           </div>

@@ -1,5 +1,12 @@
 package it342.g4.e_vents.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it342.g4.e_vents.model.Category;
 import it342.g4.e_vents.service.CategoryService;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/categories")
 @CrossOrigin(origins = "*")
+@Tag(name = "Category", description = "Category management APIs")
 public class CategoryController {
 
     private final CategoryService categoryService;
@@ -31,6 +39,11 @@ public class CategoryController {
      * @return List of all active categories
      */
     @GetMapping
+    @Operation(summary = "Get all active categories", description = "Retrieves a list of all active categories in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of active categories", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Category.class)))
+    })
     public ResponseEntity<List<Category>> getAllActiveCategories() {
         return ResponseEntity.ok(categoryService.getAllActiveCategories());
     }
@@ -40,6 +53,11 @@ public class CategoryController {
      * @return List of all categories
      */
     @GetMapping("/all")
+    @Operation(summary = "Get all categories including inactive", description = "Retrieves a list of all categories in the system, including inactive ones")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of all categories", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Category.class)))
+    })
     public ResponseEntity<List<Category>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
@@ -50,7 +68,14 @@ public class CategoryController {
      * @return The category or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getActiveCategoryById(@PathVariable Long id) {
+    @Operation(summary = "Get active category by ID", description = "Retrieves a specific active category by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the category", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Category.class))),
+        @ApiResponse(responseCode = "404", description = "Category not found", content = @Content)
+    })
+    public ResponseEntity<Category> getActiveCategoryById(
+            @Parameter(description = "ID of the category to retrieve") @PathVariable Long id) {
         return categoryService.getActiveCategoryById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -62,7 +87,14 @@ public class CategoryController {
      * @return The category or 404 if not found
      */
     @GetMapping("/name/{name}")
-    public ResponseEntity<Category> getCategoryByName(@PathVariable String name) {
+    @Operation(summary = "Get category by name", description = "Retrieves a specific category by its name")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the category", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Category.class))),
+        @ApiResponse(responseCode = "404", description = "Category not found", content = @Content)
+    })
+    public ResponseEntity<Category> getCategoryByName(
+            @Parameter(description = "Name of the category to retrieve") @PathVariable String name) {
         return categoryService.getCategoryByName(name)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -74,7 +106,15 @@ public class CategoryController {
      * @return The created category or error
      */
     @PostMapping("/create")
-    public ResponseEntity<?> createCategory(@RequestBody Category category) {
+    @Operation(summary = "Create a new category", description = "Creates a new category in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Category successfully created", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Category.class))),
+        @ApiResponse(responseCode = "409", description = "Category with this name already exists", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<?> createCategory(
+            @Parameter(description = "Category object to be created", required = true) @RequestBody Category category) {
         if (categoryService.existsByName(category.getName())) {
             return ResponseEntity
                 .status(HttpStatus.CONFLICT)
@@ -91,7 +131,16 @@ public class CategoryController {
      * @return The updated category or error
      */
     @PutMapping("/{id}/edit")
-    public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+    @Operation(summary = "Update a category", description = "Updates an existing category by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Category successfully updated", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Category.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Category not found", content = @Content)
+    })
+    public ResponseEntity<?> updateCategory(
+            @Parameter(description = "ID of the category to update", required = true) @PathVariable Long id, 
+            @Parameter(description = "Updated category details", required = true) @RequestBody Category categoryDetails) {
         try {
             // Verify category exists
             categoryService.getCategoryById(id)
@@ -118,7 +167,15 @@ public class CategoryController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}/deactivate")
-    public ResponseEntity<?> deactivateCategory(@PathVariable Long id) {
+    @Operation(summary = "Deactivate a category", description = "Deactivates a category by setting it as inactive (soft delete)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Category successfully deactivated", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> deactivateCategory(
+            @Parameter(description = "ID of the category to deactivate", required = true) @PathVariable Long id) {
         try {
             // Verify category exists
             categoryService.getCategoryById(id)
@@ -141,7 +198,15 @@ public class CategoryController {
      * @return Success message or error
      */
     @PostMapping("/restore/{id}")
-    public ResponseEntity<?> restoreCategory(@PathVariable Long id) {
+    @Operation(summary = "Restore a category", description = "Activates a previously deactivated category")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Category successfully restored", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> restoreCategory(
+            @Parameter(description = "ID of the category to restore", required = true) @PathVariable Long id) {
         try {
             categoryService.restoreCategory(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Category restored successfully"));
@@ -160,7 +225,15 @@ public class CategoryController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}/delete")
-    public ResponseEntity<?> deleteCategoryPermanently(@PathVariable Long id) {
+    @Operation(summary = "Delete a category permanently", description = "Permanently deletes a category from the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Category permanently deleted", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> deleteCategoryPermanently(
+            @Parameter(description = "ID of the category to permanently delete", required = true) @PathVariable Long id) {
         try {
             // Verify category exists
             categoryService.getCategoryById(id)

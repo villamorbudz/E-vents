@@ -214,6 +214,59 @@ export const userService = {
   }
 };
 
+// Event Service
+export const eventService = {
+  async getAllActs() {
+    try {
+      const response = await api.get('/acts');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || 'Error fetching acts';
+    }
+  },
+
+  async createEvent(eventData, bannerImage) {
+    try {
+      // First create the event
+      const response = await api.post('/events', eventData);
+      const eventId = response.data.id;
+      
+      // If there's a banner image, upload it
+      if (bannerImage && eventId) {
+        const formData = new FormData();
+        formData.append('image', bannerImage);
+        await api.post(`/events/${eventId}/banner`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      }
+      
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || 'Error creating event';
+    }
+  },
+
+  async createTicketCategory(eventId, categoryData) {
+    try {
+      const response = await api.post(`/events/${eventId}/ticket-categories`, categoryData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || 'Error creating ticket category';
+    }
+  },
+
+  async getEventById(eventId) {
+    try {
+      const response = await api.get(`/events/${eventId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || 'Error fetching event';
+    }
+  }
+};
+
 // Admin-only service
 export const adminService = {
   async getDashboardStats() {

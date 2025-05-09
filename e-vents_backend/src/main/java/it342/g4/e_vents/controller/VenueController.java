@@ -8,6 +8,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +25,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/venues")
 @CrossOrigin(origins = "*")
+@Tag(name = "Venue", description = "Venue management APIs")
 public class VenueController {
 
     private final VenueService venueService;
@@ -30,6 +39,11 @@ public class VenueController {
      * Get all venues
      */
     @GetMapping
+    @Operation(summary = "Get all venues", description = "Retrieves a list of all venues in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of venues", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class)))
+    })
     public ResponseEntity<List<Venue>> getAllVenues() {
         return ResponseEntity.ok(venueService.getAllVenues());
     }
@@ -38,7 +52,14 @@ public class VenueController {
      * Get venue by ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Venue> getVenueById(@PathVariable Long id) {
+    @Operation(summary = "Get venue by ID", description = "Retrieves a specific venue by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the venue", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class))),
+        @ApiResponse(responseCode = "404", description = "Venue not found", content = @Content)
+    })
+    public ResponseEntity<Venue> getVenueById(
+            @Parameter(description = "ID of the venue to retrieve", required = true) @PathVariable Long id) {
         try {
             return ResponseEntity.ok(venueService.getVenueById(id));
         } catch (EntityNotFoundException e) {
@@ -50,7 +71,14 @@ public class VenueController {
      * Create or update a venue
      */
     @PostMapping
-    public ResponseEntity<Venue> createVenue(@RequestBody Venue venue) {
+    @Operation(summary = "Create a new venue", description = "Creates a new venue in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Venue successfully created", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<Venue> createVenue(
+            @Parameter(description = "Venue object to be created", required = true) @RequestBody Venue venue) {
         try {
             Venue savedVenue = venueService.createVenue(venue);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedVenue);
@@ -63,7 +91,16 @@ public class VenueController {
      * Find or create a venue using Google Places data
      */
     @PostMapping("/places")
-    public ResponseEntity<Venue> findOrCreateVenue(@RequestBody Map<String, Object> placeData) {
+    @Operation(summary = "Find or create venue from Google Places", 
+               description = "Finds an existing venue by Google Place ID or creates a new one using Google Places data")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Venue found or successfully created", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<Venue> findOrCreateVenue(
+            @Parameter(description = "Google Places data for venue creation", required = true) 
+            @RequestBody Map<String, Object> placeData) {
         try {
             String name = (String) placeData.get("name");
             String formattedAddress = (String) placeData.get("formattedAddress");
@@ -88,7 +125,16 @@ public class VenueController {
      * Update an existing venue
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Venue> updateVenue(@PathVariable Long id, @RequestBody Venue venue) {
+    @Operation(summary = "Update a venue", description = "Updates an existing venue by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Venue successfully updated", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class))),
+        @ApiResponse(responseCode = "404", description = "Venue not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<Venue> updateVenue(
+            @Parameter(description = "ID of the venue to update", required = true) @PathVariable Long id, 
+            @Parameter(description = "Updated venue details", required = true) @RequestBody Venue venue) {
         try {
             venue.setVenueId(id);
             return ResponseEntity.ok(venueService.updateVenue(venue));
@@ -103,7 +149,13 @@ public class VenueController {
      * Search venues by query
      */
     @GetMapping("/search")
-    public ResponseEntity<List<Venue>> searchVenues(@RequestParam String query) {
+    @Operation(summary = "Search venues", description = "Searches for venues matching the provided query string")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved search results", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class)))
+    })
+    public ResponseEntity<List<Venue>> searchVenues(
+            @Parameter(description = "Search query string", required = true) @RequestParam String query) {
         return ResponseEntity.ok(venueService.searchVenues(query));
     }
 
@@ -111,7 +163,14 @@ public class VenueController {
      * Get venue by Google Place ID
      */
     @GetMapping("/places/{placeId}")
-    public ResponseEntity<Venue> getVenueByPlaceId(@PathVariable String placeId) {
+    @Operation(summary = "Get venue by Google Place ID", description = "Retrieves a venue by its Google Place ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the venue", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class))),
+        @ApiResponse(responseCode = "404", description = "Venue not found with this Place ID", content = @Content)
+    })
+    public ResponseEntity<Venue> getVenueByPlaceId(
+            @Parameter(description = "Google Place ID of the venue", required = true) @PathVariable String placeId) {
         return venueService.findByGooglePlaceId(placeId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

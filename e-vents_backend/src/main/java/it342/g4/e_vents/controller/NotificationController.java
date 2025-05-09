@@ -8,6 +8,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -17,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/notifications")
 @CrossOrigin(origins = "*")
+@Tag(name = "Notification", description = "Notification management APIs")
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -31,6 +40,11 @@ public class NotificationController {
      * @return List of all active notifications
      */
     @GetMapping
+    @Operation(summary = "Get all active notifications", description = "Retrieves a list of all active notifications in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of active notifications", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Notification.class)))
+    })
     public ResponseEntity<List<Notification>> getAllActiveNotifications() {
         return ResponseEntity.ok(notificationService.getAllActiveNotifications());
     }
@@ -40,6 +54,11 @@ public class NotificationController {
      * @return List of all notifications
      */
     @GetMapping("/all")
+    @Operation(summary = "Get all notifications", description = "Retrieves a list of all notifications in the system, including inactive ones")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of all notifications", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Notification.class)))
+    })
     public ResponseEntity<List<Notification>> getAllNotifications() {
         return ResponseEntity.ok(notificationService.getAllNotifications());
     }
@@ -50,7 +69,14 @@ public class NotificationController {
      * @return The notification or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Notification> getNotificationById(@PathVariable Long id) {
+    @Operation(summary = "Get notification by ID", description = "Retrieves a specific notification by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the notification", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Notification.class))),
+        @ApiResponse(responseCode = "404", description = "Notification not found", content = @Content)
+    })
+    public ResponseEntity<Notification> getNotificationById(
+            @Parameter(description = "ID of the notification to retrieve", required = true) @PathVariable Long id) {
         return notificationService.getNotificationById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -62,7 +88,13 @@ public class NotificationController {
      * @return List of active notifications for the specified user
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Notification>> getNotificationsByUserId(@PathVariable Long userId) {
+    @Operation(summary = "Get notifications by user ID", description = "Retrieves all active notifications for a specific user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved notifications for the user", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Notification.class)))
+    })
+    public ResponseEntity<List<Notification>> getNotificationsByUserId(
+            @Parameter(description = "ID of the user to get notifications for", required = true) @PathVariable Long userId) {
         return ResponseEntity.ok(notificationService.getNotificationsByUserId(userId));
     }
     
@@ -72,7 +104,13 @@ public class NotificationController {
      * @return List of unread active notifications for the specified user
      */
     @GetMapping("/user/{userId}/unread")
-    public ResponseEntity<List<Notification>> getUnreadNotificationsByUserId(@PathVariable Long userId) {
+    @Operation(summary = "Get unread notifications by user ID", description = "Retrieves all unread active notifications for a specific user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved unread notifications for the user", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Notification.class)))
+    })
+    public ResponseEntity<List<Notification>> getUnreadNotificationsByUserId(
+            @Parameter(description = "ID of the user to get unread notifications for", required = true) @PathVariable Long userId) {
         return ResponseEntity.ok(notificationService.getUnreadNotificationsByUserId(userId));
     }
     
@@ -82,7 +120,15 @@ public class NotificationController {
      * @return The created notification or error
      */
     @PostMapping
-    public ResponseEntity<?> createNotification(@RequestBody Notification notification) {
+    @Operation(summary = "Create a new notification", description = "Creates a new notification in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Notification successfully created", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Notification.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Referenced entity not found", content = @Content)
+    })
+    public ResponseEntity<?> createNotification(
+            @Parameter(description = "Notification object to be created", required = true) @RequestBody Notification notification) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(notificationService.createNotification(notification));
@@ -102,7 +148,16 @@ public class NotificationController {
      * @return The updated notification or error
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateNotification(@PathVariable Long id, @RequestBody Notification notificationDetails) {
+    @Operation(summary = "Update a notification", description = "Updates an existing notification in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Notification successfully updated", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Notification.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Notification not found", content = @Content)
+    })
+    public ResponseEntity<?> updateNotification(
+            @Parameter(description = "ID of the notification to update", required = true) @PathVariable Long id, 
+            @Parameter(description = "Updated notification details", required = true) @RequestBody Notification notificationDetails) {
         try {
             Notification updatedNotification = notificationService.updateNotification(id, notificationDetails);
             return ResponseEntity.ok(updatedNotification);
@@ -121,7 +176,15 @@ public class NotificationController {
      * @return The updated notification or error
      */
     @PutMapping("/{id}/read")
-    public ResponseEntity<?> markNotificationAsRead(@PathVariable Long id) {
+    @Operation(summary = "Mark notification as read", description = "Marks a specific notification as read")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Notification successfully marked as read", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Notification.class))),
+        @ApiResponse(responseCode = "404", description = "Notification not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> markNotificationAsRead(
+            @Parameter(description = "ID of the notification to mark as read", required = true) @PathVariable Long id) {
         try {
             Notification updatedNotification = notificationService.markNotificationAsRead(id);
             return ResponseEntity.ok(updatedNotification);
@@ -140,7 +203,15 @@ public class NotificationController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}/deactivate")
-    public ResponseEntity<?> deactivateNotification(@PathVariable Long id) {
+    @Operation(summary = "Deactivate a notification", description = "Soft-deletes a notification by setting its is_active attribute to false")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Notification successfully deactivated", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Notification not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> deactivateNotification(
+            @Parameter(description = "ID of the notification to deactivate", required = true) @PathVariable Long id) {
         try {
             notificationService.deactivateNotification(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Notification deactivated successfully"));
@@ -159,7 +230,15 @@ public class NotificationController {
      * @return Success message or error
      */
     @PostMapping("/restore/{id}")
-    public ResponseEntity<?> restoreNotification(@PathVariable Long id) {
+    @Operation(summary = "Restore a notification", description = "Restores a previously deactivated notification by setting its is_active attribute to true")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Notification successfully restored", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Notification not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> restoreNotification(
+            @Parameter(description = "ID of the notification to restore", required = true) @PathVariable Long id) {
         try {
             notificationService.restoreNotification(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Notification restored successfully"));

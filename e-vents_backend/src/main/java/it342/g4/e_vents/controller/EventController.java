@@ -1,5 +1,12 @@
 package it342.g4.e_vents.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it342.g4.e_vents.model.Act;
 import it342.g4.e_vents.model.Event;
 import it342.g4.e_vents.model.Venue;
@@ -36,6 +43,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/events")
 @CrossOrigin(origins = "*")
+@Tag(name = "Event", description = "Event management APIs")
 public class EventController {
 
     private final EventService eventService;
@@ -63,6 +71,11 @@ public class EventController {
      * @return List of all events
      */
     @GetMapping()
+    @Operation(summary = "Get all events", description = "Retrieves a list of all events in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of events", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
+    })
     public ResponseEntity<List<Event>> getAllEvents() {
         return ResponseEntity.ok(eventService.getAllEvents());
     }
@@ -72,6 +85,11 @@ public class EventController {
      * @return List of all scheduled events
      */
     @GetMapping("/scheduled")
+    @Operation(summary = "Get all scheduled events", description = "Retrieves a list of all events with SCHEDULED status")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of scheduled events", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
+    })
     public ResponseEntity<List<Event>> getScheduledEvents() {
         return ResponseEntity.ok(eventService.getEventsByStatus("SCHEDULED"));
     }
@@ -81,6 +99,11 @@ public class EventController {
      * @return List of all postponed events
      */
     @GetMapping("/postponed")
+    @Operation(summary = "Get all postponed events", description = "Retrieves a list of all events with POSTPONED status")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of postponed events", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
+    })
     public ResponseEntity<List<Event>> getPostponedEvents() {
         return ResponseEntity.ok(eventService.getEventsByStatus("POSTPONED"));
     }
@@ -90,6 +113,11 @@ public class EventController {
      * @return List of all cancelled events
      */
     @GetMapping("/cancelled")
+    @Operation(summary = "Get all cancelled events", description = "Retrieves a list of all events with CANCELLED status")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of cancelled events", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
+    })
     public ResponseEntity<List<Event>> getCancelledEvents() {
         return ResponseEntity.ok(eventService.getEventsByStatus("CANCELLED"));
     }
@@ -100,7 +128,14 @@ public class EventController {
      * @return The event or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
+    @Operation(summary = "Get event by ID", description = "Retrieves a specific event by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the event", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class))),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content)
+    })
+    public ResponseEntity<Event> getEventById(
+            @Parameter(description = "ID of the event to retrieve") @PathVariable Long id) {
         try {
             return ResponseEntity.ok(eventService.getEventById(id));
         } catch (EntityNotFoundException e) {
@@ -114,7 +149,12 @@ public class EventController {
      * @return ModelAndView for the edit page
      */
     @GetMapping("/edit/{id}")
-    public ModelAndView showEditEventPage(@PathVariable Long id) {
+    @Operation(summary = "Show edit event page", description = "Returns a view for editing an event")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully returned edit page view")
+    })
+    public ModelAndView showEditEventPage(
+            @Parameter(description = "ID of the event to edit") @PathVariable Long id) {
         ModelAndView mav = new ModelAndView("edit_event");
         mav.addObject("eventId", id);
         return mav;
@@ -125,6 +165,11 @@ public class EventController {
      * @return List of all venues
      */
     @GetMapping("/venues")
+    @Operation(summary = "Get all venues", description = "Retrieves a list of all venues for event creation/editing")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of venues", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class)))
+    })
     public ResponseEntity<List<Venue>> getVenues() {
         return ResponseEntity.ok(venueService.getAllVenues());
     }
@@ -134,6 +179,11 @@ public class EventController {
      * @return List of all acts
      */
     @GetMapping("/acts")
+    @Operation(summary = "Get all acts", description = "Retrieves a list of all acts for event lineup selection")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of acts", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Act.class)))
+    })
     public ResponseEntity<List<Act>> getActs() {
         return ResponseEntity.ok(actService.getAllActs());
     }
@@ -149,12 +199,18 @@ public class EventController {
      * @return Redirect to dashboard
      */
     @PostMapping("/create-form")
-    public ModelAndView createEventForm(@RequestParam String name,
-                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-                                   @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time,
-                                   @RequestParam Long venue,
-                                   @RequestParam(value = "lineup") List<Long> lineup,
-                                   @RequestParam String status) {
+    @Operation(summary = "Create event with form data", description = "Creates a new event using form data and redirects to dashboard")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Event successfully created and redirected to dashboard"),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ModelAndView createEventForm(
+            @Parameter(description = "Name of the event", required = true) @RequestParam String name,
+            @Parameter(description = "Date of the event", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Time of the event", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time,
+            @Parameter(description = "ID of the venue", required = true) @RequestParam Long venue,
+            @Parameter(description = "IDs of acts in the lineup", required = true) @RequestParam(value = "lineup") List<Long> lineup,
+            @Parameter(description = "Status of the event", required = true) @RequestParam String status) {
         Event event = new Event();
         event.setName(name);
         event.setDate(date);
@@ -184,7 +240,14 @@ public class EventController {
      * @return The created event
      */
     @PostMapping("/create")
-    public ResponseEntity<Event> createEvent(@RequestBody Event event) {
+    @Operation(summary = "Create a new event", description = "Creates a new event in the system using JSON data")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Event successfully created", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<Event> createEvent(
+            @Parameter(description = "Event object to be created", required = true) @RequestBody Event event) {
         try {
             Event createdEvent = eventService.createEvent(event);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
@@ -200,7 +263,16 @@ public class EventController {
      * @return Success message or error
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Event> updateEvent(@PathVariable Long id, @RequestBody Event eventDetails) {
+    @Operation(summary = "Update an event", description = "Updates an existing event by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Event successfully updated", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content)
+    })
+    public ResponseEntity<Event> updateEvent(
+            @Parameter(description = "ID of the event to update", required = true) @PathVariable Long id, 
+            @Parameter(description = "Updated event details", required = true) @RequestBody Event eventDetails) {
         try {
             // Verify event exists
             Event existingEvent = eventService.getEventById(id);
@@ -229,7 +301,15 @@ public class EventController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}/delete")
-    public ResponseEntity<?> deleteEventPermanently(@PathVariable Long id) {
+    @Operation(summary = "Delete an event permanently", description = "Permanently deletes an event from the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Event permanently deleted", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> deleteEventPermanently(
+            @Parameter(description = "ID of the event to permanently delete", required = true) @PathVariable Long id) {
         try {
             eventService.deleteEvent(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Event permanently deleted"));
@@ -248,7 +328,15 @@ public class EventController {
      * @return Success message or error
      */
     @PostMapping("/restore/{id}")
-    public ResponseEntity<?> restoreEvent(@PathVariable Long id) {
+    @Operation(summary = "Restore an event", description = "Restores a cancelled or postponed event to SCHEDULED status")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Event successfully restored", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> restoreEvent(
+            @Parameter(description = "ID of the event to restore", required = true) @PathVariable Long id) {
         try {
             eventService.restoreEvent(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Event restored successfully"));
@@ -267,7 +355,15 @@ public class EventController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}/cancel")
-    public ResponseEntity<?> cancelEvent(@PathVariable Long id) {
+    @Operation(summary = "Cancel an event", description = "Cancels an event by setting its status to CANCELLED")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Event successfully cancelled", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> cancelEvent(
+            @Parameter(description = "ID of the event to cancel", required = true) @PathVariable Long id) {
         try {
             eventService.cancelEvent(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Event cancelled successfully"));
@@ -286,7 +382,15 @@ public class EventController {
      * @return Success message or error
      */
     @PutMapping("/{id}/postpone")
-    public ResponseEntity<?> postponeEvent(@PathVariable Long id) {
+    @Operation(summary = "Postpone an event", description = "Postpones an event by setting its status to POSTPONED")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Event successfully postponed", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> postponeEvent(
+            @Parameter(description = "ID of the event to postpone", required = true) @PathVariable Long id) {
         try {
             eventService.postponeEvent(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Event postponed successfully"));
@@ -306,7 +410,16 @@ public class EventController {
      * @return Success message or error
      */
     @PostMapping("/{id}/banner")
-    public ResponseEntity<?> uploadBanner(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    @Operation(summary = "Upload event banner", description = "Uploads a banner image for an event")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Banner successfully uploaded", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Invalid file or bad request", content = @Content)
+    })
+    public ResponseEntity<?> uploadBanner(
+            @Parameter(description = "ID of the event", required = true) @PathVariable Long id, 
+            @Parameter(description = "Banner image file", required = true) @RequestParam("file") MultipartFile file) {
         try {
             // Verify event exists
             Event event = eventService.getEventById(id);
@@ -339,7 +452,15 @@ public class EventController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}/banner")
-    public ResponseEntity<?> deleteBanner(@PathVariable Long id) {
+    @Operation(summary = "Delete event banner", description = "Deletes the banner image for an event")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Banner successfully deleted", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> deleteBanner(
+            @Parameter(description = "ID of the event", required = true) @PathVariable Long id) {
         try {
             // Verify event exists
             Event event = eventService.getEventById(id);
@@ -370,7 +491,14 @@ public class EventController {
      * @return The image file
      */
     @GetMapping("/images/{filename:.+}")
-    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
+    @Operation(summary = "Serve event banner image", description = "Serves the banner image file for an event")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the image"),
+        @ApiResponse(responseCode = "404", description = "Image not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<Resource> serveImage(
+            @Parameter(description = "Filename of the image to retrieve", required = true) @PathVariable String filename) {
         try {
             Path filePath = this.bannerStorageLocation.resolve(filename).normalize();
             Resource resource = new UrlResource(filePath.toUri());
