@@ -231,6 +231,12 @@ public class UserService {
             user.setCity(updatedUser.getCity());
             user.setPostalCode(updatedUser.getPostalCode());
 
+            if (updatedUser.getRole() != null && updatedUser.getRole().getRoleId() != null) {
+                Role role = roleRepository.findById(updatedUser.getRole().getRoleId())
+                    .orElseThrow(() -> new EntityNotFoundException("Role not found with ID: " + updatedUser.getRole().getRoleId()));
+                user.setRole(role);
+            }
+
             // Save and return updated user
             return Optional.of(userRepository.save(user));
         }

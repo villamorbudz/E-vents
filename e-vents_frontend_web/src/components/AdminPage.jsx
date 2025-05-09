@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { userService, adminService, errorHandlerService } from "../services/apiService";
+import { userService } from "../services/apiService";
 import { FaEdit, FaTrash, FaUndo, FaUserPlus, FaSearch } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { useNavigate } from "react-router-dom";
 import '../styles/AdminPage.css';
 
 function AdminPage() {
@@ -10,6 +9,7 @@ function AdminPage() {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -18,7 +18,6 @@ function AdminPage() {
   const [countries, setCountries] = useState([]);
   const [regions, setRegions] = useState([]);
   const [cities, setCities] = useState([]);
-  const navigate = useNavigate();
 
   // Form state for editing and creating users
   const [formData, setFormData] = useState({
@@ -58,8 +57,11 @@ function AdminPage() {
       setUsers(filteredUsers);
       setLoading(false);
     } catch (err) {
-      const errorMessage = errorHandlerService.handleError(err);
-      setError(`Failed to fetch users: ${errorMessage}`);
+      let errorMessage = 'Failed to fetch users';
+      if (err.response?.data) {
+        errorMessage += `: ${err.response.data}`;
+      }
+      setError(errorMessage);
       console.error('Error fetching users:', err);
       setLoading(false);
     }
@@ -74,8 +76,11 @@ function AdminPage() {
       setRoles(filteredRoles);
     } catch (err) {
       console.error('Error fetching roles:', err);
-      const errorMessage = errorHandlerService.handleError(err);
-      setError(`Failed to fetch roles: ${errorMessage}`);
+      let errorMessage = 'Failed to fetch roles';
+      if (err.response?.data) {
+        errorMessage += `: ${err.response.data}`;
+      }
+      setError(errorMessage);
     }
   };
 
@@ -142,6 +147,10 @@ function AdminPage() {
       const userProfile = await userService.getUserById(user.userId);
       setCurrentUser(userProfile);
       
+      console.log("User profile loaded:", userProfile);
+      console.log("Current role structure:", userProfile.role);
+      console.log("Available roles:", roles);
+      
       setFormData({
         userId: userProfile.userId,
         firstName: userProfile.firstName || '',
@@ -153,7 +162,7 @@ function AdminPage() {
         region: userProfile.region || '',
         city: userProfile.city || '',
         postalCode: userProfile.postalCode || '',
-        roleId: userProfile.role ? userProfile.role.roleId : ''
+        roleId: userProfile.role ? String(userProfile.role.roleId) : ''  // Convert to string for form field
       });
 
       // Fetch regions and cities for the selected country and region
@@ -166,8 +175,11 @@ function AdminPage() {
 
       setIsEditModalOpen(true);
     } catch (err) {
-      const errorMessage = errorHandlerService.handleError(err);
-      setError(`Failed to get user details: ${errorMessage}`);
+      let errorMessage = 'Failed to get user details';
+      if (err.response?.data) {
+        errorMessage += `: ${err.response.data}`;
+      }
+      setError(errorMessage);
     }
   };
 
@@ -182,9 +194,18 @@ function AdminPage() {
       setUsers(users.filter(user => user.userId !== currentUser.userId));
       setIsDeleteModalOpen(false);
       setCurrentUser(null);
+      setSuccessMessage('User successfully deleted');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch (err) {
-      const errorMessage = errorHandlerService.handleError(err);
-      setError(`Failed to delete user: ${errorMessage}`);
+      let errorMessage = 'Failed to delete user';
+      if (err.response?.data) {
+        errorMessage += `: ${err.response.data}`;
+      }
+      setError(errorMessage);
     }
   };
 
@@ -200,69 +221,100 @@ function AdminPage() {
       region: '',
       city: '',
       postalCode: '',
-      // Remove roleId since it will be assigned a default role
+      roleId: '' // Include roleId with default empty value
     });
     setIsCreateModalOpen(true);
-  };
-
-  const submitCreateUser = async (e) => {
-    e.preventDefault();
-    try {
-      // Prepare the user data without role specification
-      const userData = {
-        ...formData,
-        birthdate: formData.birthdate ? new Date(formData.birthdate) : null,
-        // Remove role setting - will use default role from backend
-      };
-  
-      // Use a different method for admin creating users that doesn't affect current login state
-      const newUser = await userService.adminCreateUser(userData);
-      
-      // Only add the new user to the list if they don't have an admin role
-      if (!newUser.role || newUser.role.name !== 'ADMIN') {
-        setUsers([...users, newUser]);
-      }
-      
-      setIsCreateModalOpen(false);
-    } catch (err) {
-      const errorMessage = errorHandlerService.handleError(err);
-      setError(`Failed to create user: ${errorMessage}`);
-    }
   };
 
   const submitEditUser = async (e) => {
     e.preventDefault();
     try {
-      // Prepare the user data with proper format for role
-      const userData = {
+      // Prepare the user data
+      const roleIdAsNumber = parseInt(formData.roleId, 10);
+      const updatedUser = {
         ...formData,
         birthdate: formData.birthdate ? new Date(formData.birthdate) : null,
-        role: formData.roleId ? { roleId: formData.roleId } : null
+        role: { roleId: roleIdAsNumber }
       };
-
-      // If we're sending roleId separately from the role object for the API
-      if (userData.roleId) {
-        delete userData.roleId; // Remove roleId as it's now in the role object
-      }
-
-      const updatedUser = await userService.updateUserProfile(userData);
-      
-      // Check if the updated user now has an admin role
-      if (updatedUser.role && updatedUser.role.name === 'ADMIN') {
-        // Remove from display if now an admin
+      delete updatedUser.roleId; // Remove roleId to avoid confusion
+  
+      // Make API call to update the user (use the new admin function)
+      const result = await userService.updateUser(currentUser.userId, updatedUser);
+  
+      // Update UI as before
+      if (result.role && result.role.name === 'ADMIN') {
         setUsers(users.filter(user => user.userId !== currentUser.userId));
       } else {
-        // Update the user in the display
-        setUsers(users.map(user => 
-          user.userId === currentUser.userId ? updatedUser : user
-        ));
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user.userId === currentUser.userId ? result : user
+          )
+        );
       }
-      
+  
       setIsEditModalOpen(false);
       setCurrentUser(null);
+      setSuccessMessage('User successfully updated');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      const errorMessage = errorHandlerService.handleError(err);
-      setError(`Failed to update user: ${errorMessage}`);
+      console.error("Error updating user:", err);
+      let errorMessage = 'Failed to update user';
+      if (err.response?.data) {
+        errorMessage += `: ${err.response.data}`;
+      }
+      setError(errorMessage);
+    }
+  };
+
+  const submitCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      // Create the new user data
+      const userData = {
+        ...formData,
+        birthdate: formData.birthdate ? new Date(formData.birthdate) : null
+      };
+      
+      // Add role object if roleId is provided
+      if (formData.roleId) {
+        const roleIdAsNumber = parseInt(formData.roleId, 10);
+        const selectedRole = roles.find(role => role.roleId === roleIdAsNumber);
+        
+        if (selectedRole) {
+          userData.role = {
+            roleId: roleIdAsNumber,
+            name: selectedRole.name,
+            active: true
+          };
+        }
+        
+        // Remove the separate roleId property
+        delete userData.roleId;
+      }
+      
+      console.log("Creating user with data:", userData);
+      const createdUser = await userService.adminCreateUser(userData);
+      
+      // Only add to list if not admin
+      if (!createdUser.role || createdUser.role.name !== 'ADMIN') {
+        setUsers(prevUsers => [...prevUsers, createdUser]);
+      }
+      
+      setIsCreateModalOpen(false);
+      setError(null);
+      setSuccessMessage('User successfully created');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (err) {
+      console.error("Error creating user:", err);
+      let errorMessage = 'Failed to create user';
+      if (err.response?.data) {
+        errorMessage += `: ${err.response.data}`;
+      }
+      setError(errorMessage);
     }
   };
 
@@ -278,9 +330,19 @@ function AdminPage() {
       setUsers(users.map(u => 
         u.userId === user.userId ? { ...u, active: !u.active } : u
       ));
+      
+      setSuccessMessage(`User ${user.active ? 'deactivated' : 'activated'} successfully`);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch (err) {
-      const errorMessage = errorHandlerService.handleError(err);
-      setError(`Failed to update user status: ${errorMessage}`);
+      let errorMessage = 'Failed to update user status';
+      if (err.response?.data) {
+        errorMessage += `: ${err.response.data}`;
+      }
+      setError(errorMessage);
     }
   };
 
@@ -322,6 +384,7 @@ function AdminPage() {
       </button>
       
       {error && <div className="admin-error">{error}</div>}
+      {successMessage && <div className="admin-success">{successMessage}</div>}
       
       <div className="admin-controls">
         <div className="admin-search">
@@ -338,7 +401,6 @@ function AdminPage() {
         <button className="admin-button create-button" onClick={handleCreateUser}>
           <FaUserPlus /> New User
         </button>
-        
       </div>
       
       {loading ? (
@@ -364,7 +426,7 @@ function AdminPage() {
                 filteredUsers.map(user => (
                   <tr key={user.userId} className={!user.active ? 'inactive-user' : ''}>
                     <td>{user.userId}</td>
-                    <td>{`${user.firstName} ${user.lastName}`}</td>
+                    <td>{`${user.firstName || ''} ${user.lastName || ''}`}</td>
                     <td>{user.email}</td>
                     <td>{user.contactNumber}</td>
                     <td>{user.country}</td>
@@ -650,7 +712,23 @@ function AdminPage() {
                 </div>
               </div>
 
-              {/* Removed role selection from create user form */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="roleId">Role</label>
+                  <select
+                    id="roleId"
+                    name="roleId"
+                    value={formData.roleId}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select Role</option>
+                    {roles.map(role => (
+                      <option key={role.roleId} value={role.roleId}>{role.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               <div className="form-row">
                 <div className="form-group">
