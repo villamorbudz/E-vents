@@ -89,6 +89,12 @@ export const userService = {
     }
   },
 
+  async updateUser(userId, userData) {
+    // userData must include { role: { roleId: ... } }
+    const response = await api.put(`/users/${userId}`, userData);
+    return response.data;
+  },
+
   async checkEmailExists(email) {
     const response = await api.get(`/users/exists?email=${email}`);
     return response.data.exists;
@@ -184,7 +190,7 @@ export const userService = {
   },
 
   async deleteUser(userId) {
-    const response = await api.delete(`/users/${userId}`);
+    const response = await api.delete(`/users/${userId}/delete`);
     return response.data;
   },
 
@@ -232,7 +238,7 @@ export const adminService = {
   }
 };
 
-// Generic error handler
+/* Generic error handler
 export const errorHandlerService = {
   handleError(error) {
     if (!error) return 'An unknown error occurred';
@@ -250,4 +256,4 @@ export const errorHandlerService = {
     }
     return error.message || 'An unexpected error occurred';
   }
-};
+};*/

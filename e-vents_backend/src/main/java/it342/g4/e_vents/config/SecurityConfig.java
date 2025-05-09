@@ -17,8 +17,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import it342.g4.e_vents.security.JwtAuthenticationFilter;
-
-
+ 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -55,17 +54,14 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS with our configuration
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/api/users/register", "/api/users/login", "/api/users/exists").permitAll()
+                // Public endpoints - no authentication needed
+                .requestMatchers("/api/users/register", "/api/users/login", "/api/users/exists", "/api/users/{id}/delete", "/api/users/{id}").permitAll()
                 .requestMatchers("/api/users/countries", "/api/users/regions/**", "/api/users/cities/**").permitAll()
                 .requestMatchers("/login", "/signup/**", "/forgot-password").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                 // Swagger UI endpoints
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**", "/v3/api-docs/**").permitAll()
-                //admin roles
-                .requestMatchers("/api/roles", "/api/roles/**").hasAuthority("ADMIN")
-                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                // Protected endpoints
+                // All other requests just need valid authentication (token), no specific role required
                 .anyRequest().authenticated()
             )
             // Use JWT instead of sessions

@@ -63,15 +63,15 @@ export default function EventsLandingPage() {
           
           {/* Desktop Navigation */}
           <nav className="flex gap-10 text-lg">
-            <Link to="/" className="hover:text-gray-200 text-black">Home</Link>
+            <Link to="/" className=" text-black">Home</Link>
             <Link 
               to="#" 
-              className="hover:text-gray-200" 
+              className="hover:text-gray-200 text-white" 
               onClick={() => handleActionClick('create events')}
             >
               Create Events
             </Link>
-            <Link to="/login" className="hover:text-gray-200">Log in</Link>
+            <Link to="/login" className="hover:text-gray-200 text-white">Log in</Link>
           </nav>
         </div>
       </header>

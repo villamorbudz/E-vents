@@ -1,11 +1,10 @@
 package it342.g4.e_vents.security;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -44,10 +43,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         String email = jwtUtils.getEmailFromToken(token);
-        List<SimpleGrantedAuthority> authorities = jwtUtils.getAuthoritiesFromToken(token);
         
+        // For the simplified approach, we're not concerned with roles/authorities
+        // Just creating an authenticated token with no specific authorities
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                email, null, authorities);
+                email, null, new ArrayList<>());
         
         SecurityContextHolder.getContext().setAuthentication(authentication);
         filterChain.doFilter(request, response);

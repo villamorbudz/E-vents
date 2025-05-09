@@ -143,6 +143,7 @@ public class UserController {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
+
     
     /**
      * Soft deletes a user by setting their is_active attribute to false
