@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { userService } from '../services/apiService';
+import { eventService } from '../services/eventService';
 
 export default function TicketingDetails() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([
     {
       name: 'General Admission',
@@ -11,8 +14,21 @@ export default function TicketingDetails() {
     }
   ]);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [photos, setPhotos] = useState([]);
   const [editingIndex, setEditingIndex] = useState(0); // Track which category is being edited
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [basicInfo, setBasicInfo] = useState(null);
+
+  // Load the event basic info from localStorage
+  useEffect(() => {
+    const storedInfo = localStorage.getItem("eventBasicInfo");
+    if (storedInfo) {
+      setBasicInfo(JSON.parse(storedInfo));
+    } else {
+      // If no event info, redirect back to event creation
+      navigate('/create');
+    }
+  }, [navigate]);
 
   const handleAddCategory = () => {
     if (newCategoryName.trim() !== '') {
@@ -52,24 +68,110 @@ export default function TicketingDetails() {
     setCategories(updatedCategories);
   };
 
-  const handlePhotoUpload = (e) => {
-    // In a real implementation, this would handle file uploads
-    console.log("Photo upload initiated", e);
-    // Mock adding a photo
-    setPhotos([...photos, 'new-photo']);
+  const validateTicketCategories = () => {
+    for (const category of categories) {
+      if (!category.name || !category.price || !category.capacity) {
+        setErrorMessage('All ticket categories must have a name, price, and capacity.');
+        return false;
+      }
+      
+      if (isNaN(parseFloat(category.price)) || parseFloat(category.price) <= 0) {
+        setErrorMessage('Ticket prices must be valid positive numbers.');
+        return false;
+      }
+      
+      if (isNaN(parseInt(category.capacity)) || parseInt(category.capacity) <= 0) {
+        setErrorMessage('Ticket capacity must be a valid positive number.');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateTicketCategories()) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Get current user ID (normally would come from auth context)
+      const { userId } = userService.getCurrentUser();
+
+      // Prepare event data from the basic info
+      const eventData = {
+        name: basicInfo.name,
+        description: basicInfo.description,
+        date: basicInfo.date,
+        time: basicInfo.time,
+        venue: basicInfo.venue,
+        hostLineup: basicInfo.hostLineup,
+      };
+
+      // Submit event with ticket categories
+      const createdEvent = await eventService.createEvent(eventData, categories, userId);
+
+      // Upload banner image if available
+      if (basicInfo.bannerImage) {
+        await eventService.uploadEventBanner(createdEvent.eventId, basicInfo.bannerImage);
+      }
+
+      // Clear localStorage
+      localStorage.removeItem("eventBasicInfo");
+
+      // Navigate to the home/seller page
+      navigate('/homeseller');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      setErrorMessage('Failed to create event. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       {/* Navbar */}
       <div className="bg-[#5798FF] flex justify-between items-center px-10 py-4">
-        <h1 className="text-2xl font-bold">E-Vents</h1>
+        <div className="flex items-center">
+          <span className="text-3xl font-bold">
+            <span className="flex items-center">
+              <svg 
+                className="w-8 h-8 mr-1" 
+                viewBox="0 0 24 24" 
+                fill="white" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect x="2" y="2" width="9" height="9" />
+                <rect x="13" y="2" width="9" height="9" />
+                <rect x="2" y="13" width="9" height="9" />
+              </svg>
+              vents
+            </span>
+          </span>
+        </div>
         <div className="flex gap-10 text-lg">
           <Link to="/homeseller" className="hover:underline">My Events</Link>
           <Link to="/create" className="hover:underline text-black">Create Events</Link>
           <Link to="/profile" className="hover:underline">Profile</Link>
         </div>
       </div>
+      
+      {/* Error Message Pop-up */}
+      {errorMessage && (
+        <div className="fixed top-0 left-0 right-0 bottom-0 flex justify-center items-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white text-black p-8 rounded-md w-1/3 text-center">
+            <p>{errorMessage}</p>
+            <button 
+              onClick={() => setErrorMessage("")}
+              className="mt-4 bg-red-600 text-white px-6 py-2 rounded-md"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Main content */}
       <div className="flex-1 p-8 bg-gray-900">
@@ -166,13 +268,15 @@ export default function TicketingDetails() {
           </div>
         </div>
         
-        {/* This should be Save button instead of Payment button */}
+        {/* Create button */}
         <div className="flex justify-center mt-16">
-          <Link to="/homeseller">
-            <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full">
-              Create
-            </button>
-          </Link>
+          <button 
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={`bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isSubmitting ? 'Creating...' : 'Create Event'}
+          </button>
         </div>
       </div>
     </div>

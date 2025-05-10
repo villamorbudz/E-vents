@@ -1,13 +1,12 @@
 package it342.g4.e_vents.model;
 
-import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Date;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
@@ -55,6 +54,11 @@ public class Event {
     @ManyToMany(fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<Act> lineup;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
+    private User user;
 
     @Column(nullable = false)
     private String status = STATUS_SCHEDULED;
@@ -132,5 +136,12 @@ public class Event {
 
     public void setBannerImage(String bannerImage) {
         this.bannerImage = bannerImage;
+    }
+
+    public User getUser() {
+        return user;
+    }
+    public void setUser(User user) {
+        this.user = user;
     }
 }

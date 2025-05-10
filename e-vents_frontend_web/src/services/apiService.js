@@ -1,4 +1,5 @@
 // src/services/apiService.js
+// Add the missing getCurrentUser method
 
 import axios from 'axios';
 
@@ -42,6 +43,15 @@ api.interceptors.response.use(
 
 // User Service
 export const userService = {
+  // Add the missing getCurrentUser method
+  getCurrentUser() {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      return JSON.parse(userData);
+    }
+    return null;
+  },
+
   async login(email, password) {
     try {
       const response = await api.post('/users/login', null, {
@@ -237,23 +247,3 @@ export const adminService = {
     return response.data;
   }
 };
-
-/* Generic error handler
-export const errorHandlerService = {
-  handleError(error) {
-    if (!error) return 'An unknown error occurred';
-    if (typeof error === 'string') return error;
-    if (error.response) {
-      const { status, data } = error.response;
-      switch (status) {
-        case 400: return data.message || 'Invalid request';
-        case 401: return 'Unauthorized';
-        case 403: return 'Forbidden';
-        case 404: return 'Not found';
-        case 500: return 'Server error';
-        default: return 'An error occurred';
-      }
-    }
-    return error.message || 'An unexpected error occurred';
-  }
-};*/

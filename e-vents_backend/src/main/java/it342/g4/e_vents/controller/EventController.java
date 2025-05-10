@@ -1,23 +1,5 @@
 package it342.g4.e_vents.controller;
 
-import it342.g4.e_vents.model.Act;
-import it342.g4.e_vents.model.Event;
-import it342.g4.e_vents.model.Venue;
-import it342.g4.e_vents.service.ActService;
-import it342.g4.e_vents.service.EventService;
-import it342.g4.e_vents.service.VenueService;
-import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.MediaType;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -29,6 +11,38 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import it342.g4.e_vents.model.Act;
+import it342.g4.e_vents.model.Event;
+import it342.g4.e_vents.model.TicketCategory;
+import it342.g4.e_vents.model.User;
+import it342.g4.e_vents.model.Venue;
+import it342.g4.e_vents.service.ActService;
+import it342.g4.e_vents.service.EventService;
+import it342.g4.e_vents.service.TicketCategoryService;
+import it342.g4.e_vents.service.UserService;
+import it342.g4.e_vents.service.VenueService;
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Controller for event-related operations
@@ -42,11 +56,15 @@ public class EventController {
     private final VenueService venueService;
     private final ActService actService;
     private final Path bannerStorageLocation;
+    private final UserService userService;
+    private final TicketCategoryService ticketCategoryService;
     
     @Autowired
-    public EventController(EventService eventService, VenueService venueService, ActService actService) {
+    public EventController(EventService eventService, VenueService venueService, ActService actService, UserService userService, TicketCategoryService ticketCategoryService) {
         this.eventService = eventService;
         this.venueService = venueService;
+        this.userService = userService;
+        this.ticketCategoryService = ticketCategoryService;
         this.actService = actService;
         this.bannerStorageLocation = Paths.get("uploads/banners").toAbsolutePath().normalize();
         
@@ -184,14 +202,64 @@ public class EventController {
      * @return The created event
      */
     @PostMapping("/create")
-    public ResponseEntity<Event> createEvent(@RequestBody Event event) {
-        try {
-            Event createdEvent = eventService.createEvent(event);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+public ResponseEntity<Event> createEvent(@RequestBody Map<String, Object> requestData) {
+    try {
+        // Extract event data and ticket categories from the request
+        @SuppressWarnings("unchecked")
+        Map<String, Object> eventData = (Map<String, Object>) requestData.get("event");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> ticketCategoriesData = (List<Map<String, Object>>) requestData.get("ticketCategories");
+        
+        // Get user ID
+        Long userId = Long.valueOf(requestData.get("userId").toString());
+        User user = userService.getUserById(userId);
+        
+        // Create event object from the data
+        Event event = new Event();
+        event.setName((String) eventData.get("name"));
+        event.setDescription((String) eventData.get("description"));
+        // Parse date and time
+        event.setDate(LocalDate.parse((String) eventData.get("date")));
+        event.setTime(LocalTime.parse((String) eventData.get("time")));
+        
+        // Set venue information
+        Venue venue = new Venue();
+        venue.setName((String) eventData.get("venue"));
+        // You might need to add more venue details here
+        
+        event.setVenue(venue);
+        event.setUser(user);
+        
+        // Set default status
+        event.setStatus(Event.STATUS_SCHEDULED);
+        
+        // Save the event first
+        Event createdEvent = eventService.createEvent(event);
+        
+        // Now create and associate ticket categories
+        if (ticketCategoriesData != null && !ticketCategoriesData.isEmpty()) {
+            for (Map<String, Object> categoryData : ticketCategoriesData) {
+                TicketCategory category = new TicketCategory();
+                category.setName((String) categoryData.get("name"));
+                category.setPrice(Double.valueOf(categoryData.get("price").toString()));
+                category.setDescription((String) categoryData.get("description"));
+                category.setTotalTickets(Integer.valueOf(categoryData.get("capacity").toString()));
+                category.setTicketsSold(0); // Initially no tickets sold
+                category.setStatus("AVAILABLE");
+                category.setActive(true);
+                category.setEvent(createdEvent);
+                
+                // Add service method to save ticket category
+                ticketCategoryService.createTicketCategory(category);
+            }
         }
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.badRequest().build();
     }
+}
 
     /**
      * Updates an existing event

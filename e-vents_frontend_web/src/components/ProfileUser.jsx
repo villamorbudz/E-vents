@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { userService } from "../services/apiService";
+import NotificationsComponent from "../components/NotificationsComponent";
 
 export default function ProfileUser() {
   const navigate = useNavigate();
@@ -135,11 +136,11 @@ export default function ProfileUser() {
               </span>
             </span>
           </div>
-        <div className="flex gap-10 text-lg">
-          <Link to="/homes" className="hover:underline">Home</Link>
-          <Link to="/discover" className="hover:underline">Discover Events</Link>
+        <div className="flex items-center gap-10 text-lg">
+          <Link to="/home" className="hover:underline">Home</Link>
           <Link to="/myevents" className="hover:underline">My Events</Link>
           <Link to="/userprofile" className="hover:underline text-black">Profile</Link>
+          <NotificationsComponent />
         </div>
       </div>
       
@@ -169,7 +170,7 @@ export default function ProfileUser() {
                   <input
                     type="text"
                     name="firstName"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.firstName}
                     onChange={handleChange}
                   />
@@ -181,7 +182,7 @@ export default function ProfileUser() {
                   <input
                     type="text"
                     name="lastName"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.lastName}
                     onChange={handleChange}
                   />
@@ -193,7 +194,7 @@ export default function ProfileUser() {
                   <input
                     type="email"
                     name="email"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.email}
                     onChange={handleChange}
                     readOnly
@@ -206,7 +207,7 @@ export default function ProfileUser() {
                   <input
                     type="tel"
                     name="contactNumber"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.contactNumber}
                     onChange={handleChange}
                   />
@@ -218,7 +219,7 @@ export default function ProfileUser() {
                   <input
                     type="date"
                     name="birthdate"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.birthdate}
                     onChange={handleChange}
                   />
@@ -230,7 +231,7 @@ export default function ProfileUser() {
                   <input
                     type="text"
                     name="country"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.country}
                     onChange={handleChange}
                   />
@@ -242,7 +243,7 @@ export default function ProfileUser() {
                   <input
                     type="text"
                     name="region"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.region}
                     onChange={handleChange}
                   />
@@ -254,7 +255,7 @@ export default function ProfileUser() {
                   <input
                     type="text"
                     name="city"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.city}
                     onChange={handleChange}
                   />
@@ -266,7 +267,7 @@ export default function ProfileUser() {
                   <input
                     type="text"
                     name="postalCode"
-                    className="w-full p-2 rounded text-black"
+                    className="w-full p-2 rounded text-black bg-white"
                     value={profile.postalCode}
                     onChange={handleChange}
                   />

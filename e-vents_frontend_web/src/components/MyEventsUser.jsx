@@ -1,9 +1,77 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import NotificationsComponent from "../components/NotificationsComponent";
+import { mockEventsData } from "./HomeUser"; // Import mock data
 
 export default function MyEventsUser() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
-  const [userEvents, setUserEvents] = useState([]); // This will store user events when available
+  const [userEvents, setUserEvents] = useState([]);
+  const [eventsByDate, setEventsByDate] = useState({});
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // On component mount, check localStorage for purchased events
+  useEffect(() => {
+    // Load purchased events from localStorage
+    const loadPurchasedEvents = () => {
+      const storedEvents = localStorage.getItem('purchasedEvents');
+      if (storedEvents) {
+        const parsedEvents = JSON.parse(storedEvents);
+        setUserEvents(parsedEvents);
+        
+        // Organize events by date for easy lookup
+        const eventMap = {};
+        parsedEvents.forEach(event => {
+          const dateKey = new Date(event.date).toDateString();
+          if (!eventMap[dateKey]) {
+            eventMap[dateKey] = [];
+          }
+          eventMap[dateKey].push(event);
+        });
+        setEventsByDate(eventMap);
+      }
+    };
+
+    loadPurchasedEvents();
+
+    // Check if we have new purchased event data from state
+    if (location.state && location.state.newPurchasedEvent) {
+      const newEvent = location.state.newPurchasedEvent;
+      
+      // Add to localStorage
+      const storedEvents = localStorage.getItem('purchasedEvents');
+      let updatedEvents = storedEvents ? JSON.parse(storedEvents) : [];
+      
+      // Check if event is already in the list to avoid duplicates
+      const eventExists = updatedEvents.some(event => 
+        event.id === newEvent.id && event.ticketType === newEvent.ticketType
+      );
+      
+      if (!eventExists) {
+        updatedEvents.push(newEvent);
+        localStorage.setItem('purchasedEvents', JSON.stringify(updatedEvents));
+        
+        // Update state
+        setUserEvents(updatedEvents);
+        
+        // Update events by date
+        const dateKey = new Date(newEvent.date).toDateString();
+        setEventsByDate(prev => {
+          const updated = {...prev};
+          if (!updated[dateKey]) {
+            updated[dateKey] = [];
+          }
+          updated[dateKey].push(newEvent);
+          return updated;
+        });
+        
+        // Select the date of the new event
+        setSelectedDate(new Date(newEvent.date));
+        setCurrentDate(new Date(newEvent.date));
+      }
+    }
+  }, [location.state]);
 
   // Function to generate calendar days
   const generateCalendarDays = () => {
@@ -52,9 +120,8 @@ export default function MyEventsUser() {
   const hasEvent = (day) => {
     if (!day) return false;
     
-    // This is just a placeholder. In the future, you would check the userEvents array
-    // to see if there are any events on this day
-    return false;
+    const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toDateString();
+    return eventsByDate[checkDate] && eventsByDate[checkDate].length > 0;
   };
   
   // Check if a day is today
@@ -73,8 +140,30 @@ export default function MyEventsUser() {
     
     const newSelectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     setSelectedDate(newSelectedDate);
+  };
+
+  // Get events for selected date
+  const getEventsForSelectedDate = () => {
+    if (!selectedDate) return [];
     
-    // Here you would filter events for the selected day when that functionality is added
+    const dateKey = selectedDate.toDateString();
+    return eventsByDate[dateKey] || [];
+  };
+
+  // Navigate to event details
+  const handleEventClick = (eventId) => {
+    navigate(`/event/${eventId}`);
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
 
   return (
@@ -98,11 +187,11 @@ export default function MyEventsUser() {
             </span>
           </span>
         </div>
-        <div className="flex gap-10 text-lg">
-          <a href="/home" className="hover:underline">Home</a>
-          <a href="/discover" className="hover:underline">Discover Events</a>
-          <a href="/myevents" className="hover:underline text-black">My Events</a>
-          <a href="/userprofile" className="hover:underline">Profile</a>
+        <div className="flex items-center gap-10 text-lg">
+            <Link to="/home" className="hover:underline">Home</Link>
+            <Link to="/myevents" className="hover:underline text-black">My Events</Link>
+            <Link to="/userprofile" className="hover:underline">Profile</Link>
+            <NotificationsComponent />
         </div>
       </div>
       
@@ -157,6 +246,8 @@ export default function MyEventsUser() {
                   'bg-red-600 text-white rounded-lg' : 
                   isToday(day) ? 
                   'border-2 border-red-500 text-white rounded-lg hover:bg-gray-700 cursor-pointer' : 
+                  hasEvent(day) ?
+                  'border-2 border-blue-500 text-white rounded-lg hover:bg-gray-700 cursor-pointer' :
                   'hover:bg-gray-700 cursor-pointer rounded-lg'
                 }`}
                 onClick={() => handleDayClick(day)}
@@ -164,8 +255,8 @@ export default function MyEventsUser() {
                 {day && (
                   <>
                     <span className={isToday(day) ? "font-bold" : ""}>{day}</span>
-                    {hasEvent(day) && (
-                      <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400 rounded-full"></div>
+                    {hasEvent(day) && !isToday(day) && (
+                      <div className="absolute bottom-1 right-1 w-2 h-2 bg-blue-400 rounded-full"></div>
                     )}
                   </>
                 )}
@@ -179,22 +270,40 @@ export default function MyEventsUser() {
           {selectedDate ? (
             <div>
               <h3 className="text-xl font-semibold mb-4">
-                Events for {selectedDate.toLocaleDateString()}
+                Events for {formatDate(selectedDate)}
               </h3>
-              {userEvents.length > 0 ? (
+              {getEventsForSelectedDate().length > 0 ? (
                 <div className="space-y-4">
-                  {/* This would render the user's events when implemented */}
-                  <p>Your events will appear here once implemented.</p>
+                  {getEventsForSelectedDate().map((event, index) => (
+                    <div 
+                      key={index} 
+                      className="bg-gray-800 rounded-lg p-4 flex items-center gap-4 cursor-pointer hover:bg-gray-700"
+                      onClick={() => handleEventClick(event.id)}
+                    >
+                      <div className="w-16 h-16 flex-shrink-0">
+                        <img 
+                          src={event.image} 
+                          alt={event.title} 
+                          className="w-full h-full object-cover rounded"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold">{event.title}</h4>
+                        <p className="text-gray-300">{event.venue} • {event.time}</p>
+                        <p className="text-gray-400 text-sm">Ticket: {event.ticketType}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="bg-gray-800 rounded-lg p-6 text-center">
                   <p className="text-gray-400">No events found for this date.</p>
-                  <a 
-                    href="/discover" 
+                  <Link 
+                    to="/home" 
                     className="mt-4 inline-block bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
                   >
                     Discover Events
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

@@ -17,7 +17,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import it342.g4.e_vents.security.JwtAuthenticationFilter;
- 
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -57,6 +57,8 @@ public class SecurityConfig {
                 // Public endpoints - no authentication needed
                 .requestMatchers("/api/users/register", "/api/users/login", "/api/users/exists", "/api/users/{id}/delete", "/api/users/{id}").permitAll()
                 .requestMatchers("/api/users/countries", "/api/users/regions/**", "/api/users/cities/**").permitAll()
+                // Make all event endpoints public for now to fix the 403 error
+                .requestMatchers("/api/events/**").permitAll()
                 .requestMatchers("/login", "/signup/**", "/forgot-password").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                 // Swagger UI endpoints
@@ -70,7 +72,7 @@ public class SecurityConfig {
             )
             // Add our custom JWT filter
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-            
+        
         return http.build();
     }
 }

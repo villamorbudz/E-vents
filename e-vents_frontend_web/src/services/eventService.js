@@ -1,6 +1,7 @@
 // src/services/eventService.js
 import { api } from './apiService';
 
+// Fixed implementation with proper API URL reference
 export const eventService = {
   // Get all events
   async getAllEvents() {

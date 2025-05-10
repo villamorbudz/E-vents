@@ -712,23 +712,7 @@ function AdminPage() {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="roleId">Role</label>
-                  <select
-                    id="roleId"
-                    name="roleId"
-                    value={formData.roleId}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select Role</option>
-                    {roles.map(role => (
-                      <option key={role.roleId} value={role.roleId}>{role.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              
 
               <div className="form-row">
                 <div className="form-group">

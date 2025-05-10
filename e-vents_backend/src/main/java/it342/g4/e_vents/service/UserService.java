@@ -66,6 +66,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
     /**
      * Authenticates a user by email and password
      * @param email The user's email
