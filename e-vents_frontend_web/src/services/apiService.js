@@ -1,4 +1,5 @@
 // src/services/apiService.js
+// Add the missing getCurrentUser method
 
 import axios from 'axios';
 
@@ -42,6 +43,15 @@ api.interceptors.response.use(
 
 // User Service
 export const userService = {
+  // Add the missing getCurrentUser method
+  getCurrentUser() {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      return JSON.parse(userData);
+    }
+    return null;
+  },
+
   async login(email, password) {
     try {
       const response = await api.post('/users/login', null, {

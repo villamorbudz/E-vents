@@ -11,7 +11,6 @@ import Profile from './components/Profile';
 import AdminPage from './components/AdminPage';
 import EventsLandingPage from './components/LandingPage';
 import HomeUser from './components/HomeUser';
-import DiscoverEvents from './components/DiscoverEvents';
 import MyEventsUser from './components/MyEventsUser';
 import ProfileUser from './components/ProfileUser';
 
@@ -60,7 +59,7 @@ function App() {
         {/* User-only routes */}
         <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
           <Route path="/home" element={<HomeUser />} />
-          <Route path="/discover" element={<DiscoverEvents />} />
+          <Route path="/event/:eventId" element={<EventDetail />} />
           <Route path="/myevents" element={<MyEventsUser />} />
           <Route path="/userprofile" element={<ProfileUser />} />
         </Route>
@@ -68,6 +67,7 @@ function App() {
         {/* Organizer-only routes */}
         <Route element={<ProtectedRoute allowedRoles={['ORGANIZER']} />}>
           <Route path="/homeseller" element={<HomeSeller />} />
+          <Route path="/organizer-dashboard/:eventId" element={<OrganizerDashboard />} />
           <Route path="/create" element={<EventCreation />} />
           <Route path="/create/ticketing" element={<TicketingDetails />} />
           <Route path="/profile" element={<Profile />} />

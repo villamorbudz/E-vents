@@ -35,6 +35,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import it342.g4.e_vents.model.Act;
+import it342.g4.e_vents.model.Event;
+import it342.g4.e_vents.model.TicketCategory;
+import it342.g4.e_vents.model.User;
+import it342.g4.e_vents.model.Venue;
+import it342.g4.e_vents.service.ActService;
+import it342.g4.e_vents.service.EventService;
+import it342.g4.e_vents.service.TicketCategoryService;
+import it342.g4.e_vents.service.UserService;
+import it342.g4.e_vents.service.VenueService;
+import jakarta.persistence.EntityNotFoundException;
+
 /**
  * Controller for event-related operations
  */
@@ -47,6 +79,8 @@ public class EventController {
     private final EventService eventService;
     private final ActService actService;
     private final Path bannerStorageLocation;
+    private final UserService userService;
+    private final TicketCategoryService ticketCategoryService;
     
     @Autowired
     public EventController(EventService eventService, ActService actService) {
@@ -227,7 +261,13 @@ public class EventController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.badRequest().build();
     }
+}
 
     /**
      * Updates an existing event

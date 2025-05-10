@@ -17,7 +17,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import it342.g4.e_vents.security.JwtAuthenticationFilter;
- 
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -62,7 +62,7 @@ public class SecurityConfig {
             )
             // Add our custom JWT filter
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-            
+        
         return http.build();
     }
 }
