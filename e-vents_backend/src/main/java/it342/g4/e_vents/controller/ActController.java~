@@ -168,7 +168,7 @@ public class ActController {
      * @param id The act ID to restore
      * @return Success message or error
      */
-    @PutMapping("/restore/{id}")
+    @PostMapping("/restore/{id}")
     @Operation(summary = "Restore an act", description = "Activates a previously deactivated act")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Act successfully restored", 

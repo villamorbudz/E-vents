@@ -154,7 +154,7 @@ public class RoleController {
      * @return the ResponseEntity with status 200 (OK) if successful,
      * or with status 404 (Not Found) if the role is not found
      */
-    @PutMapping("/restore/{id}")
+    @PostMapping("/restore/{id}")
     @Operation(summary = "Activate a role", description = "Activates a previously deactivated role")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Role successfully activated", 

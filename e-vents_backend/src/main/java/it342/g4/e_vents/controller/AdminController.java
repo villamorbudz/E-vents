@@ -5,14 +5,12 @@ import it342.g4.e_vents.model.Event;
 import it342.g4.e_vents.model.Role;
 import it342.g4.e_vents.model.Tags;
 import it342.g4.e_vents.model.User;
-import it342.g4.e_vents.model.Venue;
 import it342.g4.e_vents.service.ActService;
 import it342.g4.e_vents.service.CategoryService;
 import it342.g4.e_vents.service.EventService;
 import it342.g4.e_vents.service.RoleService;
 import it342.g4.e_vents.service.TagsService;
 import it342.g4.e_vents.service.UserService;
-import it342.g4.e_vents.service.VenueService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -42,7 +40,6 @@ public class AdminController {
 
     private final UserService userService;
     private final EventService eventService;
-    private final VenueService venueService;
     private final ActService actService;
     private final RoleService roleService;
     private final TagsService tagsService;
@@ -50,12 +47,11 @@ public class AdminController {
     
     @Autowired
     public AdminController(UserService userService, EventService eventService, 
-                          VenueService venueService, ActService actService,
+                          ActService actService,
                           RoleService roleService, TagsService tagsService,
                           CategoryService categoryService) {
         this.userService = userService;
         this.eventService = eventService;
-        this.venueService = venueService;
         this.actService = actService;
         this.roleService = roleService;
         this.tagsService = tagsService;
@@ -70,13 +66,11 @@ public class AdminController {
         // Get counts for dashboard cards
         long userCount = userService.countAllUsers();
         long eventCount = eventService.countAllEvents();
-        long venueCount = venueService.countAllVenues();
         long actCount = actService.countAllActs();
         
         // Add counts to model
         model.addAttribute("userCount", userCount);
         model.addAttribute("eventCount", eventCount);
-        model.addAttribute("venueCount", venueCount);
         model.addAttribute("actCount", actCount);
         
         // Set active tab and page title
@@ -113,22 +107,7 @@ public class AdminController {
             columns.put("name", "Name");
             columns.put("date", "Date");
             columns.put("time", "Time");
-            columns.put("venue.name", "Venue");
             columns.put("status", "Status");
-            model.addAttribute("columns", columns);
-            
-        } else if ("venues".equals(entityType)) {
-            List<Venue> venues = venueService.getAllVenues();
-            model.addAttribute("venues", venues);
-            model.addAttribute("entityName", "Venues");
-            model.addAttribute("entityIcon", "bi-building");
-            model.addAttribute("entityColor", "info");
-            
-            // Define table columns for venues
-            Map<String, String> columns = new HashMap<>();
-            columns.put("venueId", "ID");
-            columns.put("name", "Name");
-            columns.put("formattedAddress", "Location");
             model.addAttribute("columns", columns);
             
         } else if ("acts".equals(entityType)) {
@@ -163,12 +142,10 @@ public class AdminController {
             // Dashboard view - show recent data
             List<User> recentUsers = userService.getRecentUsers(5);
             List<Event> upcomingEvents = eventService.getUpcomingEvents(5);
-            List<Venue> venues = venueService.getAllVenues();
             List<Act> acts = actService.getAllActs();
             
             model.addAttribute("recentUsers", recentUsers);
             model.addAttribute("upcomingEvents", upcomingEvents);
-            model.addAttribute("venues", venues);
             model.addAttribute("acts", acts);
         }
         

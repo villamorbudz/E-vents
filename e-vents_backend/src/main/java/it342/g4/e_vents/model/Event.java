@@ -47,10 +47,8 @@ public class Event {
     @Column(nullable = false)
     private LocalTime time;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "venue_id", nullable = false)
-    @JsonManagedReference
-    private Venue venue;
+    @Column(nullable = false)
+    private String venue;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JsonManagedReference
@@ -61,6 +59,14 @@ public class Event {
 
     @Column
     private String bannerImage;
+
+    public String getVenue() {
+        return venue;
+    }
+
+    public void setVenue(String venue) {
+        this.venue = venue;
+    }
 
     public Long getEventId() {
         return eventId;
@@ -92,14 +98,6 @@ public class Event {
 
     public void setTime(LocalTime time) {
         this.time = time;
-    }
-
-    public Venue getVenue() {
-        return venue;
-    }
-
-    public void setVenue(Venue venue) {
-        this.venue = venue;
     }
 
     public List<Act> getLineup() {

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import it342.g4.e_vents.model.Event;
-import it342.g4.e_vents.model.Venue;
 import it342.g4.e_vents.repository.EventRepository;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -20,8 +19,6 @@ import jakarta.persistence.EntityNotFoundException;
 public class EventService {
 
     private final EventRepository eventRepository;
-    @Autowired
-    private VenueService venueService;
     
     @Autowired
     public EventService(EventRepository eventRepository) {
@@ -98,20 +95,6 @@ public class EventService {
      */
     @Transactional
     public Event createEvent(Event event) {
-        // Handle venue creation/lookup
-        if (event.getVenue() != null) {
-            Venue venueData = event.getVenue();
-            // Try to find existing venue by Google Place ID
-            Venue venue = venueService.findByGooglePlaceId(venueData.getGooglePlaceId())
-                .orElseGet(() -> {
-                    // Create new venue if it doesn't exist
-                    return venueService.createVenue(venueData);
-                });
-            event.setVenue(venue);
-        } else {
-            throw new IllegalArgumentException("Venue is required");
-        }
-
         // Set default status if not specified
         if (event.getStatus() == null) {
             event.setStatus(Event.STATUS_SCHEDULED);

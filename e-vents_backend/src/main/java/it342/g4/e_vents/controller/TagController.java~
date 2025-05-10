@@ -10,6 +10,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -19,6 +27,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tags")
 @CrossOrigin(origins = "*")
+@Tag(name = "Tag", description = "Tag management APIs")
 public class TagController {
 
     private final TagsService tagsService;
@@ -35,6 +44,11 @@ public class TagController {
      * @return List of all active tags
      */
     @GetMapping
+    @Operation(summary = "Get all active tags", description = "Retrieves a list of all active tags in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of active tags", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Tags.class)))
+    })
     public ResponseEntity<List<Tags>> getAllActiveTags() {
         return ResponseEntity.ok(tagsService.getAllActiveTags());
     }
@@ -44,6 +58,11 @@ public class TagController {
      * @return List of all tags
      */
     @GetMapping("/all")
+    @Operation(summary = "Get all tags", description = "Retrieves a list of all tags in the system, including inactive ones")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of all tags", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Tags.class)))
+    })
     public ResponseEntity<List<Tags>> getAllTags() {
         return ResponseEntity.ok(tagsService.getAllTags());
     }
@@ -54,7 +73,14 @@ public class TagController {
      * @return The tag or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Tags> getTagById(@PathVariable Long id) {
+    @Operation(summary = "Get tag by ID", description = "Retrieves a specific active tag by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the tag", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Tags.class))),
+        @ApiResponse(responseCode = "404", description = "Tag not found", content = @Content)
+    })
+    public ResponseEntity<Tags> getTagById(
+            @Parameter(description = "ID of the tag to retrieve", required = true) @PathVariable Long id) {
         return tagsService.getActiveTagById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -66,7 +92,15 @@ public class TagController {
      * @return List of tags for the category
      */
     @GetMapping("/by-category/{categoryId}")
-    public ResponseEntity<List<Tags>> getTagsByCategory(@PathVariable Long categoryId) {
+    @Operation(summary = "Get tags by category", description = "Retrieves all tags associated with a specific category")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved tags for the category", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Tags.class))),
+        @ApiResponse(responseCode = "404", description = "Category not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<List<Tags>> getTagsByCategory(
+            @Parameter(description = "ID of the category to get tags for", required = true) @PathVariable Long categoryId) {
         try {
             Category category = categoryService.getCategoryById(categoryId)
                     .orElseThrow(() -> new EntityNotFoundException("Category not found with ID: " + categoryId));
@@ -85,7 +119,14 @@ public class TagController {
      * @return The created tag
      */
     @PostMapping
-    public ResponseEntity<?> createTag(@RequestBody Tags tag) {
+    @Operation(summary = "Create a new tag", description = "Creates a new tag in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Tag successfully created", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Tags.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<?> createTag(
+            @Parameter(description = "Tag object to be created", required = true) @RequestBody Tags tag) {
         try {
             Tags createdTag = tagsService.saveTag(tag);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdTag);
@@ -102,7 +143,16 @@ public class TagController {
      * @return The updated tag or error
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTag(@PathVariable Long id, @RequestBody Tags tagDetails) {
+    @Operation(summary = "Update a tag", description = "Updates an existing tag in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Tag successfully updated", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Tags.class))),
+        @ApiResponse(responseCode = "404", description = "Tag not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<?> updateTag(
+            @Parameter(description = "ID of the tag to update", required = true) @PathVariable Long id, 
+            @Parameter(description = "Updated tag details", required = true) @RequestBody Tags tagDetails) {
         try {
             // Verify tag exists
             Tags existingTag = tagsService.getTagById(id)
@@ -129,7 +179,15 @@ public class TagController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}/deactivate")
-    public ResponseEntity<?> deactivateTag(@PathVariable Long id) {
+    @Operation(summary = "Deactivate a tag", description = "Soft-deletes a tag by setting its is_active attribute to false")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Tag successfully deactivated", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Tag not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> deactivateTag(
+            @Parameter(description = "ID of the tag to deactivate", required = true) @PathVariable Long id) {
         try {
             tagsService.deactivateTag(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Tag deactivated successfully"));
@@ -147,8 +205,16 @@ public class TagController {
      * @param id The tag ID to restore
      * @return Success message or error
      */
-    @PostMapping("/{id}/restore")
-    public ResponseEntity<?> restoreTag(@PathVariable Long id) {
+    @PostMapping("/restore/{id}")
+    @Operation(summary = "Restore a tag", description = "Restores a previously deactivated tag by setting its is_active attribute to true")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Tag successfully restored", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Tag not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> restoreTag(
+            @Parameter(description = "ID of the tag to restore", required = true) @PathVariable Long id) {
         try {
             tagsService.restoreTag(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Tag restored successfully"));
@@ -167,7 +233,15 @@ public class TagController {
      * @return Success message or error
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> permanentlyDeleteTag(@PathVariable Long id) {
+    @Operation(summary = "Permanently delete a tag", description = "Permanently deletes a tag from the database")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Tag permanently deleted successfully", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Tag not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> permanentlyDeleteTag(
+            @Parameter(description = "ID of the tag to permanently delete", required = true) @PathVariable Long id) {
         try {
             // Verify tag exists before deletion
             if (!tagsService.getTagById(id).isPresent()) {

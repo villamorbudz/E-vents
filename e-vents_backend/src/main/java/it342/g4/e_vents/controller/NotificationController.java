@@ -229,7 +229,7 @@ public class NotificationController {
      * @param id The notification ID to restore
      * @return Success message or error
      */
-    @PostMapping("/restore/{id}")
+    @PutMapping("/restore/{id}")
     @Operation(summary = "Restore a notification", description = "Restores a previously deactivated notification by setting its is_active attribute to true")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Notification successfully restored", 

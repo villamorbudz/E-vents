@@ -235,7 +235,7 @@ public class TicketController {
      * @param id The ticket ID to restore
      * @return Success message or error
      */
-    @PostMapping("/restore/{id}")
+    @PutMapping("/restore/{id}")
     @Operation(summary = "Restore a ticket", description = "Restores a previously deactivated ticket")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Ticket successfully restored", 

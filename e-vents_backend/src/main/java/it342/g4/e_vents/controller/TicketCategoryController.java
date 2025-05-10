@@ -255,7 +255,7 @@ public class TicketCategoryController {
      * @param id The ticket category ID to restore
      * @return Success message or error
      */
-    @PostMapping("/restore/{id}")
+    @PutMapping("/restore/{id}")
     @Operation(summary = "Restore a ticket category", description = "Activates a previously deactivated ticket category")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Ticket category successfully restored", 

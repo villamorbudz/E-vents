@@ -24,6 +24,11 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "events")
 public class Event {
+    // Status constants
+    public static final String STATUS_SCHEDULED = "SCHEDULED";
+    public static final String STATUS_POSTPONED = "POSTPONED";
+    public static final String STATUS_CANCELLED = "CANCELLED";
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "event_id")
@@ -42,20 +47,26 @@ public class Event {
     @Column(nullable = false)
     private LocalTime time;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "venue_id", nullable = false)
-    @JsonManagedReference
-    private Venue venue;
+    @Column(nullable = false)
+    private String venue
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<Act> lineup;
 
     @Column(nullable = false)
-    private String status;
+    private String status = STATUS_SCHEDULED;
 
-    @Column(nullable = false)
-    private String banner;
+    @Column
+    private String bannerImage;
+
+    public String getVenue() {
+        return venue;
+    }
+
+    public void setVenue(String venue) {
+        this.venue = venue;
+    }
 
     public Long getEventId() {
         return eventId;
@@ -81,20 +92,12 @@ public class Event {
         this.date = date;
     }
 
-    public Time getTime() {
+    public LocalTime getTime() {
         return time;
     }
 
-    public void setTime(Time time) {
+    public void setTime(LocalTime time) {
         this.time = time;
-    }
-
-    public Venue getVenue() {
-        return venue;
-    }
-
-    public void setVenue(Venue venue) {
-        this.venue = venue;
     }
 
     public List<Act> getLineup() {
@@ -119,5 +122,13 @@ public class Event {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+    
+    public String getBannerImage() {
+        return bannerImage;
+    }
+
+    public void setBannerImage(String bannerImage) {
+        this.bannerImage = bannerImage;
     }
 }

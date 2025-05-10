@@ -9,10 +9,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it342.g4.e_vents.model.Act;
 import it342.g4.e_vents.model.Event;
-import it342.g4.e_vents.model.Venue;
 import it342.g4.e_vents.service.ActService;
 import it342.g4.e_vents.service.EventService;
-import it342.g4.e_vents.service.VenueService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -47,14 +45,12 @@ import java.util.UUID;
 public class EventController {
 
     private final EventService eventService;
-    private final VenueService venueService;
     private final ActService actService;
     private final Path bannerStorageLocation;
     
     @Autowired
-    public EventController(EventService eventService, VenueService venueService, ActService actService) {
+    public EventController(EventService eventService, ActService actService) {
         this.eventService = eventService;
-        this.venueService = venueService;
         this.actService = actService;
         this.bannerStorageLocation = Paths.get("uploads/banners").toAbsolutePath().normalize();
         
@@ -161,20 +157,6 @@ public class EventController {
     }
 
     /**
-     * Retrieves all venues
-     * @return List of all venues
-     */
-    @GetMapping("/venues")
-    @Operation(summary = "Get all venues", description = "Retrieves a list of all venues for event creation/editing")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of venues", 
-                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Venue.class)))
-    })
-    public ResponseEntity<List<Venue>> getVenues() {
-        return ResponseEntity.ok(venueService.getAllVenues());
-    }
-
-    /**
      * Retrieves all acts
      * @return List of all acts
      */
@@ -193,7 +175,6 @@ public class EventController {
      * @param name Event name
      * @param date Event date
      * @param time Event time
-     * @param venue Venue ID
      * @param lineup List of Act IDs
      * @param status Event status
      * @return Redirect to dashboard
@@ -208,20 +189,12 @@ public class EventController {
             @Parameter(description = "Name of the event", required = true) @RequestParam String name,
             @Parameter(description = "Date of the event", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Time of the event", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time,
-            @Parameter(description = "ID of the venue", required = true) @RequestParam Long venue,
             @Parameter(description = "IDs of acts in the lineup", required = true) @RequestParam(value = "lineup") List<Long> lineup,
             @Parameter(description = "Status of the event", required = true) @RequestParam String status) {
         Event event = new Event();
         event.setName(name);
         event.setDate(date);
         event.setTime(time);
-        
-        // Find venue by ID
-        Venue venueObj = venueService.getAllVenues().stream()
-                .filter(v -> v.getVenueId().equals(venue))
-                .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("Venue not found with ID: " + venue));
-        event.setVenue(venueObj);
         
         // Find acts by IDs
         List<Act> acts = actService.getAllActs().stream()
@@ -281,7 +254,6 @@ public class EventController {
             existingEvent.setName(eventDetails.getName());
             existingEvent.setDate(eventDetails.getDate());
             existingEvent.setTime(eventDetails.getTime());
-            existingEvent.setVenue(eventDetails.getVenue());
             existingEvent.setLineup(eventDetails.getLineup());
             existingEvent.setStatus(eventDetails.getStatus());
             
@@ -327,7 +299,7 @@ public class EventController {
      * @param id The event ID to restore
      * @return Success message or error
      */
-    @PostMapping("/restore/{id}")
+    @PutMapping("/restore/{id}")
     @Operation(summary = "Restore an event", description = "Restores a cancelled or postponed event to SCHEDULED status")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Event successfully restored", 

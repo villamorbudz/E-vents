@@ -1,4 +1,107 @@
 /* Admin Page Styles */
+.admin-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-content {
+  flex: 1;
+  padding: 2rem;
+  background-color: #f5f5f5;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+  font-size: 2rem;
+  color: #BD0027;
+  flex-shrink: 0;
+}
+
+.stat-info {
+  flex-grow: 1;
+}
+
+.stat-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #666;
+}
+
+.stat-info p {
+  margin: 0.5rem 0 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.recent-section {
+  grid-column: span 2;
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.recent-section h2 {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  color: #333;
+  border-bottom: 2px solid #BD0027;
+  padding-bottom: 0.5rem;
+}
+
+.recent-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recent-section li {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recent-section li:last-child {
+  border-bottom: none;
+}
+
+.error {
+  color: #dc3545;
+  padding: 1rem;
+  border-radius: 4px;
+  background-color: #f8d7da;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
 .admin-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -282,6 +385,30 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recent-section {
+    grid-column: span 1;
+  }
+
+  .admin-content {
+    padding: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-info h3 {
+    font-size: 0.9rem;
+  }
+
+  .stat-info p {
+    font-size: 1.2rem;
+  }
+
   .form-row {
     flex-direction: column;
     gap: 0.5rem;

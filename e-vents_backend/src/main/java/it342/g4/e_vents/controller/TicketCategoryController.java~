@@ -8,6 +8,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -17,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/ticket-categories")
 @CrossOrigin(origins = "*")
+@Tag(name = "Ticket Category", description = "Ticket category management APIs")
 public class TicketCategoryController {
 
     private final TicketCategoryService ticketCategoryService;
@@ -31,6 +40,11 @@ public class TicketCategoryController {
      * @return List of all active ticket categories
      */
     @GetMapping
+    @Operation(summary = "Get all active ticket categories", description = "Retrieves a list of all active ticket categories in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of active ticket categories", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class)))
+    })
     public ResponseEntity<List<TicketCategory>> getAllActiveTicketCategories() {
         return ResponseEntity.ok(ticketCategoryService.getAllActiveTicketCategories());
     }
@@ -40,6 +54,11 @@ public class TicketCategoryController {
      * @return List of all ticket categories
      */
     @GetMapping("/all")
+    @Operation(summary = "Get all ticket categories", description = "Retrieves a list of all ticket categories in the system, including inactive ones")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of all ticket categories", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class)))
+    })
     public ResponseEntity<List<TicketCategory>> getAllTicketCategories() {
         return ResponseEntity.ok(ticketCategoryService.getAllTicketCategories());
     }
@@ -50,7 +69,14 @@ public class TicketCategoryController {
      * @return The ticket category or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<TicketCategory> getActiveTicketCategoryById(@PathVariable Long id) {
+    @Operation(summary = "Get ticket category by ID", description = "Retrieves a specific active ticket category by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the ticket category", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class))),
+        @ApiResponse(responseCode = "404", description = "Ticket category not found", content = @Content)
+    })
+    public ResponseEntity<TicketCategory> getActiveTicketCategoryById(
+            @Parameter(description = "ID of the ticket category to retrieve", required = true) @PathVariable Long id) {
         return ticketCategoryService.getActiveTicketCategoryById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -62,7 +88,13 @@ public class TicketCategoryController {
      * @return List of ticket categories with the specified status
      */
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<TicketCategory>> getTicketCategoriesByStatus(@PathVariable String status) {
+    @Operation(summary = "Get ticket categories by status", description = "Retrieves all ticket categories with a specific status")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved ticket categories with the specified status", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class)))
+    })
+    public ResponseEntity<List<TicketCategory>> getTicketCategoriesByStatus(
+            @Parameter(description = "Status to filter ticket categories by", required = true) @PathVariable String status) {
         return ResponseEntity.ok(ticketCategoryService.getTicketCategoriesByStatus(status));
     }
     
@@ -72,7 +104,13 @@ public class TicketCategoryController {
      * @return List of active ticket categories matching the search term
      */
     @GetMapping("/search")
-    public ResponseEntity<List<TicketCategory>> searchTicketCategoriesByName(@RequestParam String name) {
+    @Operation(summary = "Search ticket categories by name", description = "Searches for active ticket categories matching the provided name")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved search results", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class)))
+    })
+    public ResponseEntity<List<TicketCategory>> searchTicketCategoriesByName(
+            @Parameter(description = "Name to search for", required = true) @RequestParam String name) {
         return ResponseEntity.ok(ticketCategoryService.searchTicketCategoriesByName(name));
     }
     
@@ -81,6 +119,11 @@ public class TicketCategoryController {
      * @return List of ticket categories with available tickets
      */
     @GetMapping("/available")
+    @Operation(summary = "Get available ticket categories", description = "Retrieves all ticket categories that have available tickets")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved available ticket categories", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class)))
+    })
     public ResponseEntity<List<TicketCategory>> getAvailableTicketCategories() {
         return ResponseEntity.ok(ticketCategoryService.getAvailableTicketCategories());
     }
@@ -91,7 +134,13 @@ public class TicketCategoryController {
      * @return List of active ticket categories for the specified event
      */
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<TicketCategory>> getTicketCategoriesByEventId(@PathVariable Long eventId) {
+    @Operation(summary = "Get ticket categories by event ID", description = "Retrieves all active ticket categories for a specific event")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved ticket categories for the event", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class)))
+    })
+    public ResponseEntity<List<TicketCategory>> getTicketCategoriesByEventId(
+            @Parameter(description = "ID of the event to retrieve ticket categories for", required = true) @PathVariable Long eventId) {
         return ResponseEntity.ok(ticketCategoryService.getTicketCategoriesByEventId(eventId));
     }
     
@@ -101,7 +150,14 @@ public class TicketCategoryController {
      * @return List of active ticket categories with available tickets for the specified event
      */
     @GetMapping("/event/{eventId}/available")
-    public ResponseEntity<List<TicketCategory>> getAvailableTicketCategoriesByEventId(@PathVariable Long eventId) {
+    @Operation(summary = "Get available ticket categories by event ID", 
+               description = "Retrieves all active ticket categories with available tickets for a specific event")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved available ticket categories for the event", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class)))
+    })
+    public ResponseEntity<List<TicketCategory>> getAvailableTicketCategoriesByEventId(
+            @Parameter(description = "ID of the event to retrieve available ticket categories for", required = true) @PathVariable Long eventId) {
         return ResponseEntity.ok(ticketCategoryService.getAvailableTicketCategoriesByEventId(eventId));
     }
     
@@ -111,7 +167,16 @@ public class TicketCategoryController {
      * @return The created ticket category or error
      */
     @PostMapping
-    public ResponseEntity<?> createTicketCategory(@RequestBody TicketCategory ticketCategory) {
+    @Operation(summary = "Create a new ticket category", description = "Creates a new ticket category in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Ticket category successfully created", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class))),
+        @ApiResponse(responseCode = "409", description = "Ticket category with this name already exists", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<?> createTicketCategory(
+            @Parameter(description = "Ticket category object to be created", required = true) @RequestBody TicketCategory ticketCategory) {
         try {
             if (ticketCategoryService.existsByName(ticketCategory.getName())) {
                 return ResponseEntity
@@ -136,7 +201,16 @@ public class TicketCategoryController {
      * @return The updated ticket category or error
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTicketCategory(@PathVariable Long id, @RequestBody TicketCategory ticketCategoryDetails) {
+    @Operation(summary = "Update a ticket category", description = "Updates an existing ticket category by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Ticket category successfully updated", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TicketCategory.class))),
+        @ApiResponse(responseCode = "404", description = "Ticket category or event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
+    public ResponseEntity<?> updateTicketCategory(
+            @Parameter(description = "ID of the ticket category to update", required = true) @PathVariable Long id, 
+            @Parameter(description = "Updated ticket category details", required = true) @RequestBody TicketCategory ticketCategoryDetails) {
         try {
             TicketCategory updatedTicketCategory = ticketCategoryService.updateTicketCategory(id, ticketCategoryDetails);
             return ResponseEntity.ok(updatedTicketCategory);
@@ -154,8 +228,16 @@ public class TicketCategoryController {
      * @param id The ticket category ID to deactivate
      * @return Success message or error
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deactivateTicketCategory(@PathVariable Long id) {
+    @DeleteMapping("/{id}/deactivate")
+    @Operation(summary = "Deactivate a ticket category", description = "Deactivates a ticket category by setting it as inactive (soft delete)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Ticket category successfully deactivated", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Ticket category or event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> deactivateTicketCategory(
+            @Parameter(description = "ID of the ticket category to deactivate", required = true) @PathVariable Long id) {
         try {
             ticketCategoryService.deactivateTicketCategory(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Ticket category deactivated successfully"));
@@ -174,7 +256,15 @@ public class TicketCategoryController {
      * @return Success message or error
      */
     @PostMapping("/restore/{id}")
-    public ResponseEntity<?> restoreTicketCategory(@PathVariable Long id) {
+    @Operation(summary = "Restore a ticket category", description = "Activates a previously deactivated ticket category")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Ticket category successfully restored", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Ticket category or event not found", content = @Content),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
+    })
+    public ResponseEntity<?> restoreTicketCategory(
+            @Parameter(description = "ID of the ticket category to restore", required = true) @PathVariable Long id) {
         try {
             ticketCategoryService.restoreTicketCategory(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Ticket category restored successfully"));

@@ -1,5 +1,12 @@
 package it342.g4.e_vents.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it342.g4.e_vents.model.Ticket;
 import it342.g4.e_vents.service.TicketService;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tickets")
 @CrossOrigin(origins = "*")
+@Tag(name = "Ticket", description = "Ticket management APIs")
 public class TicketController {
 
     private final TicketService ticketService;
@@ -31,6 +39,11 @@ public class TicketController {
      * @return List of all active tickets
      */
     @GetMapping
+    @Operation(summary = "Get all active tickets", description = "Retrieves a list of all active tickets in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of tickets", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class)))
+    })
     public ResponseEntity<List<Ticket>> getAllActiveTickets() {
         return ResponseEntity.ok(ticketService.getAllActiveTickets());
     }
@@ -40,6 +53,11 @@ public class TicketController {
      * @return List of all tickets
      */
     @GetMapping("/all")
+    @Operation(summary = "Get all tickets", description = "Retrieves a list of all tickets in the system, including inactive ones")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of all tickets", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class)))
+    })
     public ResponseEntity<List<Ticket>> getAllTickets() {
         return ResponseEntity.ok(ticketService.getAllTickets());
     }
@@ -50,7 +68,14 @@ public class TicketController {
      * @return The ticket or 404 if not found
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Ticket> getActiveTicketById(@PathVariable Long id) {
+    @Operation(summary = "Get ticket by ID", description = "Retrieves a specific active ticket by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the ticket", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class))),
+        @ApiResponse(responseCode = "404", description = "Ticket not found", content = @Content)
+    })
+    public ResponseEntity<Ticket> getActiveTicketById(
+            @Parameter(description = "ID of the ticket to retrieve") @PathVariable Long id) {
         return ticketService.getActiveTicketById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -62,7 +87,13 @@ public class TicketController {
      * @return List of active tickets for the specified user
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Ticket>> getTicketsByUserId(@PathVariable Long userId) {
+    @Operation(summary = "Get tickets by user ID", description = "Retrieves all active tickets for a specific user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved tickets for the user", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class)))
+    })
+    public ResponseEntity<List<Ticket>> getTicketsByUserId(
+            @Parameter(description = "ID of the user to retrieve tickets for") @PathVariable Long userId) {
         return ResponseEntity.ok(ticketService.getTicketsByUserId(userId));
     }
     
@@ -72,7 +103,13 @@ public class TicketController {
      * @return List of active tickets for the specified event
      */
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<Ticket>> getTicketsByEventId(@PathVariable Long eventId) {
+    @Operation(summary = "Get tickets by event ID", description = "Retrieves all active tickets for a specific event")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved tickets for the event", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class)))
+    })
+    public ResponseEntity<List<Ticket>> getTicketsByEventId(
+            @Parameter(description = "ID of the event to retrieve tickets for") @PathVariable Long eventId) {
         return ResponseEntity.ok(ticketService.getTicketsByEventId(eventId));
     }
     
@@ -82,7 +119,13 @@ public class TicketController {
      * @return List of active tickets for the specified ticket category
      */
     @GetMapping("/category/{ticketCategoryId}")
-    public ResponseEntity<List<Ticket>> getTicketsByTicketCategoryId(@PathVariable Long ticketCategoryId) {
+    @Operation(summary = "Get tickets by category ID", description = "Retrieves all active tickets for a specific ticket category")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved tickets for the category", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class)))
+    })
+    public ResponseEntity<List<Ticket>> getTicketsByTicketCategoryId(
+            @Parameter(description = "ID of the ticket category to retrieve tickets for") @PathVariable Long ticketCategoryId) {
         return ResponseEntity.ok(ticketService.getTicketsByTicketCategoryId(ticketCategoryId));
     }
     
@@ -92,7 +135,13 @@ public class TicketController {
      * @return List of tickets with the specified status
      */
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Ticket>> getTicketsByStatus(@PathVariable String status) {
+    @Operation(summary = "Get tickets by status", description = "Retrieves all tickets with a specific status")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved tickets with the specified status", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class)))
+    })
+    public ResponseEntity<List<Ticket>> getTicketsByStatus(
+            @Parameter(description = "Status to filter tickets by") @PathVariable String status) {
         return ResponseEntity.ok(ticketService.getTicketsByStatus(status));
     }
     
@@ -102,7 +151,15 @@ public class TicketController {
      * @return The created ticket or error
      */
     @PostMapping
-    public ResponseEntity<?> createTicket(@RequestBody Ticket ticket) {
+    @Operation(summary = "Create a new ticket", description = "Creates a new ticket (purchase) in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Ticket successfully created", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input or no tickets available", content = @Content),
+        @ApiResponse(responseCode = "404", description = "User or ticket category not found", content = @Content)
+    })
+    public ResponseEntity<?> createTicket(
+            @Parameter(description = "Ticket object to be created", required = true) @RequestBody Ticket ticket) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ticketService.createTicket(ticket));
@@ -125,7 +182,16 @@ public class TicketController {
      * @return The updated ticket or error
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTicket(@PathVariable Long id, @RequestBody Ticket ticketDetails) {
+    @Operation(summary = "Update a ticket", description = "Updates an existing ticket by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Ticket successfully updated", 
+                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ticket.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Ticket not found", content = @Content)
+    })
+    public ResponseEntity<?> updateTicket(
+            @Parameter(description = "ID of the ticket to update", required = true) @PathVariable Long id,
+            @Parameter(description = "Updated ticket details", required = true) @RequestBody Ticket ticketDetails) {
         try {
             Ticket updatedTicket = ticketService.updateTicket(id, ticketDetails);
             return ResponseEntity.ok(updatedTicket);
@@ -143,8 +209,15 @@ public class TicketController {
      * @param id The ticket ID to deactivate
      * @return Success message or error
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deactivateTicket(@PathVariable Long id) {
+    @DeleteMapping("/{id}/deactivate")
+    @Operation(summary = "Deactivate a ticket", description = "Soft-deletes a ticket by setting it as inactive")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Ticket successfully deactivated", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Ticket not found", content = @Content)
+    })
+    public ResponseEntity<?> deactivateTicket(
+            @Parameter(description = "ID of the ticket to deactivate", required = true) @PathVariable Long id) {
         try {
             ticketService.deactivateTicket(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Ticket deactivated successfully"));
@@ -163,7 +236,14 @@ public class TicketController {
      * @return Success message or error
      */
     @PostMapping("/restore/{id}")
-    public ResponseEntity<?> restoreTicket(@PathVariable Long id) {
+    @Operation(summary = "Restore a ticket", description = "Restores a previously deactivated ticket")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Ticket successfully restored", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Ticket not found", content = @Content)
+    })
+    public ResponseEntity<?> restoreTicket(
+            @Parameter(description = "ID of the ticket to restore", required = true) @PathVariable Long id) {
         try {
             ticketService.restoreTicket(id);
             return ResponseEntity.ok(Collections.singletonMap("message", "Ticket restored successfully"));

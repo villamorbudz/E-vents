@@ -197,7 +197,7 @@ public class CategoryController {
      * @param id The category ID to restore
      * @return Success message or error
      */
-    @PostMapping("/restore/{id}")
+    @PutMapping("/restore/{id}")
     @Operation(summary = "Restore a category", description = "Activates a previously deactivated category")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Category successfully restored", 

@@ -63,6 +63,17 @@ public class UserController {
     })
     public ResponseEntity<?> registerUser(
             @Parameter(description = "User object to be registered", required = true) @RequestBody User user) {
+        // Autofill missing fields to blank (except userId/role)
+        if (user.getFirstName() == null) user.setFirstName("");
+        if (user.getLastName() == null) user.setLastName("");
+        if (user.getBirthdate() == null) user.setBirthdate(null); // leave as null
+        if (user.getEmail() == null) user.setEmail("");
+        if (user.getContactNumber() == null) user.setContactNumber("");
+        if (user.getCountry() == null) user.setCountry("");
+        if (user.getRegion() == null) user.setRegion("");
+        if (user.getCity() == null) user.setCity("");
+        if (user.getPostalCode() == null) user.setPostalCode("");
+        if (user.getPassword() == null) user.setPassword("");
         try {
             User registeredUser = userService.registerUser(user);
             

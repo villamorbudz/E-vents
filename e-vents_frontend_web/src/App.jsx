@@ -14,6 +14,18 @@ import HomeUser from './components/HomeUser';
 import DiscoverEvents from './components/DiscoverEvents';
 import MyEventsUser from './components/MyEventsUser';
 import ProfileUser from './components/ProfileUser';
+
+// Admin components
+import UserManagement from './components/admin/UserManagement';
+import EventManagement from './components/admin/EventManagement';
+import ActManagement from './components/admin/ActManagement';
+import CategoryManagement from './components/admin/CategoryManagement';
+import TagManagement from './components/admin/TagManagement';
+import TicketManagement from './components/admin/TicketManagement';
+import TicketCategoryManagement from './components/admin/TicketCategoryManagement';
+import RatingManagement from './components/admin/RatingManagement';
+import NotificationManagement from './components/admin/NotificationManagement';
+import RoleManagement from './components/admin/RoleManagement';
 import './styles/AdminPage.css';
 import { AnimatePresence } from "framer-motion";
 import './App.css';
@@ -33,6 +45,16 @@ function App() {
         {/* Admin-only routes */}
         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/events" element={<EventManagement />} />
+          <Route path="/admin/acts" element={<ActManagement />} />
+          <Route path="/admin/categories" element={<CategoryManagement />} />
+          <Route path="/admin/tags" element={<TagManagement />} />
+          <Route path="/admin/tickets" element={<TicketManagement />} />
+          <Route path="/admin/ticketcategories" element={<TicketCategoryManagement />} />
+          <Route path="/admin/ratings" element={<RatingManagement />} />
+          <Route path="/admin/notifications" element={<NotificationManagement />} />
+          <Route path="/admin/roles" element={<RoleManagement />} />
         </Route>
         
         {/* User-only routes */}

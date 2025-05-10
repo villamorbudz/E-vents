@@ -205,7 +205,7 @@ public class TagController {
      * @param id The tag ID to restore
      * @return Success message or error
      */
-    @PostMapping("/restore/{id}")
+    @PutMapping("/restore/{id}")
     @Operation(summary = "Restore a tag", description = "Restores a previously deactivated tag by setting its is_active attribute to true")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Tag successfully restored", 
