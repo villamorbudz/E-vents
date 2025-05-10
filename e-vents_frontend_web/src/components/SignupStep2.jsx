@@ -18,9 +18,6 @@ export default function SignupStep2() {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [countries, setCountries] = useState([]);
-  const [regions, setRegions] = useState([]);
-  const [cities, setCities] = useState([]);
 
   // Check for existing signup data in localStorage
   useEffect(() => {
@@ -40,61 +37,7 @@ export default function SignupStep2() {
         ...parsedData.personalInfo
       }));
     }
-    
-    // Load countries
-    loadCountries();
   }, [navigate]);
-
-  // Load countries from API
-  const loadCountries = async () => {
-    try {
-      const countriesData = await userService.getCountries();
-      console.log("Countries data:", countriesData);
-      setCountries(countriesData);
-    } catch (error) {
-      console.error("Error loading countries:", error);
-    }
-  };
-
-  // Load regions when country changes
-  useEffect(() => {
-    const loadRegions = async () => {
-      if (formData.country) {
-        try {
-          const regionsData = await userService.getRegions(formData.country);
-          console.log("Regions data:", regionsData);
-          setRegions(regionsData);
-        } catch (error) {
-          console.error("Error loading regions:", error);
-        }
-      } else {
-        setRegions([]);
-        setFormData(prev => ({ ...prev, region: "", city: "" }));
-      }
-    };
-    
-    loadRegions();
-  }, [formData.country]);
-
-  // Load cities when region changes
-  useEffect(() => {
-    const loadCities = async () => {
-      if (formData.country && formData.region) {
-        try {
-          const citiesData = await userService.getCities(formData.country, formData.region);
-          console.log("Cities data:", citiesData);
-          setCities(citiesData);
-        } catch (error) {
-          console.error("Error loading cities:", error);
-        }
-      } else {
-        setCities([]);
-        setFormData(prev => ({ ...prev, city: "" }));
-      }
-    };
-    
-    loadCities();
-  }, [formData.country, formData.region]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -145,15 +88,14 @@ export default function SignupStep2() {
     }
     
     // State validation
-    if (regions.length > 0 && !formData.region.trim()) {
+    if (!formData.region.trim()) {
       newErrors.region = "State/Province is required";
     }
     
     // City validation
-    if (cities.length > 0 && !formData.city.trim()) {
+    if (!formData.city.trim()) {
       newErrors.city = "City is required";
     }
-    
     
     // Postal code validation
     if (!formData.postalCode.trim()) {
@@ -326,51 +268,37 @@ export default function SignupStep2() {
           
           <div className="w-3/4 grid grid-cols-2 gap-3 mb-4">
             <div>
-              <select 
+              <input 
                 name="country"
+                placeholder="Country" 
                 className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.country ? 'border-red-500' : 'border-black'}`}
                 value={formData.country}
                 onChange={handleChange}
-              >
-                <option value="">Select Country</option>
-                {countries.map((country, index) => (
-                  <option key={index} value={country}>{country}</option>
-                ))}
-              </select>
+              />
               {errors.country && <p className="text-sm text-red-200 mt-1">{errors.country}</p>}
             </div>
             
             <div>
-              <select 
+              <input 
                 name="region"
+                placeholder="State/Province" 
                 className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.region ? 'border-red-500' : 'border-black'}`}
                 value={formData.region}
                 onChange={handleChange}
-                disabled={!formData.country}
-              >
-                <option value="">Select State/Province</option>
-                {regions.map((region, index) => (
-                  <option key={index} value={region}>{region}</option>
-                ))}
-              </select>
+              />
               {errors.region && <p className="text-sm text-red-200 mt-1">{errors.region}</p>}
             </div>
           </div>
           
           <div className="w-3/4 grid grid-cols-2 gap-3 mb-4">
             <div>
-              <select 
+              <input 
                 name="city"
+                placeholder="City" 
                 className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.city ? 'border-red-500' : 'border-black'}`}
                 value={formData.city}
                 onChange={handleChange}
-                disabled={!formData.region}
-              >
-                <option value="">Select City</option>
-                {cities.map((city, index) => (
-                  <option key={index} value={city}>{city}</option>
-                ))}
-              </select>
+              />
               {errors.city && <p className="text-sm text-red-200 mt-1">{errors.city}</p>}
             </div>
             

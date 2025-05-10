@@ -13,6 +13,8 @@ import EventsLandingPage from './components/LandingPage';
 import HomeUser from './components/HomeUser';
 import MyEventsUser from './components/MyEventsUser';
 import ProfileUser from './components/ProfileUser';
+import EventDetail from './components/EventDetail';
+import OrganizerDashboard from './components/OrganizerDashboard';
 
 // Admin components
 import UserManagement from './components/admin/UserManagement';

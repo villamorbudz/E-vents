@@ -52,20 +52,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
-
-import it342.g4.e_vents.model.Act;
-import it342.g4.e_vents.model.Event;
-import it342.g4.e_vents.model.TicketCategory;
-import it342.g4.e_vents.model.User;
-import it342.g4.e_vents.model.Venue;
-import it342.g4.e_vents.service.ActService;
-import it342.g4.e_vents.service.EventService;
-import it342.g4.e_vents.service.TicketCategoryService;
-import it342.g4.e_vents.service.UserService;
-import it342.g4.e_vents.service.VenueService;
-import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Controller for event-related operations
@@ -79,15 +65,13 @@ public class EventController {
     private final EventService eventService;
     private final ActService actService;
     private final Path bannerStorageLocation;
-    private final UserService userService;
-    private final TicketCategoryService ticketCategoryService;
-    
+
     @Autowired
     public EventController(EventService eventService, ActService actService) {
         this.eventService = eventService;
         this.actService = actService;
         this.bannerStorageLocation = Paths.get("uploads/banners").toAbsolutePath().normalize();
-        
+
         // Create directory if it doesn't exist
         try {
             Files.createDirectories(this.bannerStorageLocation);
@@ -95,7 +79,7 @@ public class EventController {
             throw new RuntimeException("Could not create the directory where banners will be stored.", ex);
         }
     }
-    
+
     /**
      * Retrieves all events
      * @return List of all events
@@ -103,13 +87,13 @@ public class EventController {
     @GetMapping()
     @Operation(summary = "Get all events", description = "Retrieves a list of all events in the system")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of events", 
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of events",
                      content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
     })
     public ResponseEntity<List<Event>> getAllEvents() {
         return ResponseEntity.ok(eventService.getAllEvents());
     }
-    
+
     /**
      * Retrieves all scheduled events
      * @return List of all scheduled events
@@ -117,13 +101,13 @@ public class EventController {
     @GetMapping("/scheduled")
     @Operation(summary = "Get all scheduled events", description = "Retrieves a list of all events with SCHEDULED status")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of scheduled events", 
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of scheduled events",
                      content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
     })
     public ResponseEntity<List<Event>> getScheduledEvents() {
         return ResponseEntity.ok(eventService.getEventsByStatus("SCHEDULED"));
     }
-    
+
     /**
      * Retrieves all postponed events
      * @return List of all postponed events
@@ -131,13 +115,13 @@ public class EventController {
     @GetMapping("/postponed")
     @Operation(summary = "Get all postponed events", description = "Retrieves a list of all events with POSTPONED status")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of postponed events", 
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of postponed events",
                      content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
     })
     public ResponseEntity<List<Event>> getPostponedEvents() {
         return ResponseEntity.ok(eventService.getEventsByStatus("POSTPONED"));
     }
-    
+
     /**
      * Retrieves all cancelled events
      * @return List of all cancelled events
@@ -145,13 +129,13 @@ public class EventController {
     @GetMapping("/cancelled")
     @Operation(summary = "Get all cancelled events", description = "Retrieves a list of all events with CANCELLED status")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of cancelled events", 
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of cancelled events",
                      content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
     })
     public ResponseEntity<List<Event>> getCancelledEvents() {
         return ResponseEntity.ok(eventService.getEventsByStatus("CANCELLED"));
     }
-    
+
     /**
      * Retrieves an event by ID
      * @param id The event ID
@@ -160,7 +144,7 @@ public class EventController {
     @GetMapping("/{id}")
     @Operation(summary = "Get event by ID", description = "Retrieves a specific event by its ID")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved the event", 
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the event",
                      content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class))),
         @ApiResponse(responseCode = "404", description = "Event not found", content = @Content)
     })
@@ -172,7 +156,7 @@ public class EventController {
             return ResponseEntity.notFound().build();
         }
     }
-    
+
     /**
      * Shows the edit event page
      * @param id The event ID to edit
@@ -197,7 +181,7 @@ public class EventController {
     @GetMapping("/acts")
     @Operation(summary = "Get all acts", description = "Retrieves a list of all acts for event lineup selection")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of acts", 
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of acts",
                      content = @Content(mediaType = "application/json", schema = @Schema(implementation = Act.class)))
     })
     public ResponseEntity<List<Act>> getActs() {
@@ -229,18 +213,18 @@ public class EventController {
         event.setName(name);
         event.setDate(date);
         event.setTime(time);
-        
+
         // Find acts by IDs
         List<Act> acts = actService.getAllActs().stream()
                 .filter(a -> lineup.contains(a.getActId()))
                 .toList();
         event.setLineup(acts);
-        
+
         event.setStatus(status);
         eventService.createEvent(event);
         return new ModelAndView("redirect:/events/dashboard");
     }
-    
+
     /**
      * Creates a new event with JSON data
      * @param event Event data from request body
@@ -249,9 +233,9 @@ public class EventController {
     @PostMapping("/create")
     @Operation(summary = "Create a new event", description = "Creates a new event in the system using JSON data")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Event successfully created", 
-                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+            @ApiResponse(responseCode = "201", description = "Event successfully created",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
     })
     public ResponseEntity<Event> createEvent(
             @Parameter(description = "Event object to be created", required = true) @RequestBody Event event) {
@@ -260,14 +244,11 @@ public class EventController {
             return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().build();
     }
-}
 
     /**
      * Updates an existing event

@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import StripeWrapper from "./StripeWrapper";
+import StripePayment from "./StripePayment";
 
 // Import the mock events data 
-import { mockEventsData } from "./HomeUser"; // assuming both components are in the same directory
+import { mockEventsData } from "./HomeUser";
 
 export default function EventDetail() {
   const { eventId } = useParams();
@@ -10,6 +12,7 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [totalPurchase, setTotalPurchase] = useState(0);
+  const [showStripePayment, setShowStripePayment] = useState(false);
   const navigate = useNavigate();
 
   // Use the mock events data to find the event
@@ -72,13 +75,18 @@ export default function EventDetail() {
     return stars;
   };
 
-  // Handle payment (mock function)
-  const handlePayment = () => {
+  // Handle proceed to checkout
+  const handleProceedToCheckout = () => {
     if (selectedTickets.length === 0) {
       alert("Please select at least one ticket.");
       return;
     }
     
+    setShowStripePayment(true);
+  };
+
+  // Handle successful payment
+  const handlePaymentSuccess = (paymentResponse) => {
     // Process purchased events
     const purchasedEvents = selectedTickets.map(ticket => {
       // Parse date from the event date string
@@ -94,7 +102,8 @@ export default function EventDetail() {
         image: event.image,
         ticketType: ticket.type,
         ticketPrice: ticket.price,
-        quantity: ticket.quantity
+        quantity: ticket.quantity,
+        paymentId: paymentResponse.paymentIntent.id
       };
     });
     
@@ -106,15 +115,15 @@ export default function EventDetail() {
     updatedEvents = [...updatedEvents, ...purchasedEvents];
     localStorage.setItem('purchasedEvents', JSON.stringify(updatedEvents));
     
-    // Show success message
-    alert(`Payment processed successfully for ${selectedTickets.reduce((sum, ticket) => sum + ticket.quantity, 0)} tickets!`);
-    
     // Navigate to myevents with the latest purchased event
-    navigate('/myevents', { 
-      state: { 
-        newPurchasedEvent: purchasedEvents[0] // Pass first ticket as the latest purchase
-      }
-    });
+    setTimeout(() => {
+      navigate('/myevents', { 
+        state: { 
+          newPurchasedEvent: purchasedEvents[0], // Pass first ticket as the latest purchase
+          paymentSuccess: true
+        }
+      });
+    }, 2000);
   };
 
   if (loading) {
@@ -243,12 +252,21 @@ export default function EventDetail() {
             </div>
             
             <div className="flex justify-end mt-4">
-              <button 
-                onClick={handlePayment}
-                className="bg-gray-100 text-gray-900 py-2 px-6 rounded font-medium hover:bg-white transition"
-              >
-                Pay with Stripe
-              </button>
+              {!showStripePayment ? (
+                <button 
+                  onClick={handleProceedToCheckout}
+                  className="bg-gray-100 text-gray-900 py-2 px-6 rounded font-medium hover:bg-white transition"
+                >
+                  Proceed to Payment
+                </button>
+              ) : (
+                <StripeWrapper>
+                  <StripePayment 
+                    amount={totalPurchase} 
+                    onPaymentSuccess={handlePaymentSuccess}
+                  />
+                </StripeWrapper>
+              )}
             </div>
           </div>
         )}

@@ -244,13 +244,17 @@ export const eventService = {
   async createEvent(eventData, bannerImage) {
     try {
       // First create the event
-      const response = await api.post('/events', eventData);
+      const response = await api.post('/events/create', eventData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       const eventId = response.data.id;
       
       // If there's a banner image, upload it
       if (bannerImage && eventId) {
         const formData = new FormData();
-        formData.append('image', bannerImage);
+        formData.append('file', bannerImage); // Changed from 'image' to 'file' to match backend parameter name
         await api.post(`/events/${eventId}/banner`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'

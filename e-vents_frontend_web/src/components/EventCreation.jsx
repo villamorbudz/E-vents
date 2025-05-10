@@ -83,7 +83,8 @@ export default function EventCreation() {
         date: selectedDate,
         time: selectedTime,
         venue: venueName,
-        actIds: selectedActs.map(act => act.id),
+        lineup: selectedActs,
+        status: 'SCHEDULED'
       };
 
       // Create the event using the API
@@ -111,10 +112,11 @@ export default function EventCreation() {
                 viewBox="0 0 24 24" 
                 fill="white" 
                 xmlns="http://www.w3.org/2000/svg"
+                key="logo-svg"
               >
-                <rect key="rect-1" x="2" y="2" width="9" height="9" />
-                <rect key="rect-2" x="13" y="2" width="9" height="9" />
-                <rect key="rect-3" x="2" y="13" width="9" height="9" />
+                <rect x="2" y="2" width="9" height="9" />
+                <rect x="13" y="2" width="9" height="9" />
+                <rect x="2" y="13" width="9" height="9" />
               </svg>
               vents
             </span>

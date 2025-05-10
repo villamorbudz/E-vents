@@ -4,18 +4,22 @@ import it342.g4.e_vents.model.Act;
 import it342.g4.e_vents.model.Category;
 import it342.g4.e_vents.model.Role;
 import it342.g4.e_vents.model.Tags;
+import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.model.enums.Tag;
 import it342.g4.e_vents.repository.ActRepository;
 import it342.g4.e_vents.repository.CategoryRepository;
 import it342.g4.e_vents.repository.RoleRepository;
 import it342.g4.e_vents.repository.TagsRepository;
+import it342.g4.e_vents.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 @SpringBootApplication
@@ -31,7 +35,9 @@ public class EVentsApplication {
             CategoryRepository categoryRepository,
             RoleRepository roleRepository,
             TagsRepository tagsRepository,
-            ActRepository actRepository) {
+            ActRepository actRepository,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
         return args -> {
             // Initialize Roles if they don't exist
             for (it342.g4.e_vents.model.enums.Role roleEnum : it342.g4.e_vents.model.enums.Role.values()) {
@@ -64,9 +70,66 @@ public class EVentsApplication {
                 }
             }
             
+            // Initialize Users if they don't exist
+            initializeUsers(userRepository, roleRepository, passwordEncoder);
+            
             // Initialize Acts if they don't exist
             initializeActs(actRepository, categoryRepository, tagsRepository);
         };
+    }
+    
+    private void initializeUsers(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder) {
+            
+        // Initialize admin user
+        if (!userRepository.existsByEmail("admin@events.com")) {
+            User adminUser = new User();
+            adminUser.setFirstName("Admin");
+            adminUser.setLastName("User");
+            adminUser.setEmail("admin@events.com");
+            adminUser.setPassword(passwordEncoder.encode("12345678"));
+            adminUser.setContactNumber("1234567890");
+            adminUser.setCountry("Philippines");
+            adminUser.setRegion("Metro Manila");
+            adminUser.setCity("Manila");
+            adminUser.setPostalCode("1000");
+            adminUser.setBirthdate(new Date()); // Current date as placeholder
+            adminUser.setActive(true);
+            
+            // Set ADMIN role
+            Role adminRole = roleRepository.findByName("ADMIN")
+                    .orElseThrow(() -> new RuntimeException("Role ADMIN not found"));
+            adminUser.setRole(adminRole);
+            
+            userRepository.save(adminUser);
+            System.out.println("Initialized admin user: admin@events.com");
+        }
+        
+        // Initialize organizer user
+        if (!userRepository.existsByEmail("limalima@events.com")) {
+            User organizerUser = new User();
+            organizerUser.setFirstName("Renato");
+            organizerUser.setLastName("Limalima");
+            organizerUser.setEmail("limalima@events.com");
+            organizerUser.setPassword(passwordEncoder.encode("12345678"));
+            organizerUser.setContactNumber("0123456789");
+            organizerUser.setCountry("Philippines");
+            organizerUser.setRegion("Cebu");
+            organizerUser.setCity("Cebu City");
+            organizerUser.setPostalCode("6000");
+            organizerUser.setBirthdate(new Date()); // Current date as placeholder
+            organizerUser.setActive(true);
+            
+            // Set ORGANIZER role
+            Role organizerRole = roleRepository.findByName("ORGANIZER")
+                    .orElseThrow(() -> new RuntimeException("Role ORGANIZER not found"));
+            organizerUser.setRole(organizerRole);
+            
+            userRepository.save(organizerUser);
+            System.out.println("Initialized organizer user: limalima@events.com");
+        }
     }
     
     private void initializeActs(
