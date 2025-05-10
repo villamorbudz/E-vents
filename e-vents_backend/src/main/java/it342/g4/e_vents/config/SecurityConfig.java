@@ -57,6 +57,7 @@ public class SecurityConfig {
                 // Public endpoints - no authentication needed
                 .requestMatchers("/api/users/register", "/api/users/login", "/api/users/exists", "/api/users/{id}/delete", "/api/users/{id}").permitAll()
                 .requestMatchers("/api/users/countries", "/api/users/regions/**", "/api/users/cities/**").permitAll()
+                .requestMatchers("/api/payment/**").permitAll()
                 // Make all event endpoints public for now to fix the 403 error
                 .requestMatchers("/api/events/**").permitAll()
                 .requestMatchers("/login", "/signup/**", "/forgot-password").permitAll()
