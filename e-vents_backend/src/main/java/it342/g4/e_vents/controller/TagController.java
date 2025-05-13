@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST Controller for tag-related operations
@@ -83,6 +84,25 @@ public class TagController {
             @Parameter(description = "ID of the tag to retrieve", required = true) @PathVariable Long id) {
         return tagsService.getActiveTagById(id)
                 .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * Retrieves the category name for a tag
+     * @param id The tag ID
+     * @return The category name or 404 if tag not found
+     */
+    @GetMapping("/{id}/category-name")
+    @Operation(summary = "Get category name for a tag", description = "Retrieves the category name for a specific tag")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the category name", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Tag not found", content = @Content)
+    })
+    public ResponseEntity<Map<String, String>> getCategoryNameByTagId(
+            @Parameter(description = "ID of the tag", required = true) @PathVariable Long id) {
+        return tagsService.getActiveTagById(id)
+                .map(tag -> ResponseEntity.ok(Collections.singletonMap("categoryName", tag.getCategoryName())))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -254,6 +274,28 @@ public class TagController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get the count of active tags
+     * @return ResponseEntity with the count of active tags
+     */
+    @Operation(summary = "Get count of active tags", description = "Returns the total number of active tags in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved count", 
+                    content = @Content(mediaType = "application/json", 
+                    schema = @Schema(implementation = Long.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> countActiveTags() {
+        try {
+            long count = tagsService.countActiveTags();
+            Map<String, Long> response = Collections.singletonMap("count", count);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

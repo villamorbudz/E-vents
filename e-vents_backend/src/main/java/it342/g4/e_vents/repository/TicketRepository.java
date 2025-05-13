@@ -14,4 +14,10 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByTicketCategoryTicketCategoryIdAndIsActiveTrue(Long ticketCategoryId);
     List<Ticket> findByStatus(String status);
     Optional<Ticket> findByTicketIdAndIsActiveTrue(Long ticketId);
+    
+    /**
+     * Count active tickets in the system
+     * @return Number of active tickets
+     */
+    long countByIsActiveTrue();
 }

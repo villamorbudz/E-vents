@@ -13,8 +13,8 @@ public class Role {
     @Column(nullable = false, unique = true)
     private String name;
     
-    @Column(nullable = false)
-    private boolean active = true;
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean isActive = true;
 
     public Long getRoleId() {
         return roleId;
@@ -23,7 +23,7 @@ public class Role {
     public void setRoleId(Long roleId) {
         this.roleId = roleId;
     }
-
+    
     public String getName() {
         return name;
     }
@@ -33,10 +33,10 @@ public class Role {
     }
     
     public boolean isActive() {
-        return active;
+        return isActive;
     }
     
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
     }
 }

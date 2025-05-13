@@ -12,4 +12,10 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     List<Rating> findByRatedEntityIdAndRatedEntityTypeAndIsActiveTrue(Long entityId, Rating.EntityType entityType);
     List<Rating> findByUserAndIsActiveTrue(User user);
     List<Rating> findByRatedEntityIdAndRatedEntityType(Long entityId, Rating.EntityType entityType);
+    
+    /**
+     * Count active ratings in the system
+     * @return Number of active ratings
+     */
+    long countByIsActiveTrue();
 }

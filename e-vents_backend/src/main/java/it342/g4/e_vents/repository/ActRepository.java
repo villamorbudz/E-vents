@@ -18,4 +18,10 @@ public interface ActRepository extends JpaRepository<Act, Long> {
      * @return True if exists, false otherwise
      */
     boolean existsByName(String name);
+    
+    /**
+     * Count active acts in the system
+     * @return Number of active acts
+     */
+    long countByIsActiveTrue();
 }

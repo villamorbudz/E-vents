@@ -19,17 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.MediaType;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -64,20 +59,11 @@ public class EventController {
 
     private final EventService eventService;
     private final ActService actService;
-    private final Path bannerStorageLocation;
 
     @Autowired
     public EventController(EventService eventService, ActService actService) {
         this.eventService = eventService;
         this.actService = actService;
-        this.bannerStorageLocation = Paths.get("uploads/banners").toAbsolutePath().normalize();
-
-        // Create directory if it doesn't exist
-        try {
-            Files.createDirectories(this.bannerStorageLocation);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not create the directory where banners will be stored.", ex);
-        }
     }
 
     /**
@@ -189,64 +175,96 @@ public class EventController {
     }
 
     /**
-     * Creates a new event with form data
-     * @param name Event name
-     * @param date Event date
-     * @param time Event time
-     * @param lineup List of Act IDs
-     * @param status Event status
-     * @return Redirect to dashboard
-     */
-    @PostMapping("/create-form")
-    @Operation(summary = "Create event with form data", description = "Creates a new event using form data and redirects to dashboard")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Event successfully created and redirected to dashboard"),
-        @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
-    })
-    public ModelAndView createEventForm(
-            @Parameter(description = "Name of the event", required = true) @RequestParam String name,
-            @Parameter(description = "Date of the event", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @Parameter(description = "Time of the event", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time,
-            @Parameter(description = "IDs of acts in the lineup", required = true) @RequestParam(value = "lineup") List<Long> lineup,
-            @Parameter(description = "Status of the event", required = true) @RequestParam String status) {
-        Event event = new Event();
-        event.setName(name);
-        event.setDate(date);
-        event.setTime(time);
-
-        // Find acts by IDs
-        List<Act> acts = actService.getAllActs().stream()
-                .filter(a -> lineup.contains(a.getActId()))
-                .toList();
-        event.setLineup(acts);
-
-        event.setStatus(status);
-        eventService.createEvent(event);
-        return new ModelAndView("redirect:/events/dashboard");
-    }
-
-    /**
      * Creates a new event with JSON data
      * @param event Event data from request body
-     * @return The created event
+     * @return The created event or error
      */
-    @PostMapping("/create")
+    @PostMapping(value = "/create", consumes = "application/json", produces = "application/json")
     @Operation(summary = "Create a new event", description = "Creates a new event in the system using JSON data")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Event successfully created",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Server error", content = @Content)
     })
-    public ResponseEntity<Event> createEvent(
-            @Parameter(description = "Event object to be created", required = true) @RequestBody Event event) {
+    public ResponseEntity<Object> createEvent(
+            @Parameter(description = "Event object to be created", required = true)
+            @RequestBody Event event) {
         try {
+            // Log the incoming request for debugging
+            System.out.println("Received event creation request: " + event.getName());
+
+            // Validate required fields
+            if (event.getName() == null || event.getName().trim().isEmpty()) {
+                return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Event name is required"));
+            }
+
+            if (event.getVenue() == null || event.getVenue().trim().isEmpty()) {
+                return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Event venue is required"));
+            }
+
+            if (event.getDate() == null) {
+                return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Event date is required"));
+            }
+
+            if (event.getTime() == null) {
+                return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Event time is required"));
+            }
+
+            if (event.getUser() == null || event.getUser().getUserId() == null) {
+                return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "User ID is required"));
+            }
+
+            // Validate lineup
+            if (event.getLineup() == null || event.getLineup().isEmpty()) {
+                return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "At least one act/lineup is required"));
+            }
+
+            // Fetch and set Act entities based on actId(s) provided in lineup
+            List<Act> resolvedActs = new ArrayList<>();
+            for (Act actStub : event.getLineup()) {
+                if (actStub.getActId() == null) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Each act must have an actId"));
+                }
+                Act act = actService.getActById(actStub.getActId());
+                if (act == null) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Act with ID " + actStub.getActId() + " not found"));
+                }
+                resolvedActs.add(act);
+            }
+            event.setLineup(resolvedActs);
+
+            // Set default values if not provided
+            if (event.getStatus() == null) {
+                event.setStatus("SCHEDULED");
+            }
+
+            // Create the event
             Event createdEvent = eventService.createEvent(event);
+
+            // Log the created event for debugging
+            System.out.println("Created event with ID: " + createdEvent.getEventId());
+            System.out.println("Event name: " + createdEvent.getName());
+
+            // Return with status 201 Created and the complete event object
             return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().build();
+            e.printStackTrace(); // Log the full stack trace for debugging
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to create event", "message", e.getMessage()));
         }
     }
 
@@ -397,128 +415,13 @@ public class EventController {
     }
     
     /**
-     * Uploads a banner image for an event
-     * @param id The event ID
-     * @param file The image file to upload
-     * @return Success message or error
+     * Get the count of active events
+     * @return ResponseEntity with the count of active events
      */
-    @PostMapping("/{id}/banner")
-    @Operation(summary = "Upload event banner", description = "Uploads a banner image for an event")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Banner successfully uploaded", 
-                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
-        @ApiResponse(responseCode = "400", description = "Invalid file or bad request", content = @Content)
-    })
-    public ResponseEntity<?> uploadBanner(
-            @Parameter(description = "ID of the event", required = true) @PathVariable Long id, 
-            @Parameter(description = "Banner image file", required = true) @RequestParam("file") MultipartFile file) {
-        try {
-            // Verify event exists
-            Event event = eventService.getEventById(id);
-            
-            // Generate unique filename
-            String fileExtension = getFileExtension(file.getOriginalFilename());
-            String fileName = UUID.randomUUID().toString() + fileExtension;
-            
-            // Save file
-            Path targetLocation = this.bannerStorageLocation.resolve(fileName);
-            Files.copy(file.getInputStream(), targetLocation);
-            
-            // Update event with banner path
-            event.setBannerImage(fileName);
-            eventService.updateEvent(event);
-            
-            return ResponseEntity.ok(Collections.singletonMap("message", "Banner uploaded successfully"));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * Deletes the banner image for an event
-     * @param id The event ID
-     * @return Success message or error
-     */
-    @DeleteMapping("/{id}/banner")
-    @Operation(summary = "Delete event banner", description = "Deletes the banner image for an event")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Banner successfully deleted", 
-                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
-        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
-    })
-    public ResponseEntity<?> deleteBanner(
-            @Parameter(description = "ID of the event", required = true) @PathVariable Long id) {
-        try {
-            // Verify event exists
-            Event event = eventService.getEventById(id);
-            
-            // Delete file if exists
-            if (event.getBannerImage() != null && !event.getBannerImage().isEmpty()) {
-                Path filePath = this.bannerStorageLocation.resolve(event.getBannerImage()).normalize();
-                Files.deleteIfExists(filePath);
-                
-                // Update event
-                event.setBannerImage(null);
-                eventService.updateEvent(event);
-            }
-            
-            return ResponseEntity.ok(Collections.singletonMap("message", "Banner deleted successfully"));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Collections.singletonMap("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * Serves image files from the file system
-     * @param filename The image filename
-     * @return The image file
-     */
-    @GetMapping("/images/{filename:.+}")
-    @Operation(summary = "Serve event banner image", description = "Serves the banner image file for an event")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved the image"),
-        @ApiResponse(responseCode = "404", description = "Image not found", content = @Content),
-        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content)
-    })
-    public ResponseEntity<Resource> serveImage(
-            @Parameter(description = "Filename of the image to retrieve", required = true) @PathVariable String filename) {
-        try {
-            Path filePath = this.bannerStorageLocation.resolve(filename).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            
-            if (resource.exists()) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.IMAGE_JPEG)
-                        .body(resource);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (MalformedURLException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-    
-    /**
-     * Helper method to extract file extension
-     */
-    private String getFileExtension(String filename) {
-        if (filename == null) {
-            return "";
-        }
-        int lastIndexOf = filename.lastIndexOf(".");
-        if (lastIndexOf == -1) {
-            return "";
-        }
-        return filename.substring(lastIndexOf);
+    @GetMapping("/count")
+    @Operation(summary = "Count active events", description = "Get the count of active events")
+    public ResponseEntity<Map<String, Long>> countActiveEvents() {
+        Long count = eventService.countActiveEvents();
+        return ResponseEntity.ok(Map.of("count", count));
     }
 }

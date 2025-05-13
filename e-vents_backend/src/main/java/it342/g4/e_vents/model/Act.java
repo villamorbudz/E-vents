@@ -30,7 +30,7 @@ public class Act {
     private String description;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
-    private boolean active = true;
+    private boolean isActive = true;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -78,11 +78,11 @@ public class Act {
     }
 
     public boolean isActive() {
-        return active;
+        return isActive;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
     }
 
     public List<Tags> getTags() {
@@ -99,5 +99,27 @@ public class Act {
 
     public void setEvents(List<Event> events) {
         this.events = events;
+    }
+    
+    /**
+     * Helper method to get the category name
+     * @return The name of the category this act belongs to
+     */
+    public String getCategoryName() {
+        return category != null ? category.getName() : null;
+    }
+    
+    /**
+     * Helper method to get tag names as a comma-separated string
+     * @return Comma-separated string of tag names
+     */
+    public String getTagNames() {
+        if (tags == null || tags.isEmpty()) {
+            return "";
+        }
+        return tags.stream()
+                .map(Tags::getName)
+                .filter(name -> name != null && !name.isEmpty())
+                .collect(java.util.stream.Collectors.joining(", "));
     }
 }

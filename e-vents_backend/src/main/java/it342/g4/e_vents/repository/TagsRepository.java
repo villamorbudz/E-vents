@@ -8,8 +8,17 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository for Tags entity
+ */
 @Repository
 public interface TagsRepository extends JpaRepository<Tags, Long> {
+    /**
+     * Count active tags in the system
+     * @return Number of active tags
+     */
+    long countByIsActiveTrue();
+    
     /**
      * Find all active tags
      * @return List of active tags
@@ -18,36 +27,36 @@ public interface TagsRepository extends JpaRepository<Tags, Long> {
     
     /**
      * Find an active tag by ID
-     * @param id The tag ID
+     * @param id Tag ID
      * @return Optional containing the tag if found
      */
     Optional<Tags> findByTagIdAndIsActiveTrue(Long id);
     
     /**
      * Find tags by category
-     * @param category The category to filter by
-     * @return List of tags for the category
+     * @param category Category to filter by
+     * @return List of tags in the category
      */
     List<Tags> findByCategory(Category category);
     
     /**
-     * Search tags by name (case-insensitive)
-     * @param name The name to search for
+     * Search tags by name (case insensitive)
+     * @param query Search query
      * @return List of matching tags
      */
-    List<Tags> findByNameContainingIgnoreCase(String name);
-    
-    /**
-     * Find a tag by its exact name
-     * @param name The exact name of the tag
-     * @return Optional containing the tag if found
-     */
-    Optional<Tags> findByName(String name);
+    List<Tags> findByNameContainingIgnoreCase(String query);
     
     /**
      * Check if a tag with the given name exists
-     * @param name The name to check
+     * @param name Tag name
      * @return True if exists, false otherwise
      */
     boolean existsByName(String name);
+    
+    /**
+     * Find a tag by its exact name
+     * @param name Tag name
+     * @return Optional containing the tag if found
+     */
+    Optional<Tags> findByName(String name);
 }

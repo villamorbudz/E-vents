@@ -9,8 +9,7 @@ export default function EventCreation() {
   const [eventDescription, setEventDescription] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [bannerImage, setBannerImage] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  // Banner image functionality has been removed
   const [venueName, setVenueName] = useState("");
   const [acts, setActs] = useState([]);
   const [selectedActs, setSelectedActs] = useState([]);
@@ -35,18 +34,7 @@ export default function EventCreation() {
     fetchActs();
   }, []);
 
-  // Handle banner image upload
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setBannerImage(file);
-      const fileReader = new FileReader();
-      fileReader.onload = () => {
-        setPreviewUrl(fileReader.result);
-      };
-      fileReader.readAsDataURL(file);
-    }
-  };
+  // Banner image functionality has been removed
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +65,16 @@ export default function EventCreation() {
         return;
       }
 
+      // Get the current user's ID from localStorage
+      const userData = JSON.parse(localStorage.getItem('user')) || {};
+      const userId = userData.userId;
+      
+      if (!userId) {
+        setErrorMessage("User information not found. Please log in again.");
+        navigate('/login');
+        return;
+      }
+      
       const eventData = {
         name: eventName,
         description: eventDescription,
@@ -84,11 +82,12 @@ export default function EventCreation() {
         time: selectedTime,
         venue: venueName,
         lineup: selectedActs,
-        status: 'SCHEDULED'
+        status: 'SCHEDULED',
+        user: { userId: userId }
       };
 
       // Create the event using the API
-      const createdEvent = await eventService.createEvent(eventData, bannerImage);
+      const createdEvent = await eventService.createEvent(eventData);
       
       // Navigate to ticketing details with the event ID
       navigate(`/create/ticketing?eventId=${createdEvent.id}`);
@@ -277,46 +276,9 @@ export default function EventCreation() {
                 </div>
               </div>
 
-              {/* Right Side - Banner Upload */}
+              {/* Banner image functionality has been removed */}
               <div className="w-full md:w-1/2">
-                <label className="block text-gray-400 mb-2">Banner:</label>
-                <div
-                  className="border-2 border-dashed border-gray-400 rounded-lg h-64 flex flex-col items-center justify-center bg-gray-100 text-gray-500 cursor-pointer overflow-hidden"
-                  onClick={() => document.getElementById('banner-upload').click()}
-                >
-                  {previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt="Banner Preview"
-                      className="w-full h-full object-cover object-center"
-                    />
-                  ) : (
-                    <div className="text-center p-4">
-                      <svg
-                        className="mx-auto h-12 w-12 text-gray-400"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                      <p className="mt-1">Click to upload banner image</p>
-                    </div>
-                  )}
-                  <input
-                    id="banner-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                </div>
+                {/* This space is intentionally left empty after banner image removal */}
               </div>
             </div>
 

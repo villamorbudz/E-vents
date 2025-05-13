@@ -5,6 +5,8 @@ import backgroundImage from '../assets/images/loginBG.png';
 import { userService } from '../services/apiService';
 
 export default function SignupStep2() {
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [countryLoading, setCountryLoading] = useState(false);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
@@ -12,12 +14,17 @@ export default function SignupStep2() {
     contactNumber: "", // changed from mobile to match backend
     birthdate: "",
     country: "",
-    region: "",
-    city: "",
-    postalCode: ""
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch country options on mount
+  useEffect(() => {
+    setCountryLoading(true);
+    userService.getCountries().then((countries) => {
+      setCountryOptions(countries);
+    }).finally(() => setCountryLoading(false));
+  }, []);
 
   // Check for existing signup data in localStorage
   useEffect(() => {
@@ -87,21 +94,6 @@ export default function SignupStep2() {
       newErrors.country = "Country is required";
     }
     
-    // State validation
-    if (!formData.region.trim()) {
-      newErrors.region = "State/Province is required";
-    }
-    
-    // City validation
-    if (!formData.city.trim()) {
-      newErrors.city = "City is required";
-    }
-    
-    // Postal code validation
-    if (!formData.postalCode.trim()) {
-      newErrors.postalCode = "Postal code is required";
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -127,10 +119,7 @@ export default function SignupStep2() {
         password: existingData.password,
         contactNumber: formData.contactNumber,
         birthdate: new Date(formData.birthdate),
-        country: formData.country,
-        region: formData.region,
-        city: formData.city,
-        postalCode: formData.postalCode
+        country: formData.country
       };
       
       // Register user
@@ -265,53 +254,22 @@ export default function SignupStep2() {
             />
             {errors.birthdate && <p className="text-sm text-red-200 mt-1">{errors.birthdate}</p>}
           </div>
-          
-          <div className="w-3/4 grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <input 
-                name="country"
-                placeholder="Country" 
-                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.country ? 'border-red-500' : 'border-black'}`}
-                value={formData.country}
-                onChange={handleChange}
-              />
-              {errors.country && <p className="text-sm text-red-200 mt-1">{errors.country}</p>}
-            </div>
-            
-            <div>
-              <input 
-                name="region"
-                placeholder="State/Province" 
-                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.region ? 'border-red-500' : 'border-black'}`}
-                value={formData.region}
-                onChange={handleChange}
-              />
-              {errors.region && <p className="text-sm text-red-200 mt-1">{errors.region}</p>}
-            </div>
-          </div>
-          
-          <div className="w-3/4 grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <input 
-                name="city"
-                placeholder="City" 
-                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.city ? 'border-red-500' : 'border-black'}`}
-                value={formData.city}
-                onChange={handleChange}
-              />
-              {errors.city && <p className="text-sm text-red-200 mt-1">{errors.city}</p>}
-            </div>
-            
-            <div>
-              <input 
-                name="postalCode"
-                placeholder="Postal/Zip Code" 
-                className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.postalCode ? 'border-red-500' : 'border-black'}`}
-                value={formData.postalCode}
-                onChange={handleChange}
-              />
-              {errors.postalCode && <p className="text-sm text-red-200 mt-1">{errors.postalCode}</p>}
-            </div>
+
+          <div className="w-3/4 mb-4">
+            <select
+              name="country"
+              className={`w-full p-3 rounded-md bg-white text-black border-2 ${errors.country ? 'border-red-500' : 'border-black'}`}
+              value={formData.country}
+              onChange={handleChange}
+              disabled={countryLoading}
+            >
+              <option value="">Select Country</option>
+              {countryOptions.map((country) => (
+                <option key={country} value={country}>{country}</option>
+              ))}
+            </select>
+            {countryLoading && <p className="text-xs text-gray-200 mt-1">Loading countries...</p>}
+            {errors.country && <p className="text-sm text-red-200 mt-1">{errors.country}</p>}
           </div>
           
           <div className="w-3/4 flex justify-between mb-4">

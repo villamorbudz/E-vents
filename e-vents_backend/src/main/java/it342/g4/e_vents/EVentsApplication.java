@@ -2,12 +2,14 @@ package it342.g4.e_vents;
 
 import it342.g4.e_vents.model.Act;
 import it342.g4.e_vents.model.Category;
+import it342.g4.e_vents.model.Event;
 import it342.g4.e_vents.model.Role;
 import it342.g4.e_vents.model.Tags;
 import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.model.enums.Tag;
 import it342.g4.e_vents.repository.ActRepository;
 import it342.g4.e_vents.repository.CategoryRepository;
+import it342.g4.e_vents.repository.EventRepository;
 import it342.g4.e_vents.repository.RoleRepository;
 import it342.g4.e_vents.repository.TagsRepository;
 import it342.g4.e_vents.repository.UserRepository;
@@ -18,7 +20,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -37,7 +42,8 @@ public class EVentsApplication {
             TagsRepository tagsRepository,
             ActRepository actRepository,
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            EventRepository eventRepository) {
         return args -> {
             // Initialize Roles if they don't exist
             for (it342.g4.e_vents.model.enums.Role roleEnum : it342.g4.e_vents.model.enums.Role.values()) {
@@ -75,7 +81,20 @@ public class EVentsApplication {
             
             // Initialize Acts if they don't exist
             initializeActs(actRepository, categoryRepository, tagsRepository);
+            
+            // Initialize Events if they don't exist
+            initializeEvents(eventRepository, userRepository, actRepository);
         };
+    }
+    
+    /**
+     * Helper method to create a Date object for January 1, 2000
+     * @return Date object set to January 1, 2000
+     */
+    private Date createJan2000Date() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(2000, Calendar.JANUARY, 1);
+        return calendar.getTime();
     }
     
     private void initializeUsers(
@@ -92,10 +111,10 @@ public class EVentsApplication {
             adminUser.setPassword(passwordEncoder.encode("12345678"));
             adminUser.setContactNumber("1234567890");
             adminUser.setCountry("Philippines");
-            adminUser.setRegion("Metro Manila");
-            adminUser.setCity("Manila");
-            adminUser.setPostalCode("1000");
-            adminUser.setBirthdate(new Date()); // Current date as placeholder
+            
+            // Set birthdate to January 1, 2000
+            adminUser.setBirthdate(createJan2000Date());
+            
             adminUser.setActive(true);
             
             // Set ADMIN role
@@ -116,10 +135,10 @@ public class EVentsApplication {
             organizerUser.setPassword(passwordEncoder.encode("12345678"));
             organizerUser.setContactNumber("0123456789");
             organizerUser.setCountry("Philippines");
-            organizerUser.setRegion("Cebu");
-            organizerUser.setCity("Cebu City");
-            organizerUser.setPostalCode("6000");
-            organizerUser.setBirthdate(new Date()); // Current date as placeholder
+            
+            // Set birthdate to January 1, 2000
+            organizerUser.setBirthdate(createJan2000Date());
+            
             organizerUser.setActive(true);
             
             // Set ORGANIZER role
@@ -191,5 +210,66 @@ public class EVentsApplication {
             hamilton.setTags(hamiltonTags);
             actRepository.save(hamilton);
         }
+    }
+    
+    /**
+     * Initialize default events in the system
+     * @param eventRepository Repository for Event entities
+     * @param userRepository Repository for User entities
+     * @param actRepository Repository for Act entities
+     */
+    private void initializeEvents(
+            EventRepository eventRepository,
+            UserRepository userRepository,
+            ActRepository actRepository) {
+        
+        // Check if we already have events
+        if (eventRepository.count() > 0) {
+            return;
+        }
+        
+        // Get user with ID 1 to be the host
+        User host = userRepository.findById(1L)
+                .orElseThrow(() -> new RuntimeException("User with ID 1 not found"));
+        
+        // Get acts for event lineups
+        Act taylorSwift = actRepository.findByName("Taylor Swift")
+                .orElseThrow(() -> new RuntimeException("Act 'Taylor Swift' not found"));
+        
+        Act laLakers = actRepository.findByName("Los Angeles Lakers")
+                .orElseThrow(() -> new RuntimeException("Act 'Los Angeles Lakers' not found"));
+        
+        Act hamilton = actRepository.findByName("Hamilton: An American Musical")
+                .orElseThrow(() -> new RuntimeException("Act 'Hamilton: An American Musical' not found"));
+        
+        // Create Event 1: Music Concert
+        Event musicConcert = new Event();
+        musicConcert.setName("Summer Music Festival 2025");
+        musicConcert.setDescription("A spectacular summer music festival featuring Taylor Swift and other top artists.");
+        musicConcert.setDate(LocalDate.of(2025, 7, 15));
+        musicConcert.setTime(LocalTime.of(18, 30));
+        musicConcert.setVenue("National Stadium, Manila");
+        musicConcert.setUser(host);
+        musicConcert.setStatus(Event.STATUS_SCHEDULED);
+        musicConcert.setActive(true);
+        musicConcert.setLineup(List.of(taylorSwift));
+        
+        eventRepository.save(musicConcert);
+        System.out.println("Initialized event: Summer Music Festival 2025");
+        
+        // Create Event 2: Sports Exhibition
+        Event sportsEvent = new Event();
+        sportsEvent.setName("Basketball Exhibition Match 2025");
+        sportsEvent.setDescription("Watch the legendary LA Lakers in an exhibition match, followed by a special Hamilton performance.");
+        sportsEvent.setDate(LocalDate.of(2025, 8, 20));
+        sportsEvent.setTime(LocalTime.of(19, 0));
+        sportsEvent.setVenue("Araneta Coliseum, Quezon City");
+        sportsEvent.setUser(host);
+        sportsEvent.setStatus(Event.STATUS_SCHEDULED);
+        sportsEvent.setActive(true);
+        sportsEvent.setLineup(Arrays.asList(laLakers, hamilton));
+        
+        eventRepository.save(sportsEvent);
+        System.out.println("Initialized event: Basketball Exhibition Match 2025");
     }
 }

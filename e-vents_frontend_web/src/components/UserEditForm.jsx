@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { userService } from '../services/apiService';
+import { userService, roleService } from '../services/apiService';
 
 const UserEditForm = ({ user, onUpdate, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -7,89 +7,47 @@ const UserEditForm = ({ user, onUpdate, onCancel }) => {
     email: user.email || '',
     firstName: user.firstName || '',
     lastName: user.lastName || '',
-    role: user.role?.name || 'USER',
+    role: user.role?.roleId || user.role?.name || 'USER',
     country: user.country || '',
-    region: user.region || '',
-    city: user.city || '',
-    postalCode: user.postalCode || '',
     birthdate: user.birthdate || '',
     contactNumber: user.contactNumber || ''
   });
 
   const [countries, setCountries] = useState([]);
-  const [regions, setRegions] = useState([]);
-  const [cities, setCities] = useState([]);
+  const [roles, setRoles] = useState([]);
 
   useEffect(() => {
-    // Load countries on component mount
-    const loadCountries = async () => {
+    // Load countries and roles on component mount
+    const loadData = async () => {
       try {
         const countriesList = await userService.getCountries();
         setCountries(countriesList);
         
-        // If user has a country, load its regions
-        if (formData.country) {
-          const regionsList = await userService.getRegions(formData.country);
-          setRegions(regionsList);
-          
-          // If user has a region, load its cities
-          if (formData.region) {
-            const citiesList = await userService.getCities(formData.country, formData.region);
-            setCities(citiesList);
-          }
-        }
+        const rolesList = await roleService.getAllRoles();
+        setRoles(rolesList);
       } catch (error) {
-        console.error('Error loading location data:', error);
+        console.error('Error loading form data:', error);
       }
     };
     
-    loadCountries();
-  }, [formData.country, formData.region]);
+    loadData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleCountryChange = async (e) => {
-    const country = e.target.value;
-    setFormData({
-      ...formData,
-      country,
-      region: '',
-      city: ''
-    });
-    
-    // Load regions for selected country
-    try {
-      const regionsList = await userService.getRegions(country);
-      setRegions(regionsList);
-      setCities([]);
-    } catch (error) {
-      console.error('Error loading regions:', error);
-    }
-  };
-
-  const handleRegionChange = async (e) => {
-    const region = e.target.value;
-    setFormData({
-      ...formData,
-      region,
-      city: ''
-    });
-    
-    // Load cities for selected region
-    try {
-      const citiesList = await userService.getCities(formData.country, region);
-      setCities(citiesList);
-    } catch (error) {
-      console.error('Error loading cities:', error);
-    }
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    onUpdate(formData);
+    
+    // Create a copy of the form data
+    const userData = { ...formData };
+    
+    // Format the role as an object with roleId
+    userData.role = { roleId: userData.role };
+    
+    onUpdate(userData);
   };
 
   return (
@@ -142,8 +100,12 @@ const UserEditForm = ({ user, onUpdate, onCancel }) => {
             value={formData.role}
             onChange={handleChange}
           >
-            <option value="USER">User</option>
-            <option value="ADMIN">Admin</option>
+            <option value="">Select Role</option>
+            {roles.map((role) => (
+              <option key={role.roleId} value={role.roleId}>
+                {role.name}
+              </option>
+            ))}
           </select>
         </div>
         
@@ -153,7 +115,7 @@ const UserEditForm = ({ user, onUpdate, onCancel }) => {
             id="country"
             name="country"
             value={formData.country}
-            onChange={handleCountryChange}
+            onChange={handleChange}
           >
             <option value="">Select Country</option>
             {countries.map((country, index) => (
@@ -162,55 +124,6 @@ const UserEditForm = ({ user, onUpdate, onCancel }) => {
               </option>
             ))}
           </select>
-        </div>
-        
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="region">Region</label>
-            <select
-              id="region"
-              name="region"
-              value={formData.region}
-              onChange={handleRegionChange}
-              disabled={!formData.country}
-            >
-              <option value="">Select Region</option>
-              {regions.map((region, index) => (
-                <option key={index} value={region}>
-                  {region}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="city">City</label>
-            <select
-              id="city"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              disabled={!formData.region}
-            >
-              <option value="">Select City</option>
-              {cities.map((city, index) => (
-                <option key={index} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="postalCode">Postal Code</label>
-          <input
-            type="text"
-            id="postalCode"
-            name="postalCode"
-            value={formData.postalCode}
-            onChange={handleChange}
-          />
         </div>
         
         <div className="form-row">

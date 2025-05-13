@@ -10,4 +10,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByIsActiveTrue();
     List<Notification> findByUserUserIdAndIsActiveTrue(Long userId);
     List<Notification> findByUserUserIdAndReadFalseAndIsActiveTrue(Long userId);
+    
+    /**
+     * Count active notifications in the system
+     * @return Number of active notifications
+     */
+    long countByIsActiveTrue();
 }

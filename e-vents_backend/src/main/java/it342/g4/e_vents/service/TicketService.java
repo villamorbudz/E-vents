@@ -187,4 +187,12 @@ public class TicketService {
         ticket.setActive(true);
         ticketRepository.save(ticket);
     }
+
+    /**
+     * Counts the number of active tickets in the system
+     * @return The count of active tickets
+     */
+    public long countActiveTickets() {
+        return ticketRepository.countByIsActiveTrue();
+    }
 }

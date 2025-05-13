@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { userService, api } from "../services/apiService";
+import { userService, api, adminService } from "../services/apiService";
 import {
   FaUsers,
   FaCalendarAlt,
@@ -8,11 +8,14 @@ import {
   FaTicketAlt,
   FaStar,
   FaBell,
-  FaUserTag
+  FaUserTag,
+  FaChartBar,
+  FaExclamationTriangle
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import '../styles/AdminPage.css';
 import AdminSidebar from './AdminSidebar';
+import { Link } from 'react-router-dom';
 
 function AdminPage() {
   const [loading, setLoading] = useState(true);
@@ -45,32 +48,11 @@ function AdminPage() {
     setError(null);
 
     try {
-      const [users, events, acts, categories, tags, tickets, ticketCategories, ratings, notifications, roles] = 
-        await Promise.allSettled([
-          fetchCount('/users/all'),
-          fetchCount('/events'),
-          fetchCount('/acts'),
-          fetchCount('/categories/all'),
-          fetchCount('/tags/all'),
-          fetchCount('/tickets/all'),
-          fetchCount('/ticket-categories/all'),
-          fetchCount('/ratings/all'),
-          fetchCount('/notifications/all'),
-          fetchCount('/roles')
-        ]);
-
-      setStats({
-        users: users.status === 'fulfilled' ? users.value : 0,
-        events: events.status === 'fulfilled' ? events.value : 0,
-        acts: acts.status === 'fulfilled' ? acts.value : 0,
-        categories: categories.status === 'fulfilled' ? categories.value : 0,
-        tags: tags.status === 'fulfilled' ? tags.value : 0,
-        tickets: tickets.status === 'fulfilled' ? tickets.value : 0,
-        ticketCategories: ticketCategories.status === 'fulfilled' ? ticketCategories.value : 0,
-        ratings: ratings.status === 'fulfilled' ? ratings.value : 0,
-        notifications: notifications.status === 'fulfilled' ? notifications.value : 0,
-        roles: roles.status === 'fulfilled' ? roles.value : 0
-      });
+      // Use the adminService.getAllCounts method to get all counts at once
+      const counts = await adminService.getAllCounts();
+      
+      // Set the stats with the returned counts
+      setStats(counts);
 
       await Promise.all([
         loadRecentUsers(),
@@ -129,166 +111,215 @@ function AdminPage() {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <h1 className="admin-title">Admin Dashboard</h1>
+        <div className="admin-header">
+          <h1 className="admin-title">Admin Dashboard</h1>
+          <div className="admin-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        </div>
         
-        {error && <div className="admin-error">{error}</div>}
+        {error && (
+          <div className="admin-alert error">
+            <FaExclamationTriangle />
+            <span>{error}</span>
+          </div>
+        )}
         
         {loading ? (
-          <div className="admin-loading">Loading dashboard data...</div>
-        ) : (
-          <div className="dashboard-grid">
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaUsers className="stat-icon" />
-              <div className="stat-info">
-                <h3>Users</h3>
-                <p>{stats.users}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaCalendarAlt className="stat-icon" />
-              <div className="stat-info">
-                <h3>Events</h3>
-                <p>{stats.events}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaList className="stat-icon" />
-              <div className="stat-info">
-                <h3>Acts</h3>
-                <p>{stats.acts}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaList className="stat-icon" />
-              <div className="stat-info">
-                <h3>Categories</h3>
-                <p>{stats.categories}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaTags className="stat-icon" />
-              <div className="stat-info">
-                <h3>Tags</h3>
-                <p>{stats.tags}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaTicketAlt className="stat-icon" />
-              <div className="stat-info">
-                <h3>Tickets</h3>
-                <p>{stats.tickets}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaTicketAlt className="stat-icon" />
-              <div className="stat-info">
-                <h3>Ticket Categories</h3>
-                <p>{stats.ticketCategories}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaStar className="stat-icon" />
-              <div className="stat-info">
-                <h3>Ratings</h3>
-                <p>{stats.ratings}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaBell className="stat-icon" />
-              <div className="stat-info">
-                <h3>Notifications</h3>
-                <p>{stats.notifications}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FaUserTag className="stat-icon" />
-              <div className="stat-info">
-                <h3>Roles</h3>
-                <p>{stats.roles}</p>
-              </div>
-            </motion.div>
-
-            <div className="recent-section">
-              <h2>Recent Users</h2>
-              {recentUsers.length > 0 ? (
-                <ul>
-                  {recentUsers.map(user => (
-                    <li key={user.userId || user.id}>
-                      <span>{user.username || user.email}</span>
-                      <span>{new Date(user.createdAt).toLocaleDateString()}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No recent users</p>
-              )}
-            </div>
-
-            <div className="recent-section">
-              <h2>Recent Events</h2>
-              {recentEvents.length > 0 ? (
-                <ul>
-                  {recentEvents.map(event => (
-                    <li key={event.eventId || event.id}>
-                      <span>{event.title}</span>
-                      <span>{new Date(event.createdAt).toLocaleDateString()}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No recent events</p>
-              )}
-            </div>
+          <div className="admin-loading">
+            <div className="spinner"></div>
+            <p>Loading dashboard data...</p>
           </div>
+        ) : (
+          <>
+            <div className="dashboard-summary">
+              <div className="summary-card primary">
+                <div className="summary-icon">
+                  <FaUsers />
+                </div>
+                <div className="summary-content">
+                  <h3>{stats.users}</h3>
+                  <p>Total Users</p>
+                </div>
+                <Link to="/admin/users" className="summary-link">View All</Link>
+              </div>
+              
+              <div className="summary-card success">
+                <div className="summary-icon">
+                  <FaCalendarAlt />
+                </div>
+                <div className="summary-content">
+                  <h3>{stats.events}</h3>
+                  <p>Total Events</p>
+                </div>
+                <Link to="/admin/events" className="summary-link">View All</Link>
+              </div>
+              
+              <div className="summary-card warning">
+                <div className="summary-icon">
+                  <FaTicketAlt />
+                </div>
+                <div className="summary-content">
+                  <h3>{stats.tickets}</h3>
+                  <p>Total Tickets</p>
+                </div>
+                <Link to="/admin/tickets" className="summary-link">View All</Link>
+              </div>
+              
+              <div className="summary-card info">
+                <div className="summary-icon">
+                  <FaUserTag />
+                </div>
+                <div className="summary-content">
+                  <h3>{stats.roles}</h3>
+                  <p>User Roles</p>
+                </div>
+                <Link to="/admin/roles" className="summary-link">View All</Link>
+              </div>
+            </div>
+
+            <div className="dashboard-grid">
+              <div className="dashboard-section">
+                <div className="section-header">
+                  <h2><FaChartBar /> Platform Statistics</h2>
+                </div>
+                <div className="stats-grid">
+                  <motion.div
+                    className="stat-card"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <FaList className="stat-icon" />
+                    <div className="stat-info">
+                      <h3>Acts</h3>
+                      <p>{stats.acts}</p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className="stat-card"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <FaList className="stat-icon" />
+                    <div className="stat-info">
+                      <h3>Categories</h3>
+                      <p>{stats.categories}</p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className="stat-card"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <FaTags className="stat-icon" />
+                    <div className="stat-info">
+                      <h3>Tags</h3>
+                      <p>{stats.tags}</p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className="stat-card"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <FaTicketAlt className="stat-icon" />
+                    <div className="stat-info">
+                      <h3>Ticket Categories</h3>
+                      <p>{stats.ticketCategories}</p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className="stat-card"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <FaStar className="stat-icon" />
+                    <div className="stat-info">
+                      <h3>Ratings</h3>
+                      <p>{stats.ratings}</p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    className="stat-card"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <FaBell className="stat-icon" />
+                    <div className="stat-info">
+                      <h3>Notifications</h3>
+                      <p>{stats.notifications}</p>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+
+              <div className="dashboard-section recent-users">
+                <div className="section-header">
+                  <h2><FaUsers /> Recent Users</h2>
+                  <Link to="/admin/users" className="view-all">View All</Link>
+                </div>
+                {recentUsers.length > 0 ? (
+                  <div className="recent-list">
+                    {recentUsers.map(user => (
+                      <div className="recent-item" key={user.userId || user.id}>
+                        <div className="user-avatar">
+                          {(user.firstName || user.username || user.email || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="user-info">
+                          <h4>{user.username || user.email}</h4>
+                          <p>{user.firstName} {user.lastName}</p>
+                          <span className="date-badge">{new Date(user.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>No recent users</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="dashboard-section recent-events">
+                <div className="section-header">
+                  <h2><FaCalendarAlt /> Recent Events</h2>
+                  <Link to="/admin/events" className="view-all">View All</Link>
+                </div>
+                {recentEvents.length > 0 ? (
+                  <div className="recent-list">
+                    {recentEvents.map(event => (
+                      <div className="recent-item" key={event.eventId || event.id}>
+                        <div className="event-image">
+                          {event.bannerUrl ? (
+                            <img src={event.bannerUrl} alt={event.title} />
+                          ) : (
+                            <div className="event-placeholder">
+                              <FaCalendarAlt />
+                            </div>
+                          )}
+                        </div>
+                        <div className="event-info">
+                          <h4>{event.title}</h4>
+                          <p>{event.description && event.description.substring(0, 60)}...</p>
+                          <div className="event-meta">
+                            <span className="date-badge">{new Date(event.createdAt).toLocaleDateString()}</span>
+                            {event.category && <span className="category-badge">{event.category.name}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>No recent events</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </motion.div>
     </div>

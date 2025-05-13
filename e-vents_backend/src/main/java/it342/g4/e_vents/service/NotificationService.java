@@ -160,4 +160,12 @@ public class NotificationService {
         notification.setActive(true);
         notificationRepository.save(notification);
     }
+
+    /**
+     * Counts the number of active notifications in the system
+     * @return The count of active notifications
+     */
+    public long countActiveNotifications() {
+        return notificationRepository.countByIsActiveTrue();
+    }
 }

@@ -200,24 +200,6 @@ public class AdminController {
     }
     
     /**
-     * Process edit user form submission
-     */
-    @PostMapping("/users/{id}/edit")
-    public String updateUser(@PathVariable("id") Long id, @ModelAttribute User user, 
-                           RedirectAttributes redirectAttributes) {
-        try {
-            // Ensure the ID is set correctly
-            user.setUserId(id);
-            userService.editUser(user);
-            redirectAttributes.addFlashAttribute("successMessage", "User updated successfully");
-            return "redirect:/admin?entityType=users";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error updating user: " + e.getMessage());
-            return "redirect:/admin/users/" + id + "/edit";
-        }
-    }
-    
-    /**
      * Delete a user
      */
     @GetMapping("/users/{id}/delete")

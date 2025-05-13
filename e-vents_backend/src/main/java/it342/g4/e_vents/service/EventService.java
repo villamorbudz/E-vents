@@ -99,7 +99,6 @@ public class EventService {
         if (event.getStatus() == null) {
             event.setStatus(Event.STATUS_SCHEDULED);
         }
-
         return eventRepository.save(event);
     }
     
@@ -187,5 +186,13 @@ public class EventService {
                 .filter(event -> Event.STATUS_SCHEDULED.equals(event.getStatus()))
                 .limit(limit)
                 .toList();
+    }
+
+    /**
+     * Counts the number of active events in the system
+     * @return The count of active events
+     */
+    public long countActiveEvents() {
+        return eventRepository.countByIsActiveTrue();
     }
 }

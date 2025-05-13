@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { userService } from '../services/apiService';
-import { eventService } from '../services/eventService';
 
 export default function TicketingDetails() {
   const navigate = useNavigate();
@@ -111,11 +110,6 @@ export default function TicketingDetails() {
 
       // Submit event with ticket categories
       const createdEvent = await eventService.createEvent(eventData, categories, userId);
-
-      // Upload banner image if available
-      if (basicInfo.bannerImage) {
-        await eventService.uploadEventBanner(createdEvent.eventId, basicInfo.bannerImage);
-      }
 
       // Clear localStorage
       localStorage.removeItem("eventBasicInfo");

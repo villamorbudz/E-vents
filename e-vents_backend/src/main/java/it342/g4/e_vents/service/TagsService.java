@@ -129,4 +129,12 @@ public class TagsService {
     public void deleteTag(Long id) {
         tagsRepository.deleteById(id);
     }
+
+    /**
+     * Counts the number of active tags in the system
+     * @return The count of active tags
+     */
+    public long countActiveTags() {
+        return tagsRepository.countByIsActiveTrue();
+    }
 }

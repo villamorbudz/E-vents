@@ -193,4 +193,12 @@ public class TicketCategoryService {
     public boolean existsByName(String name) {
         return ticketCategoryRepository.existsByName(name);
     }
+
+    /**
+     * Counts the number of active ticket categories in the system
+     * @return The count of active ticket categories
+     */
+    public long countActiveTicketCategories() {
+        return ticketCategoryRepository.countByIsActiveTrue();
+    }
 }

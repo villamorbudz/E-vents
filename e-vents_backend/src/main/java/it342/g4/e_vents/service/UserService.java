@@ -2,6 +2,7 @@ package it342.g4.e_vents.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,6 +13,12 @@ import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.repository.RoleRepository;
 import it342.g4.e_vents.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 @Service
 public class UserService {
@@ -63,6 +70,9 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
         user.setRole(defaultRole);
 
+        // Set creation date to current time (same handling as birthdate)
+        user.setDateCreated(new Date());
+
         return userRepository.save(user);
     }
 
@@ -89,96 +99,61 @@ public class UserService {
     }
 
     /**
-     * Gets list of countries (placeholder until API integration)
+     * Gets list of countries from a Countries API
      * @return Array of country names
      */
     public String[] getCountries() {
-        return new String[]{
-            "United States", "Canada", "United Kingdom", "Australia", 
-            "Germany", "France", "Japan", "Brazil", "India", "China"
-        };
-    }
-
-    /**
-     * Gets regions for a country (placeholder until API integration)
-     * @param country The country to get regions for
-     * @return Array of region names
-     */
-
-
-    /*  Method to get regions for a country (placeholder until API integration)
-    public String[] getRegions(String country) {
-        return new String[]{"---"};
-    }*/
-
-    public String[] getRegions(String country) {
-        switch (country) {
-            case "United States":
-                return new String[]{
-                    "Alabama", "Alaska", "Arizona", "Arkansas", "California", 
-                    "Colorado", "Connecticut", "Delaware", "Florida", "Georgia"
-                };
-            case "Canada":
-                return new String[]{
-                    "Alberta", "British Columbia", "Manitoba", "New Brunswick", 
-                    "Newfoundland and Labrador", "Nova Scotia", "Ontario", "Quebec"
-                };
-            case "United Kingdom":
-                return new String[]{
-                    "England", "Scotland", "Wales", "Northern Ireland"
-                };
-            default:
-                return new String[]{"Other"};
+        try {
+            // Using restcountries.com API to fetch countries
+            String url = "https://restcountries.com/v3.1/all?fields=name";
+            return fetchCountriesFromAPI(url);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback to N/A if API fails
+            return new String[]{"N/A"};
         }
     }
 
     /**
-     * Gets cities for a region (placeholder until API integration)
-     * @param country The country containing the region
-     * @param region The region to get cities for
-     * @return Array of city names
+     * Fetch countries from the REST Countries API
+     * @param apiUrl The API URL to fetch countries
+     * @return Array of country names
      */
-    public String[] getCities(String country, String region) {
-        if (country.equals("United States")) {
-            switch (region) {
-                case "California":
-                    return new String[]{"Los Angeles", "San Francisco", "San Diego", "Sacramento"};
-                case "Florida":
-                    return new String[]{"Miami", "Orlando", "Tampa", "Jacksonville"};
-                case "Texas":
-                    return new String[]{"Houston", "Dallas", "Austin", "San Antonio"};
-                default:
-                    return new String[]{"City1", "City2"};
-            }
-        } else if (country.equals("Canada")) {
-            switch (region) {
-                case "Ontario":
-                    return new String[]{"Toronto", "Ottawa", "Hamilton", "London"};
-                case "Quebec":
-                    return new String[]{"Montreal", "Quebec City", "Laval", "Gatineau"};
-                case "British Columbia":
-                    return new String[]{"Vancouver", "Victoria", "Kelowna", "Surrey"};
-                default:
-                    return new String[]{"City1", "City2"};
-            }
-        } else if (country.equals("United Kingdom")) {
-            switch (region) {
-                case "England":
-                    return new String[]{"London", "Manchester", "Birmingham", "Liverpool"};
-                case "Scotland":
-                    return new String[]{"Edinburgh", "Glasgow", "Aberdeen", "Dundee"};
-                case "Wales":
-                    return new String[]{"Cardiff", "Swansea", "Newport", "Wrexham"};
-                case "Northern Ireland":
-                    return new String[]{"Belfast", "Derry", "Lisburn", "Newry"};
-                default:
-                    return new String[]{"City1", "City2"};
-            }
-        } else {
-            return new String[]{"Other City"};
+    private String[] fetchCountriesFromAPI(String apiUrl) throws Exception {
+        java.net.URL url = new java.net.URL(apiUrl);
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        
+        if (conn.getResponseCode() != 200) {
+            throw new Exception("Failed to fetch countries: " + conn.getResponseCode());
         }
+        
+        java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(conn.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
+        }
+        reader.close();
+        
+        // Parse JSON response to get country names
+        JSONArray jsonArray = new JSONArray(response.toString());
+        List<String> countries = new ArrayList<>();
+        
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject countryObj = jsonArray.getJSONObject(i);
+            JSONObject nameObj = countryObj.getJSONObject("name");
+            String commonName = nameObj.getString("common");
+            countries.add(commonName);
+        }
+        
+        // Sort countries alphabetically
+        countries.sort(String::compareTo);
+        
+        return countries.toArray(new String[0]);
     }
-
+    
     /**
      * Checks if a user with the given email exists
      * @param email The email to check
@@ -205,15 +180,6 @@ public class UserService {
     }
 
     /**
-     * Updates an existing user
-     * @param user The user with updated fields
-     * @return The updated user
-     */
-    public User editUser(User user) {
-        return userRepository.save(user);
-    }
-
-    /**
      * Updates a user's profile information
      * @param id User ID to update
      * @param updatedUser Updated user data
@@ -225,20 +191,35 @@ public class UserService {
         if (existingUser.isPresent()) {
             User user = existingUser.get();
 
-            // Update fields (excluding password and email which require special handling)
-            user.setFirstName(updatedUser.getFirstName());
-            user.setLastName(updatedUser.getLastName());
-            user.setContactNumber(updatedUser.getContactNumber());
+            // Update fields only if they are not null
+            if (updatedUser.getFirstName() != null) {
+                user.setFirstName(updatedUser.getFirstName());
+            }
+            
+            if (updatedUser.getLastName() != null) {
+                user.setLastName(updatedUser.getLastName());
+            }
+            
+            if (updatedUser.getContactNumber() != null) {
+                user.setContactNumber(updatedUser.getContactNumber());
+            }
+            
+            // Birthdate can be null
             user.setBirthdate(updatedUser.getBirthdate());
-            user.setCountry(updatedUser.getCountry());
-            user.setRegion(updatedUser.getRegion());
-            user.setCity(updatedUser.getCity());
-            user.setPostalCode(updatedUser.getPostalCode());
+            
+            if (updatedUser.getCountry() != null) {
+                user.setCountry(updatedUser.getCountry());
+            }
 
+            // Handle role update if provided
             if (updatedUser.getRole() != null && updatedUser.getRole().getRoleId() != null) {
-                Role role = roleRepository.findById(updatedUser.getRole().getRoleId())
-                    .orElseThrow(() -> new EntityNotFoundException("Role not found with ID: " + updatedUser.getRole().getRoleId()));
-                user.setRole(role);
+                try {
+                    Role role = roleRepository.findById(updatedUser.getRole().getRoleId())
+                        .orElseThrow(() -> new EntityNotFoundException("Role not found with ID: " + updatedUser.getRole().getRoleId()));
+                    user.setRole(role);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error updating user role: " + e.getMessage());
+                }
             }
 
             // Save and return updated user
@@ -246,6 +227,20 @@ public class UserService {
         }
 
         return Optional.empty();
+    }
+    
+    /**
+     * Gets the most recently registered users
+     * @param limit The maximum number of users to return
+     * @return List of recent users
+     */
+    public List<User> getRecentUsers(int limit) {
+        // This is a simple implementation that returns the first N users
+        // In a real application, you would order by registration date
+        return userRepository.findAll().stream()
+                .sorted((u1, u2) -> u2.getUserId().compareTo(u1.getUserId()))
+                .limit(limit)
+                .toList();
     }
     
     /**
@@ -292,20 +287,6 @@ public class UserService {
     }
     
     /**
-     * Gets the most recently registered users
-     * @param limit The maximum number of users to return
-     * @return List of recent users
-     */
-    public List<User> getRecentUsers(int limit) {
-        // This is a simple implementation that returns the first N users
-        // In a real application, you would order by registration date
-        return userRepository.findAll().stream()
-                .limit(limit)
-                .toList();
-    }
-
-    /**
-     * Add this method to your existing UserService class
      * Deletes a user by ID
      * @param id The user ID
      * @return true if deleted, false if not found
@@ -316,5 +297,13 @@ public class UserService {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Counts the number of active users in the system
+     * @return The count of active users
+     */
+    public long countActiveUsers() {
+        return userRepository.countByIsActiveTrue();
     }
 }

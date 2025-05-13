@@ -8,6 +8,12 @@
   flex: 1;
   padding: 20px;
   margin-left: 250px;
+  background-color: white;
+  min-height: 100vh;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  overflow: auto;
+  width: calc(100% - 250px);
+  box-sizing: border-box;
 }
 
 .admin-title {
@@ -19,10 +25,10 @@
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
   overflow: hidden;
+  table-layout: auto;
+  border: 1px solid #e1e5eb;
 }
 
 .admin-table th,
@@ -30,6 +36,14 @@
   padding: 12px 15px;
   text-align: left;
   border-bottom: 1px solid #e1e5eb;
+}
+
+/* Make the Actions column fixed width */
+.admin-table th:last-child,
+.admin-table td:last-child {
+  width: 120px;
+  text-align: center;
+  padding: 8px;
 }
 
 .admin-table th {
@@ -44,18 +58,24 @@
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
 }
 
 .action-buttons button {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 5px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  transition: all 0.2s ease;
 }
 
 .action-buttons button:hover {
@@ -93,6 +113,29 @@
 
 .create-button:hover {
   background-color: #27ae60;
+}
+
+/* Status badge styles */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 80px;
+}
+
+.status-active {
+  background-color: #e6f7ee;
+  color: #2ecc71;
+  border: 1px solid #2ecc71;
+}
+
+.status-inactive {
+  background-color: #feeaea;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
 }
 
 .modal-overlay {
@@ -198,9 +241,20 @@
   margin-bottom: 20px;
 }
 
+.form-row {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
+  width: 100%;
+}
+
+.form-group-half {
+  width: 50%;
 }
 
 .form-group label {

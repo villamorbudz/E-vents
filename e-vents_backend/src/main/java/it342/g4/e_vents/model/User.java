@@ -9,10 +9,17 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 @Entity
 @Table(name = "users")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "userId")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +32,7 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Date birthdate;
 
     @Column(nullable = false, unique = true)
@@ -37,15 +44,6 @@ public class User {
     @Column(nullable = false)
     private String country;
 
-    @Column(nullable = false)
-    private String region;
-
-    @Column(nullable = false)
-    private String city;
-
-    @Column(nullable = false)
-    private String postalCode;
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id")
     private Role role;
@@ -54,6 +52,10 @@ public class User {
 
     @Column
     private boolean isActive = true;
+
+    @Column(nullable = false, updatable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    private Date dateCreated;
 
     public Long getUserId() {
         return userId;
@@ -135,26 +137,18 @@ public class User {
         this.country = country;
     }
 
-    public String getRegion() {
-        return region;
+    public Date getDateCreated() {
+        return dateCreated;
     }
 
-    public void setRegion(String region) {
-        this.region = region;
+    // Changed from private to public to allow setting from service layer
+    public void setDateCreated(Date dateCreated) {
+        this.dateCreated = dateCreated;
     }
 
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-    public String getPostalCode() {
-        return postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
+    // Pre-persist hook to set creation date automatically
+    @PrePersist
+    protected void onCreate() {
+        this.dateCreated = new Date();
     }
 }

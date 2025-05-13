@@ -141,4 +141,12 @@ public class CategoryService {
     public boolean existsByName(String name) {
         return categoryRepository.existsByName(name);
     }
+
+    /**
+     * Counts the number of active categories in the system
+     * @return The count of active categories
+     */
+    public long countActiveCategories() {
+        return categoryRepository.countByIsActiveTrue();
+    }
 }

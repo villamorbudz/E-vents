@@ -9,4 +9,10 @@ import java.util.Optional;
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     boolean existsByName(String name);
     Optional<Category> findByName(String name);
+    
+    /**
+     * Count active categories in the system
+     * @return Number of active categories
+     */
+    long countByIsActiveTrue();
 }

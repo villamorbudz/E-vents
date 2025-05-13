@@ -11,10 +11,7 @@ export default function Profile() {
     email: '',
     contactNumber: '',
     birthdate: '',
-    country: '',
-    region: '',
-    city: '',
-    postalCode: ''
+    country: ''
   });
   
   const [isEditing, setIsEditing] = useState(false);
@@ -40,10 +37,7 @@ export default function Profile() {
           email: userData.email || '',
           contactNumber: userData.contactNumber || '',
           birthdate: formattedBirthdate || '',
-          country: userData.country || '',
-          region: userData.region || '',
-          city: userData.city || '',
-          postalCode: userData.postalCode || ''
+          country: userData.country || ''
         });
         setIsLoading(false);
       } catch (err) {
@@ -235,42 +229,6 @@ export default function Profile() {
                   />
                 </div>
                 
-                {/* Region */}
-                <div>
-                  <label className="block mb-1">Region</label>
-                  <input
-                    type="text"
-                    name="region"
-                    className="w-full p-2 rounded text-black"
-                    value={profile.region}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                {/* City */}
-                <div>
-                  <label className="block mb-1">City</label>
-                  <input
-                    type="text"
-                    name="city"
-                    className="w-full p-2 rounded text-black"
-                    value={profile.city}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                {/* Postal Code */}
-                <div>
-                  <label className="block mb-1">Postal Code</label>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    className="w-full p-2 rounded text-black"
-                    value={profile.postalCode}
-                    onChange={handleChange}
-                  />
-                </div>
-                
                 <div className="md:col-span-2 flex justify-between mt-4">
                   <button
                     type="button"
@@ -323,23 +281,7 @@ export default function Profile() {
                   <div className="bg-white rounded p-2 text-black">{profile.country}</div>
                 </div>
                 
-                {/* Region */}
-                <div>
-                  <label className="block mb-1">Region</label>
-                  <div className="bg-white rounded p-2 text-black">{profile.region}</div>
-                </div>
-                
-                {/* City */}
-                <div>
-                  <label className="block mb-1">City</label>
-                  <div className="bg-white rounded p-2 text-black">{profile.city}</div>
-                </div>
-                
-                {/* Postal Code */}
-                <div>
-                  <label className="block mb-1">Postal Code</label>
-                  <div className="bg-white rounded p-2 text-black">{profile.postalCode}</div>
-                </div>
+
                 
                 <div className="md:col-span-2 flex justify-between mt-4">
                   <button

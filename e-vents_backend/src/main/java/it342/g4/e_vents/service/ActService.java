@@ -192,4 +192,12 @@ public class ActService {
     public long countAllActs() {
         return actRepository.count();
     }
+    
+    /**
+     * Counts the number of active acts in the system
+     * @return The count of active acts
+     */
+    public long countActiveActs() {
+        return actRepository.countByIsActiveTrue();
+    }
 }

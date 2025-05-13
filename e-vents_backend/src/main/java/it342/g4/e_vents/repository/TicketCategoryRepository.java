@@ -24,4 +24,10 @@ public interface TicketCategoryRepository extends JpaRepository<TicketCategory, 
     // Find available ticket categories for an event
     @Query("SELECT tc FROM TicketCategory tc WHERE tc.event.eventId = ?1 AND tc.totalTickets > tc.ticketsSold AND tc.isActive = true")
     List<TicketCategory> findAvailableTicketCategoriesByEventId(Long eventId);
+    
+    /**
+     * Count active ticket categories in the system
+     * @return Number of active ticket categories
+     */
+    long countByIsActiveTrue();
 }

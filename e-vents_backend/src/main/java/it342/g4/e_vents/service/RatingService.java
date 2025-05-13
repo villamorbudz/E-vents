@@ -79,4 +79,12 @@ public class RatingService {
                 .average()
                 .orElse(0.0);
     }
+
+    /**
+     * Counts the number of active ratings in the system
+     * @return The count of active ratings
+     */
+    public long countActiveRatings() {
+        return ratingRepository.countByIsActiveTrue();
+    }
 }

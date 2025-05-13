@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -185,5 +186,27 @@ public class RatingController {
             @RequestParam Rating.EntityType entityType) {
         double average = ratingService.getAverageRating(entityId, entityType);
         return ResponseEntity.ok(Map.of("average", average));
+    }
+
+    /**
+     * Get the count of active ratings
+     * @return ResponseEntity with the count of active ratings
+     */
+    @Operation(summary = "Get count of active ratings", description = "Returns the total number of active ratings in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved count", 
+                    content = @Content(mediaType = "application/json", 
+                    schema = @Schema(implementation = Long.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> countActiveRatings() {
+        try {
+            long count = ratingService.countActiveRatings();
+            Map<String, Long> response = Collections.singletonMap("count", count);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

@@ -18,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
@@ -55,14 +56,17 @@ public class Event {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonBackReference
+    // Change from JsonBackReference to properly include user ID in JSON
     private User user;
 
     @Column(nullable = false)
     private String status = STATUS_SCHEDULED;
 
-    @Column
-    private String bannerImage;
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean isActive = true;
+    
+    @Column(nullable = false, updatable = false)
+    private LocalDate dateCreated;
 
     public String getVenue() {
         return venue;
@@ -128,18 +132,33 @@ public class Event {
         this.description = description;
     }
     
-    public String getBannerImage() {
-        return bannerImage;
-    }
-
-    public void setBannerImage(String bannerImage) {
-        this.bannerImage = bannerImage;
-    }
-
     public User getUser() {
         return user;
     }
     public void setUser(User user) {
         this.user = user;
+    }
+    
+    public boolean isActive() {
+        return isActive;
+    }
+    
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+    
+    public LocalDate getDateCreated() {
+        return dateCreated;
+    }
+    
+    // Private setter for JPA
+    private void setDateCreated(LocalDate dateCreated) {
+        this.dateCreated = dateCreated;
+    }
+    
+    // Pre-persist hook to set creation date automatically
+    @PrePersist
+    protected void onCreate() {
+        this.dateCreated = LocalDate.now();
     }
 }

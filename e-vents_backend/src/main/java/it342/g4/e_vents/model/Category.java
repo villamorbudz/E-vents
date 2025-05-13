@@ -1,5 +1,6 @@
 package it342.g4.e_vents.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.List;
 
@@ -15,9 +16,10 @@ public class Category {
     private String name;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
-    private boolean active = true;
+    private boolean isActive = true;
 
     @OneToMany(mappedBy = "category")
+    @JsonManagedReference
     private List<Tags> tags;
 
     public Long getCategoryId() {
@@ -37,11 +39,11 @@ public class Category {
     }
 
     public boolean isActive() {
-        return active;
+        return isActive;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
     }
 
     public List<Tags> getTags() {

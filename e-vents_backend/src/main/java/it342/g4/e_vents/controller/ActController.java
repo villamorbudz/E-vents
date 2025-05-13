@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for act-related operations
@@ -78,6 +79,44 @@ public class ActController {
             @Parameter(description = "ID of the act to retrieve") @PathVariable Long id) {
         return actService.findActiveActById(id)
                 .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * Retrieves the category name for an act
+     * @param id The act ID
+     * @return The category name or 404 if act not found
+     */
+    @GetMapping("/{id}/category-name")
+    @Operation(summary = "Get category name for an act", description = "Retrieves the category name for a specific act")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the category name", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Act not found", content = @Content)
+    })
+    public ResponseEntity<Map<String, String>> getCategoryNameByActId(
+            @Parameter(description = "ID of the act") @PathVariable Long id) {
+        return actService.findActiveActById(id)
+                .map(act -> ResponseEntity.ok(Collections.singletonMap("categoryName", act.getCategoryName())))
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * Retrieves the tag names for an act as a comma-separated string
+     * @param id The act ID
+     * @return The tag names or 404 if act not found
+     */
+    @GetMapping("/{id}/tag-names")
+    @Operation(summary = "Get tag names for an act", description = "Retrieves the tag names for a specific act as a comma-separated string")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved the tag names", 
+                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", description = "Act not found", content = @Content)
+    })
+    public ResponseEntity<Map<String, String>> getTagNamesByActId(
+            @Parameter(description = "ID of the act") @PathVariable Long id) {
+        return actService.findActiveActById(id)
+                .map(act -> ResponseEntity.ok(Collections.singletonMap("tagNames", act.getTagNames())))
                 .orElse(ResponseEntity.notFound().build());
     }
     
@@ -214,6 +253,28 @@ public class ActController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Get the count of active acts
+     * @return ResponseEntity with the count of active acts
+     */
+    @Operation(summary = "Get count of active acts", description = "Returns the total number of active acts in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved count", 
+                    content = @Content(mediaType = "application/json", 
+                    schema = @Schema(implementation = Long.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> countActiveActs() {
+        try {
+            long count = actService.countActiveActs();
+            Map<String, Long> response = Collections.singletonMap("count", count);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

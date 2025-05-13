@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for ticket category-related operations
@@ -274,6 +275,28 @@ public class TicketCategoryController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Get the count of active ticket categories
+     * @return ResponseEntity with the count of active ticket categories
+     */
+    @Operation(summary = "Get count of active ticket categories", description = "Returns the total number of active ticket categories in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved count", 
+                    content = @Content(mediaType = "application/json", 
+                    schema = @Schema(implementation = Long.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> countActiveTicketCategories() {
+        try {
+            long count = ticketCategoryService.countActiveTicketCategories();
+            Map<String, Long> response = Collections.singletonMap("count", count);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

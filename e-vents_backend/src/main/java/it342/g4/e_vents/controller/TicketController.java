@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for ticket-related operations
@@ -143,6 +144,28 @@ public class TicketController {
     public ResponseEntity<List<Ticket>> getTicketsByStatus(
             @Parameter(description = "Status to filter tickets by") @PathVariable String status) {
         return ResponseEntity.ok(ticketService.getTicketsByStatus(status));
+    }
+    
+    /**
+     * Get the count of active tickets
+     * @return ResponseEntity with the count of active tickets
+     */
+    @Operation(summary = "Get count of active tickets", description = "Returns the total number of active tickets in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved count", 
+                    content = @Content(mediaType = "application/json", 
+                    schema = @Schema(implementation = Long.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> countActiveTickets() {
+        try {
+            long count = ticketService.countActiveTickets();
+            Map<String, Long> response = Collections.singletonMap("count", count);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     /**

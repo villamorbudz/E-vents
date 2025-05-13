@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,8 @@ import it342.g4.e_vents.model.User;
 import it342.g4.e_vents.security.JwtUtils;
 import it342.g4.e_vents.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Controller for user-related operations
@@ -42,6 +45,8 @@ public class UserController {
     private final UserService userService;
 
     private final JwtUtils jwtUtils;
+    
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
     
     @Autowired
     public UserController(UserService userService, JwtUtils jwtUtils) {
@@ -62,17 +67,12 @@ public class UserController {
         @ApiResponse(responseCode = "400", description = "Invalid input or email already exists", content = @Content)
     })
     public ResponseEntity<?> registerUser(
-            @Parameter(description = "User object to be registered", required = true) @RequestBody User user) {
-        // Autofill missing fields to blank (except userId/role)
+        @Parameter(description = "User object to be registered", required = true) @RequestBody User user) {
         if (user.getFirstName() == null) user.setFirstName("");
         if (user.getLastName() == null) user.setLastName("");
-        if (user.getBirthdate() == null) user.setBirthdate(null); // leave as null
         if (user.getEmail() == null) user.setEmail("");
         if (user.getContactNumber() == null) user.setContactNumber("");
         if (user.getCountry() == null) user.setCountry("");
-        if (user.getRegion() == null) user.setRegion("");
-        if (user.getCity() == null) user.setCity("");
-        if (user.getPostalCode() == null) user.setPostalCode("");
         if (user.getPassword() == null) user.setPassword("");
         try {
             User registeredUser = userService.registerUser(user);
@@ -88,12 +88,10 @@ public class UserController {
             response.put("firstName", registeredUser.getFirstName());
             response.put("lastName", registeredUser.getLastName());
             response.put("role", registeredUser.getRole() != null ? registeredUser.getRole().getName() : "USER");
-            response.put("city", registeredUser.getCity());
-            response.put("region", registeredUser.getRegion());
             response.put("country", registeredUser.getCountry());
-            response.put("postalCode", registeredUser.getPostalCode());
             response.put("birthdate", registeredUser.getBirthdate());
             response.put("contactNumber", registeredUser.getContactNumber());
+            response.put("dateCreated", registeredUser.getDateCreated());
             
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -149,6 +147,8 @@ public class UserController {
                      content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class)))
     })
     public ResponseEntity<?> getAllUsers() {
+        // The @JsonFormat annotation on the dateCreated field in User class 
+        // will handle the date formatting for all users
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
@@ -285,44 +285,10 @@ public class UserController {
     @Operation(summary = "Get countries list", description = "Retrieves a list of available countries")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Successfully retrieved list of countries", 
-                     content = @Content(mediaType = "application/json"))
+                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class))))
     })
     public ResponseEntity<?> getCountries() {
         return ResponseEntity.ok(userService.getCountries());
-    }
-
-    /**
-     * Gets regions for a country (placeholder until API integration)
-     * @param country The country to get regions for
-     * @return Array of region names
-     */
-    @GetMapping("/regions/{country}")
-    @Operation(summary = "Get regions by country", description = "Retrieves a list of regions for a specific country")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of regions", 
-                     content = @Content(mediaType = "application/json"))
-    })
-    public ResponseEntity<?> getRegions(
-            @Parameter(description = "Country to get regions for", required = true) @PathVariable String country) {
-        return ResponseEntity.ok(userService.getRegions(country));
-    }
-
-    /**
-     * Gets cities for a region (placeholder until API integration)
-     * @param country The country containing the region
-     * @param region The region to get cities for
-     * @return Array of city names
-     */
-    @GetMapping("/cities/{country}/{region}")
-    @Operation(summary = "Get cities by region", description = "Retrieves a list of cities for a specific region in a country")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of cities", 
-                     content = @Content(mediaType = "application/json"))
-    })
-    public ResponseEntity<?> getCities(
-            @Parameter(description = "Country containing the region", required = true) @PathVariable String country, 
-            @Parameter(description = "Region to get cities for", required = true) @PathVariable String region) {
-        return ResponseEntity.ok(userService.getCities(country, region));
     }
 
     /**
@@ -366,11 +332,51 @@ public class UserController {
             @Parameter(description = "ID of the user to update", required = true) @PathVariable Long id, 
             @Parameter(description = "Updated user details", required = true) @RequestBody User updatedUser) {
         try {
+            logger.info("Updating user with ID: {}", id);
+            logger.debug("Update payload: {}", updatedUser);
+            
             return userService.updateUser(id, updatedUser)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
-        } catch (RuntimeException e) {
+                    .map(user -> {
+                        logger.info("User {} updated successfully", id);
+                        return ResponseEntity.ok(user);
+                    })
+                    .orElseGet(() -> {
+                        logger.warn("User with ID {} not found for update", id);
+                        return ResponseEntity.notFound().build();
+                    });
+        } catch (EntityNotFoundException e) {
+            logger.error("Entity not found during user update: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            logger.error("Error updating user: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Unexpected error updating user: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Collections.singletonMap("error", "An unexpected error occurred"));
+        }
+    }
+
+    /**
+     * Get the count of active users
+     * @return ResponseEntity with the count of active users
+     */
+    @Operation(summary = "Get count of active users", description = "Returns the total number of active users in the system")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved count", 
+                    content = @Content(mediaType = "application/json", 
+                    schema = @Schema(implementation = Long.class))),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> countActiveUsers() {
+        try {
+            long count = userService.countActiveUsers();
+            Map<String, Long> response = new HashMap<>();
+            response.put("count", count);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
