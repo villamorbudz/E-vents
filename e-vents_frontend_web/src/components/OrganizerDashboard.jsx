@@ -10,15 +10,13 @@ export default function OrganizerDashboard() {
       id: 1,
       title: "TYLER, THE CREATOR: CHROMAKOPIA THE WORLD TOUR",
       venue: "ARANETA COLISEUM",
-      location: "Manila, PH",
       date: "September 20, 2025",
       time: "8PM",
-      image: "/api/placeholder/200/270",
       tickets: [
-        { category: "General Admission", price: 1500, total: 250, sold: 210, left: 40 },
-        { category: "VIP", price: 10000, total: 100, sold: 84, left: 16 },
-        { category: "Lower Box", price: 6000, total: 150, sold: 148, left: 2 },
-        { category: "Upper Box", price: 4000, total: 200, sold: 104, left: 96 }
+        { category: "General Admission", price: 1500, total: 250, sold: 0, left: 250 },
+        { category: "VIP", price: 10000, total: 100, sold: 0, left: 100 },
+        { category: "Lower Box", price: 6000, total: 150, sold: 0, left: 150 },
+        { category: "Upper Box", price: 4000, total: 200, sold: 0, left: 200 }
       ]
     },
     {
@@ -26,46 +24,40 @@ export default function OrganizerDashboard() {
       title: "MUSIC FESTIVAL:",
       subtitle: "SM SEASIDE - MOUNTAIN WING",
       venue: "SM SEASIDE",
-      location: "Manila, PH",
       date: "September 20, 2025",
       time: "8PM",
-      image: "/api/placeholder/200/270",
       tickets: [
-        { category: "General Admission", price: 1200, total: 500, sold: 325, left: 175 },
-        { category: "VIP", price: 8000, total: 200, sold: 180, left: 20 },
-        { category: "Premium", price: 5500, total: 100, sold: 85, left: 15 },
-        { category: "VVIP", price: 12000, total: 50, sold: 50, left: 0 }
+        { category: "General Admission", price: 1200, total: 500, sold: 0, left: 500 },
+        { category: "VIP", price: 8000, total: 200, sold: 0, left: 200 },
+        { category: "Premium", price: 5500, total: 100, sold: 0, left: 100 },
+        { category: "VVIP", price: 12000, total: 50, sold: 0, left: 50 }
       ]
     },
     {
       id: 3,
       title: "TAYLOR SWIFT: THE ERAS TOUR",
       venue: "PHILIPPINE ARENA",
-      location: "Bulacan, PH",
       date: "October 15, 2025",
       time: "7PM",
-      image: "/api/placeholder/200/270",
       tickets: [
-        { category: "General Admission", price: 2500, total: 1000, sold: 1000, left: 0 },
-        { category: "VIP", price: 15000, total: 500, sold: 495, left: 5 },
-        { category: "Lower Box", price: 8500, total: 800, sold: 790, left: 10 },
-        { category: "Upper Box", price: 5000, total: 1200, sold: 950, left: 250 },
-        { category: "Premium Standing", price: 12000, total: 300, sold: 300, left: 0 }
+        { category: "General Admission", price: 2500, total: 1000, sold: 0, left: 1000 },
+        { category: "VIP", price: 15000, total: 500, sold: 1, left: 499},
+        { category: "Lower Box", price: 8500, total: 800, sold: 0, left: 800},
+        { category: "Upper Box", price: 5000, total: 1200, sold: 1, left: 1199 },
+        { category: "Premium Standing", price: 12000, total: 300, sold: 0, left: 300 }
       ]
     },
     {
       id: 4,
       title: "ANIME CONVENTION 2025",
       venue: "SMX CONVENTION CENTER",
-      location: "Pasay, PH",
       date: "November 5, 2025",
       time: "10AM",
-      image: "/api/placeholder/200/270",
       tickets: [
-        { category: "1-Day Pass", price: 1000, total: 2000, sold: 1200, left: 800 },
-        { category: "3-Day Pass", price: 2500, total: 1500, sold: 1100, left: 400 },
-        { category: "VIP Pass", price: 5000, total: 500, sold: 350, left: 150 },
-        { category: "Meet & Greet", price: 8000, total: 100, sold: 75, left: 25 }
+        { category: "1-Day Pass", price: 1000, total: 2000, sold: 0, left: 2000 },
+        { category: "3-Day Pass", price: 2500, total: 1500, sold: 0, left: 1500 },
+        { category: "VIP Pass", price: 5000, total: 500, sold: 0, left: 500 },
+        { category: "Meet & Greet", price: 8000, total: 100, sold: 0, left: 100 }
       ]
     }
   ];
@@ -122,13 +114,7 @@ export default function OrganizerDashboard() {
 
       {/* Event Detail Header */}
       <div className="bg-indigo-900 bg-opacity-60 p-8 flex items-start gap-6">
-        <div className="w-32">
-          <img
-            src={selectedEvent.image}
-            alt={selectedEvent.title}
-            className="w-full h-auto object-cover rounded"
-          />
-        </div>
+
         <div>
           <h1 className="text-2xl font-bold">{selectedEvent.title}</h1>
           {selectedEvent.subtitle && <h2 className="text-xl font-semibold">{selectedEvent.subtitle}</h2>}

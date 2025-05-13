@@ -231,15 +231,7 @@ export default function ProfileUser() {
                   />
                 </div>
                 
-                <div className="md:col-span-2 flex justify-between mt-4">
-                  <button
-                    type="button"
-                    className="bg-red-500 text-white px-6 py-2 rounded-full hover:bg-red-600"
-                    onClick={() => navigate('/change-password')}
-                  >
-                    Change Password
-                  </button>
-                  
+                <div className="md:col-span-2 flex justify-end mt-4">
                   <SaveButton />
                 </div>
               </div>
@@ -283,17 +275,7 @@ export default function ProfileUser() {
                   <div className="bg-white rounded p-2 text-black">{profile.country}</div>
                 </div>
                 
-
-                
-                <div className="md:col-span-2 flex justify-between mt-4">
-                  <button
-                    type="button"
-                    className="bg-red-500 text-white px-6 py-2 rounded-full hover:bg-red-600"
-                    onClick={() => navigate('/change-password')}
-                  >
-                    Change Password
-                  </button>
-                  
+                <div className="md:col-span-2 flex justify-end mt-4">
                   <EditButton />
                 </div>
               </div>

@@ -43,6 +43,28 @@ export default function EventDetail() {
     // Update total purchase
     setTotalPurchase(prevTotal => prevTotal + ticket.price);
   };
+  
+  // Handle removing ticket from cart
+  const handleRemoveTicket = (ticket) => {
+    const existingTicket = selectedTickets.find(t => t.id === ticket.id);
+    
+    if (existingTicket) {
+      if (existingTicket.quantity > 1) {
+        // Decrement quantity if more than 1
+        const updatedTickets = selectedTickets.map(t => 
+          t.id === ticket.id ? { ...t, quantity: t.quantity - 1 } : t
+        );
+        setSelectedTickets(updatedTickets);
+      } else {
+        // Remove ticket if quantity is 1
+        const updatedTickets = selectedTickets.filter(t => t.id !== ticket.id);
+        setSelectedTickets(updatedTickets);
+      }
+      
+      // Update total purchase
+      setTotalPurchase(prevTotal => prevTotal - ticket.price);
+    }
+  };
 
   // Render stars for rating
   const renderStars = (rating) => {
@@ -85,6 +107,11 @@ export default function EventDetail() {
     setShowStripePayment(true);
   };
 
+  // Handle closing the payment modal
+  const handleClosePaymentModal = () => {
+    setShowStripePayment(false);
+  };
+
   // Handle successful payment
   const handlePaymentSuccess = (paymentResponse) => {
     // Process purchased events
@@ -99,7 +126,6 @@ export default function EventDetail() {
         location: event.location,
         date: eventDate,
         time: event.time,
-        image: event.image,
         ticketType: ticket.type,
         ticketPrice: ticket.price,
         quantity: ticket.quantity,
@@ -177,13 +203,6 @@ export default function EventDetail() {
         <div className="bg-gray-800 rounded-lg overflow-hidden">
           {/* Event Image and Basic Info */}
           <div className="p-6 flex items-start gap-6">
-            <div className="w-48">
-              <img 
-                src={event.image} 
-                alt={event.title} 
-                className="w-full h-auto object-cover rounded"
-              />
-            </div>
             <div>
               <h2 className="text-2xl font-bold text-white">{event.title}</h2>
               <p className="text-lg text-white mt-2">{event.venue}</p>
@@ -206,12 +225,24 @@ export default function EventDetail() {
                 <h3 className="text-lg font-semibold">{ticket.type}</h3>
                 <p className="text-gray-300 mb-2">₱{ticket.price.toLocaleString()}</p>
                 <p className="text-gray-400 text-sm flex-grow">{ticket.description}</p>
-                <button 
-                  onClick={() => handleAddTicket(ticket)}
-                  className="mt-4 bg-gray-700 text-white py-1 px-4 rounded hover:bg-gray-600 transition"
-                >
-                  Get
-                </button>
+                <div className="mt-4 flex items-center">
+                  <button 
+                    onClick={() => handleRemoveTicket(ticket)}
+                    className="bg-gray-700 text-white w-8 h-8 rounded-l flex items-center justify-center hover:bg-gray-600 transition"
+                    disabled={!selectedTickets.some(t => t.id === ticket.id)}
+                  >
+                    -
+                  </button>
+                  <span className="bg-gray-700 text-white px-3 py-1">
+                    {selectedTickets.find(t => t.id === ticket.id)?.quantity || 0}
+                  </span>
+                  <button 
+                    onClick={() => handleAddTicket(ticket)}
+                    className="bg-gray-700 text-white w-8 h-8 rounded-r flex items-center justify-center hover:bg-gray-600 transition"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -252,23 +283,25 @@ export default function EventDetail() {
             </div>
             
             <div className="flex justify-end mt-4">
-              {!showStripePayment ? (
-                <button 
-                  onClick={handleProceedToCheckout}
-                  className="bg-gray-100 text-gray-900 py-2 px-6 rounded font-medium hover:bg-white transition"
-                >
-                  Proceed to Payment
-                </button>
-              ) : (
-                <StripeWrapper>
-                  <StripePayment 
-                    amount={totalPurchase} 
-                    onPaymentSuccess={handlePaymentSuccess}
-                  />
-                </StripeWrapper>
-              )}
+              <button 
+                onClick={handleProceedToCheckout}
+                className="bg-red-600 text-white py-2 px-6 rounded font-medium hover:bg-red-700 transition"
+              >
+                Proceed to Payment
+              </button>
             </div>
           </div>
+        )}
+        
+        {/* Payment Modal */}
+        {showStripePayment && (
+          <StripeWrapper>
+            <StripePayment 
+              amount={totalPurchase} 
+              onPaymentSuccess={handlePaymentSuccess}
+              onClose={handleClosePaymentModal}
+            />
+          </StripeWrapper>
         )}
       </div>
     </div>

@@ -9,32 +9,67 @@ export default function EventCreation() {
   const [eventDescription, setEventDescription] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  // Banner image functionality has been removed
   const [venueName, setVenueName] = useState("");
   const [acts, setActs] = useState([]);
   const [selectedActs, setSelectedActs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  // Fetch acts when component mounts
+  // Check authentication status when component mounts
   useEffect(() => {
-    const fetchActs = async () => {
-      setIsLoading(true);
+    const checkAuth = async () => {
       try {
-        const actsData = await eventService.getAllActs();
-        setActs(actsData);
+        // Use getCurrentUser from userService instead of directly accessing localStorage
+        const user = userService.getCurrentUser();
+        const isValidUser = user && user.userId;
+        
+        setIsAuthenticated(!!isValidUser);
+        
+        // Only redirect if we're certain the user is not authenticated
+        if (!isValidUser) {
+          console.log("No valid user found in localStorage, redirecting to login");
+          navigate('/login');
+        }
       } catch (error) {
-        console.error('Error fetching acts:', error);
+        console.error("Error checking authentication:", error);
+        navigate('/login');
       } finally {
-        setIsLoading(false);
+        setAuthChecked(true);
       }
     };
+    
+    checkAuth();
+  }, [navigate]);
 
-    fetchActs();
-  }, []);
+  // Define fetchActs function at the component level so it can be reused
+  const fetchActs = async () => {
+    setIsLoading(true);
+    try {
+      const actsData = await eventService.getAllActs();
+      // Process the data to ensure unique IDs before returning
+      const uniqueActs = Array.from(
+        new Map(actsData.map(act => [act.id, act])).values()
+      );
+      return uniqueActs;
+    } catch (error) {
+      console.error('Error fetching acts:', error);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Banner image functionality has been removed
+  // Fetch acts when component mounts - only after auth check is complete
+  useEffect(() => {
+    if (authChecked && isAuthenticated) {
+      fetchActs().then(uniqueActsData => {
+        setActs(uniqueActsData);
+      });
+    }
+  }, [authChecked, isAuthenticated]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,12 +77,16 @@ export default function EventCreation() {
     setErrorMessage("");
 
     try {
-      // Check if user is authenticated
-      if (!userService.isAuthenticated()) {
-        setErrorMessage("You must be logged in to create an event. Please log in and try again.");
+      // Get the current user from userService
+      const user = userService.getCurrentUser();
+      const userId = user?.userId;
+      
+      if (!userId) {
+        setErrorMessage("User information not found. Please log in again.");
         navigate('/login');
         return;
       }
+      
       // Get today's date and check if the selected date is at least 7 days ahead
       const today = new Date();
       const selectedDateObj = new Date(selectedDate);
@@ -64,16 +103,6 @@ export default function EventCreation() {
         setErrorMessage("Please select a date at least 7 days from now.");
         return;
       }
-
-      // Get the current user's ID from localStorage
-      const userData = JSON.parse(localStorage.getItem('user')) || {};
-      const userId = userData.userId;
-      
-      if (!userId) {
-        setErrorMessage("User information not found. Please log in again.");
-        navigate('/login');
-        return;
-      }
       
       const eventData = {
         name: eventName,
@@ -86,8 +115,11 @@ export default function EventCreation() {
         user: { userId: userId }
       };
 
+      console.log("Creating event with data:", eventData);
+      
       // Create the event using the API
       const createdEvent = await eventService.createEvent(eventData);
+      console.log("Event created successfully:", createdEvent);
       
       // Navigate to ticketing details with the event ID
       navigate(`/create/ticketing?eventId=${createdEvent.id}`);
@@ -98,6 +130,21 @@ export default function EventCreation() {
       setIsLoading(false);
     }
   };
+
+  const filteredActs = acts.filter(
+    act =>
+      act.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !selectedActs.some(selected => selected.id === act.id)
+  );
+
+  // If still checking auth, show loading
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex justify-center items-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -207,49 +254,50 @@ export default function EventCreation() {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
+
                     {isLoading ? (
                       <div className="w-full p-2 bg-gray-100 text-gray-500 text-center rounded">
                         Loading acts...
                       </div>
                     ) : (
                       <div className="max-h-40 overflow-y-auto bg-white rounded mb-2">
-                        {acts
-                          .filter(act => 
-                            act.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                            !selectedActs.some(selected => selected.id === act.id)
-                          )
-                          .map(act => (
-                            <div 
-                              key={act.id} 
+                        {filteredActs.length > 0 ? (
+                          filteredActs.map(act => (
+                            <div
+                              key={`search-${act.id}`}
                               className="p-2 hover:bg-gray-100 cursor-pointer text-black"
-                              onClick={() => setSelectedActs([...selectedActs, act])}
+                              onClick={() => {
+                                // Check if act already exists in selectedActs before adding
+                                if (!selectedActs.some(selected => selected.id === act.id)) {
+                                  setSelectedActs([...selectedActs, act]);
+                                }
+                              }}
                             >
-                              {act.name}
+                              {act.name || "Unknown Act"}
                             </div>
                           ))
-                        }
-                        {searchTerm && 
-                          acts.filter(act => 
-                            act.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                            !selectedActs.some(selected => selected.id === act.id)
-                          ).length === 0 && (
-                            <div className="p-2 text-gray-500 text-center">
+                        ) : (
+                          searchTerm && (
+                            <div key="no-results" className="p-2 text-gray-500 text-center">
                               No matching acts found
                             </div>
                           )
-                        }
+                        )}
                       </div>
                     )}
+
                     <div className="flex flex-wrap gap-2 mb-2">
                       {selectedActs.map(act => (
-                        <div 
-                          key={act.id} 
+                        <div
+                          key={`selected-${act.id}`}
                           className="bg-blue-500 text-white px-2 py-1 rounded-full flex items-center"
                         >
-                          <span className="mr-1">{act.name}</span>
-                          <button 
+                          <span className="mr-1">{act.name || "Unknown Act"}</span>
+                          <button
                             type="button"
-                            onClick={() => setSelectedActs(selectedActs.filter(a => a.id !== act.id))}
+                            onClick={() =>
+                              setSelectedActs(selectedActs.filter(a => a.id !== act.id))
+                            }
                             className="hover:text-red-200"
                           >
                             <FaTimes size={12} />
@@ -257,6 +305,7 @@ export default function EventCreation() {
                         </div>
                       ))}
                     </div>
+
                     {selectedActs.length === 0 && (
                       <div className="text-red-400 text-sm">Please select at least one act</div>
                     )}
@@ -276,7 +325,7 @@ export default function EventCreation() {
                 </div>
               </div>
 
-              {/* Banner image functionality has been removed */}
+              {/* Right Side - Placeholder for removed banner image functionality */}
               <div className="w-full md:w-1/2">
                 {/* This space is intentionally left empty after banner image removal */}
               </div>
@@ -287,8 +336,9 @@ export default function EventCreation() {
               <button
                 type="submit"
                 className="bg-red-500 text-white px-8 py-2 rounded-full hover:bg-red-600"
+                disabled={isLoading}
               >
-                Proceed
+                {isLoading ? "Processing..." : "Proceed"}
               </button>
             </div>
           </form>

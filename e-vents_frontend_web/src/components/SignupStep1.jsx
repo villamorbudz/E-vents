@@ -173,13 +173,6 @@ export default function SignupStep1() {
             >
               <FcGoogle size={24} />
             </button>
-            <button 
-              type="button"
-              className="bg-white p-2 rounded-md hover:bg-gray-100 transition-colors"
-              onClick={() => handleSocialSignup('Facebook')}
-            >
-              <FaFacebook size={24} color="#4267B2" />
-            </button>
           </div>
           
           <button 

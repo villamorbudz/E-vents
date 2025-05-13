@@ -280,13 +280,6 @@ export default function MyEventsUser() {
                       className="bg-gray-800 rounded-lg p-4 flex items-center gap-4 cursor-pointer hover:bg-gray-700"
                       onClick={() => handleEventClick(event.id)}
                     >
-                      <div className="w-16 h-16 flex-shrink-0">
-                        <img 
-                          src={event.image} 
-                          alt={event.title} 
-                          className="w-full h-full object-cover rounded"
-                        />
-                      </div>
                       <div>
                         <h4 className="text-lg font-bold">{event.title}</h4>
                         <p className="text-gray-300">{event.venue} • {event.time}</p>

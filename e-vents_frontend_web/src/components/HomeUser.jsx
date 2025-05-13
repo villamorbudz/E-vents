@@ -9,10 +9,8 @@ export const mockEventsData = [
     id: 1,
     title: "TYLER, THE CREATOR: CHROMAKOPIA THE WORLD TOUR",
     venue: "ARANETA COLISEUM",
-    location: "Manila, PH",
     date: "September 20, 2025",
     time: "8PM",
-    image: "/api/placeholder/200/270",
     rating: 4.5,
     description: "Experience Tyler, The Creator's CHROMAKOPIA Tour live in Manila! Following the success of his album, Tyler brings his unique aesthetic and energy to the stage for an unforgettable performance.",
     tickets: [
@@ -25,19 +23,19 @@ export const mockEventsData = [
       {
         id: 102,
         type: "VIP",
-        price: 3400,
+        price: 10000,
         description: "Access to exclusive area near the stage",
       },
       {
         id: 103,
         type: "Lower Box",
-        price: 2000,
+        price: 6000,
         description: "Sitting near the stage",
       },
       {
         id: 104,
         type: "Upper Box",
-        price: 1000,
+        price: 4000,
         description: "Sitting far from stage",
       },
     ]
@@ -47,10 +45,8 @@ export const mockEventsData = [
     title: "MUSIC FESTIVAL:",
     subtitle: "SM SEASIDE - MOUNTAIN WING",
     venue: "SM SEASIDE",
-    location: "Manila, PH",
     date: "September 20, 2025",
     time: "8PM",
-    image: "/api/placeholder/200/270",
     rating: 4.0,
     description: "A multi-stage music festival featuring the best local and international artists. Enjoy a full day of music across multiple genres with food stalls and interactive activities.",
     tickets: [
@@ -84,29 +80,27 @@ export const mockEventsData = [
     id: 3,
     title: "TAYLOR SWIFT: THE ERAS TOUR",
     venue: "PHILIPPINE ARENA",
-    location: "Bulacan, PH",
     date: "October 15, 2025",
     time: "7PM",
-    image: "/api/placeholder/200/270",
     rating: 5.0,
     description: "Taylor Swift brings her record-breaking Eras Tour to the Philippines! Experience a journey through all of Taylor's musical eras in this spectacular 3+ hour show.",
     tickets: [
       {
         id: 301,
-        type: "Floor Seats",
-        price: 8500,
+        type: "Premium Standing",
+        price: 12000,
         description: "Prime viewing on the floor level",
       },
       {
         id: 302,
         type: "Lower Box",
-        price: 6500,
+        price: 8500,
         description: "Lower box seats with excellent views",
       },
       {
         id: 303,
         type: "Upper Box",
-        price: 4500,
+        price: 5000,
         description: "Upper box seating",
       },
       {
@@ -117,7 +111,7 @@ export const mockEventsData = [
       },
       {
         id: 305,
-        type: "VIP Package",
+        type: "VIP",
         price: 15000,
         description: "Premium seats, special merchandise, and early entry",
       },
@@ -127,10 +121,8 @@ export const mockEventsData = [
     id: 4,
     title: "ANIME CONVENTION 2025",
     venue: "SMX CONVENTION CENTER",
-    location: "Pasay, PH",
     date: "November 5, 2025",
     time: "10AM",
-    image: "/api/placeholder/200/270",
     rating: 4.2,
     description: "The biggest anime and gaming convention in the Philippines! Meet voice actors, attend panels, shop exclusive merchandise, and participate in cosplay competitions.",
     tickets: [
@@ -260,13 +252,6 @@ export default function HomeUser() {
                 className="flex items-start gap-6 bg-opacity-30 p-2 rounded hover:bg-gray-800 transition cursor-pointer"
                 onClick={() => handleEventClick(event.id)}
               >
-                <div className="w-32">
-                  <img 
-                    src={event.image} 
-                    alt={event.title} 
-                    className="w-full h-auto object-cover rounded"
-                  />
-                </div>
                 <div className="flex-1">
                   <h2 className="text-xl font-bold">{event.title}</h2>
                   {event.subtitle && (

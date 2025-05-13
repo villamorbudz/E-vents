@@ -316,39 +316,56 @@ export const eventService = {
   },
 
   async createEvent(eventData) {
-    try {
-      // Create a clean copy of the event data and prepare it for submission
-      const cleanEventData = { ...eventData };
-      
-      // Set defaults and format data
-      cleanEventData.status = cleanEventData.status || 'SCHEDULED';
-      
-      // Format date if needed
-      if (cleanEventData.date && cleanEventData.date instanceof Date) {
-        cleanEventData.date = cleanEventData.date.toISOString().split('T')[0];
-      }
-      
-      // Format time if needed (ensure HH:mm:ss format)
-      if (cleanEventData.time && typeof cleanEventData.time === 'string' && cleanEventData.time.split(':').length === 2) {
-        cleanEventData.time = `${cleanEventData.time}:00`;
-      }
-      
-      console.log('Creating event with data:', JSON.stringify(cleanEventData, null, 2));
-      
-      // Send event data to API using axios instance with proper content type headers
-      const response = await api.post('/events/create', cleanEventData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error creating event:', error);
-      throw error.response?.data || error.message || 'Error creating event';
+  try {
+    // Create a deep copy of the event data to avoid mutating the original
+    const cleanEventData = JSON.parse(JSON.stringify(eventData));
+    
+    // Format lineup data according to what the backend expects
+    if (cleanEventData.lineup && Array.isArray(cleanEventData.lineup)) {
+      cleanEventData.lineup = cleanEventData.lineup.map(act => ({
+        actId: act.id || act.actId  // Use actId property as expected by the backend
+      }));
     }
-  },
+    
+    // Ensure user object has the correct structure
+    if (cleanEventData.user) {
+      cleanEventData.user = {
+        userId: cleanEventData.user.userId || cleanEventData.user.id
+      };
+    }
+    
+    // Set default status if not provided
+    if (!cleanEventData.status) {
+      cleanEventData.status = 'SCHEDULED';
+    }
+    
+    console.log('Sending event data:', cleanEventData);
+    
+    // Direct fetch API approach with explicitly set Content-Type
+    const response = await api.post(`/events/create`);
+    
+    // Check for non-ok responses
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Server error: ${response.status}. Response: ${errorText}`);
+      throw new Error(`Server returned ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('Event created successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error creating event:', error);
+    
+    // Extract meaningful error information
+    const errorDetails = error.response?.data?.error ||
+                       error.response?.data?.message ||
+                       error.message ||
+                       'Unknown error creating event';
+    
+    throw errorDetails;
+  }
+},
 
   async updateEvent(eventId, eventData) {
     try {

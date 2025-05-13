@@ -11,7 +11,6 @@ export default function HomeSeller() {
   const [editForm, setEditForm] = useState({
     title: "",
     venue: "",
-    location: "",
     date: "",
     time: ""
   });
@@ -22,38 +21,30 @@ export default function HomeSeller() {
       id: 1,
       title: "TYLER, THE CREATOR: CHROMAKOPIA THE WORLD TOUR",
       venue: "ARANETA COLISEUM",
-      location: "Manila, PH",
       date: "September 20, 2025",
-      time: "8PM",
-      image: "/api/placeholder/200/270"
+      time: "8PM"
     },
     {
       id: 2,
       title: "MUSIC FESTIVAL:",
       subtitle: "SM SEASIDE - MOUNTAIN WING",
       venue: "SM SEASIDE",
-      location: "Manila, PH",
       date: "September 20, 2025",
-      time: "8PM",
-      image: "/api/placeholder/200/270"
+      time: "8PM"
     },
     {
       id: 3,
       title: "TAYLOR SWIFT: THE ERAS TOUR",
       venue: "PHILIPPINE ARENA",
-      location: "Bulacan, PH",
       date: "October 15, 2025",
-      time: "7PM",
-      image: "/api/placeholder/200/270"
+      time: "7PM"
     },
     {
       id: 4,
       title: "ANIME CONVENTION 2025",
       venue: "SMX CONVENTION CENTER",
-      location: "Pasay, PH",
       date: "November 5, 2025",
-      time: "10AM",
-      image: "/api/placeholder/200/270"
+      time: "10AM"
     }
   ]);
 
@@ -70,7 +61,6 @@ export default function HomeSeller() {
     setEditForm({
       title: event.title,
       venue: event.venue,
-      location: event.location,
       date: event.date,
       time: event.time
     });
@@ -106,7 +96,6 @@ export default function HomeSeller() {
       event.title.toLowerCase().includes(searchValue) ||
       (event.subtitle && event.subtitle.toLowerCase().includes(searchValue)) ||
       event.venue.toLowerCase().includes(searchValue) ||
-      event.location.toLowerCase().includes(searchValue) ||
       event.date.toLowerCase().includes(searchValue)
     );
   });
@@ -179,20 +168,12 @@ export default function HomeSeller() {
                 className="flex items-start gap-6 bg-opacity-30 p-2 rounded hover:bg-gray-800 transition cursor-pointer"
                 onClick={() => handleEventClick(event.id)}
               >
-                <div className="w-32">
-                  <img 
-                    src={event.image} 
-                    alt={event.title} 
-                    className="w-full h-auto object-cover rounded"
-                  />
-                </div>
                 <div className="flex-1">
                   <h2 className="text-xl font-bold">{event.title}</h2>
                   {event.subtitle && (
                     <h3 className="text-xl font-bold mb-1">{event.subtitle}</h3>
                   )}
                   <p className="text-gray-300">{event.venue}</p>
-                  <p className="text-gray-300">{event.location}</p>
                   <p className="text-gray-300">{event.date} {event.time}</p>
                 </div>
                 <div>
@@ -277,16 +258,7 @@ export default function HomeSeller() {
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={editForm.location}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500"
-                />
-              </div>
+              
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
