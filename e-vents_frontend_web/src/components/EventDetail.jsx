@@ -2,11 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import StripeWrapper from "./StripeWrapper";
 import StripePayment from "./StripePayment";
-import StripeWrapper from "./StripeWrapper";
-import StripePayment from "./StripePayment";
 
 // Import the mock events data 
-import { mockEventsData } from "./HomeUser";
 import { mockEventsData } from "./HomeUser";
 
 export default function EventDetail() {
@@ -15,7 +12,6 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [totalPurchase, setTotalPurchase] = useState(0);
-  const [showStripePayment, setShowStripePayment] = useState(false);
   const [showStripePayment, setShowStripePayment] = useState(false);
   const navigate = useNavigate();
 
@@ -103,8 +99,6 @@ export default function EventDetail() {
 
   // Handle proceed to checkout
   const handleProceedToCheckout = () => {
-  // Handle proceed to checkout
-  const handleProceedToCheckout = () => {
     if (selectedTickets.length === 0) {
       alert("Please select at least one ticket.");
       return;
@@ -136,8 +130,6 @@ export default function EventDetail() {
         ticketPrice: ticket.price,
         quantity: ticket.quantity,
         paymentId: paymentResponse.paymentIntent.id
-        quantity: ticket.quantity,
-        paymentId: paymentResponse.paymentIntent.id
       };
     });
     
@@ -150,14 +142,6 @@ export default function EventDetail() {
     localStorage.setItem('purchasedEvents', JSON.stringify(updatedEvents));
     
     // Navigate to myevents with the latest purchased event
-    setTimeout(() => {
-      navigate('/myevents', { 
-        state: { 
-          newPurchasedEvent: purchasedEvents[0], // Pass first ticket as the latest purchase
-          paymentSuccess: true
-        }
-      });
-    }, 2000);
     setTimeout(() => {
       navigate('/myevents', { 
         state: { 
@@ -219,6 +203,11 @@ export default function EventDetail() {
         <div className="bg-gray-800 rounded-lg overflow-hidden">
           {/* Event Image and Basic Info */}
           <div className="p-6 flex items-start gap-6">
+            <div className="w-1/4">
+              <div className="bg-gray-700 w-full h-48 rounded-lg flex items-center justify-center">
+                <span className="text-gray-400">Event Image</span>
+              </div>
+            </div>
             <div>
               <h2 className="text-2xl font-bold text-white">{event.title}</h2>
               <p className="text-lg text-white mt-2">{event.venue}</p>
@@ -226,6 +215,9 @@ export default function EventDetail() {
               <p className="text-gray-300 mt-2">{event.date} {event.time}</p>
               <div className="flex mt-2">
                 {renderStars(event.rating)}
+              </div>
+              <div className="mt-4">
+                <p className="text-gray-300">{event.description}</p>
               </div>
             </div>
           </div>
