@@ -79,7 +79,7 @@ export default function Profile() {
 
   const handleLogout = () => {
     userService.logout(); 
-    navigate("/login");        
+    navigate("/");        
   };
   
   if (isLoading && profile.firstName === '') {
