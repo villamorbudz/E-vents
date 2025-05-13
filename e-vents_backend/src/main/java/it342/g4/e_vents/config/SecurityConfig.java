@@ -54,18 +54,6 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS with our configuration
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints - no authentication needed
-                .requestMatchers("/api/users/register", "/api/users/login", "/api/users/exists", "/api/users/{id}/delete", "/api/users/{id}").permitAll()
-                .requestMatchers("/api/users/countries", "/api/users/regions/**", "/api/users/cities/**").permitAll()
-                .requestMatchers("/api/payment/**").permitAll()
-                // Make all event endpoints public for now to fix the 403 error
-                .requestMatchers("/api/events/**").permitAll()
-                .requestMatchers("/login", "/signup/**", "/forgot-password").permitAll()
-                .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
-                // Swagger UI endpoints
-                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**", "/v3/api-docs/**").permitAll()
-                // All other requests just need valid authentication (token), no specific role required
-                .anyRequest().authenticated()
                 .anyRequest().permitAll()
             )
             // Use JWT instead of sessions
