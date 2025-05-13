@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import StripeWrapper from "./StripeWrapper";
 import StripePayment from "./StripePayment";
+import StripeWrapper from "./StripeWrapper";
+import StripePayment from "./StripePayment";
 
 // Import the mock events data 
+import { mockEventsData } from "./HomeUser";
 import { mockEventsData } from "./HomeUser";
 
 export default function EventDetail() {
@@ -12,6 +15,7 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [totalPurchase, setTotalPurchase] = useState(0);
+  const [showStripePayment, setShowStripePayment] = useState(false);
   const [showStripePayment, setShowStripePayment] = useState(false);
   const navigate = useNavigate();
 
@@ -99,6 +103,8 @@ export default function EventDetail() {
 
   // Handle proceed to checkout
   const handleProceedToCheckout = () => {
+  // Handle proceed to checkout
+  const handleProceedToCheckout = () => {
     if (selectedTickets.length === 0) {
       alert("Please select at least one ticket.");
       return;
@@ -130,6 +136,8 @@ export default function EventDetail() {
         ticketPrice: ticket.price,
         quantity: ticket.quantity,
         paymentId: paymentResponse.paymentIntent.id
+        quantity: ticket.quantity,
+        paymentId: paymentResponse.paymentIntent.id
       };
     });
     
@@ -142,6 +150,14 @@ export default function EventDetail() {
     localStorage.setItem('purchasedEvents', JSON.stringify(updatedEvents));
     
     // Navigate to myevents with the latest purchased event
+    setTimeout(() => {
+      navigate('/myevents', { 
+        state: { 
+          newPurchasedEvent: purchasedEvents[0], // Pass first ticket as the latest purchase
+          paymentSuccess: true
+        }
+      });
+    }, 2000);
     setTimeout(() => {
       navigate('/myevents', { 
         state: { 
