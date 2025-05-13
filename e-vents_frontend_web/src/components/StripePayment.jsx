@@ -62,7 +62,7 @@ export default function StripePayment({ amount, onPaymentSuccess, onClose }) {
     // Show loading state while creating payment intent
     setProcessing(true);
     
-    axios.post('http://localhost:8080/api/payment/create-payment-intent', {
+    axios.post('https://e-vents-4bld.onrender.com/api/payment/create-payment-intent', {
       amount: amount * 100, // convert to cents
       currency: 'php'
     })
