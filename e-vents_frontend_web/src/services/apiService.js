@@ -3,7 +3,7 @@
 
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = 'https://e-vents-4bld.onrender.com/api';
 
 // Axios instance
 export const api = axios.create({
