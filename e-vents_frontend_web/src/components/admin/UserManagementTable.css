@@ -1,0 +1,140 @@
+/* User Management Table Responsive Styles */
+
+.user-management-table {
+  width: 100%;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  max-width: 100%;
+  padding-bottom: 8px; /* Space for scrollbar */
+  margin-bottom: 20px;
+  position: relative;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Make the table wide enough to show all content */
+.user-management-table .admin-table {
+  width: auto; /* Allow table to expand */
+  min-width: 100%; /* At least full width */
+  table-layout: auto; /* Let content determine width */
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+/* Ensure all content is visible */
+.user-management-table .admin-table th,
+.user-management-table .admin-table td {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  padding: 12px 15px;
+}
+
+/* Custom scrollbar for the table wrapper */
+.user-management-table::-webkit-scrollbar {
+  height: 8px;
+  background-color: #f5f5f5;
+}
+
+.user-management-table::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 4px;
+}
+
+.user-management-table::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a8a8;
+}
+
+/* Firefox scrollbar */
+.user-management-table {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f5f5f5;
+}
+
+/* Column widths for user management table */
+.user-management-table .admin-table th:nth-child(1),
+.user-management-table .admin-table td:nth-child(1) {
+  width: 50px; /* ID column */
+}
+
+.user-management-table .admin-table th:nth-child(2),
+.user-management-table .admin-table th:nth-child(3),
+.user-management-table .admin-table td:nth-child(2),
+.user-management-table .admin-table td:nth-child(3) {
+  width: 100px; /* First Name, Last Name columns */
+}
+
+.user-management-table .admin-table th:nth-child(4),
+.user-management-table .admin-table td:nth-child(4) {
+  width: 150px; /* Email column */
+}
+
+.user-management-table .admin-table th:nth-child(5),
+.user-management-table .admin-table td:nth-child(5),
+.user-management-table .admin-table th:nth-child(9),
+.user-management-table .admin-table td:nth-child(9) {
+  width: 100px; /* Birthdate and Created Date columns */
+}
+
+.user-management-table .admin-table th:nth-child(6),
+.user-management-table .admin-table td:nth-child(6) {
+  width: 120px; /* Contact Number column */
+}
+
+.user-management-table .admin-table th:nth-child(7),
+.user-management-table .admin-table td:nth-child(7),
+.user-management-table .admin-table th:nth-child(8),
+.user-management-table .admin-table td:nth-child(8) {
+  width: 100px; /* Country and Role columns */
+}
+
+.user-management-table .admin-table th:nth-child(10),
+.user-management-table .admin-table td:nth-child(10) {
+  width: 80px; /* Active column */
+}
+
+/* Tooltip for truncated content */
+.user-management-table .admin-table td {
+  position: relative;
+}
+
+.user-management-table .admin-table td:hover::after {
+  content: attr(data-full-text);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 1;
+  background-color: #333;
+  color: white;
+  padding: 5px 8px;
+  border-radius: 4px;
+  white-space: normal;
+  max-width: 300px;
+  word-wrap: break-word;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: block;
+  pointer-events: none;
+}
+
+/* Make sure the table container takes full width */
+.admin-container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .user-management-table .admin-table {
+    min-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-container {
+    margin-left: 0;
+    width: 100%;
+    padding: 10px;
+  }
+  
+  .user-management-table {
+    overflow-x: auto;
+  }
+}

@@ -1,0 +1,10 @@
+.table-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  margin-bottom: 20px;
+}
+
+.table-scroll-wrapper table {
+  width: 100%;
+}

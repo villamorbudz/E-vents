@@ -1,0 +1,40 @@
+/* Table Sorting Styles */
+
+.sortable-header {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sortable-header:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+}
+
+.sort-icon {
+  margin-left: 8px;
+  opacity: 0.6;
+}
+
+/* Highlight the sorted column */
+th.sortable-header[aria-sort="ascending"] .sort-icon,
+th.sortable-header[aria-sort="descending"] .sort-icon {
+  opacity: 1;
+  color: #1976d2;
+}
+
+/* Ensure table content is fully visible */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table td, .admin-table th {
+  white-space: nowrap;
+  padding: 8px 12px;
+}
